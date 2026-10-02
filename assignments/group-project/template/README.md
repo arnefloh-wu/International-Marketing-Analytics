@@ -17,8 +17,8 @@ Brief and rubric: `assignments/group-project/` in the course repository.
 
 ```
 README.md             this file
-report.qmd            the board report (renders to report.html / report.pdf, max 12 pages)
-report.pdf            rendered report (committed for the final submission)
+report.qmd            the board report (renders to report.html and report.docx; export to PDF for submission, max 12 pages)
+report.pdf            rendered report exported to PDF (committed for the final submission)
 pitch.pdf             the 8-slide pitch deck shown in Session 5
 allocation_2027.csv   our recommended weekly 2027 spend per country x channel (30 rows)
 code/

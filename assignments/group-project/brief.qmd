@@ -108,7 +108,7 @@ One repository per group in the course GitHub organisation, named `group-XX-alpe
 ```
 README.md             team, structure, how to reproduce
 report.qmd            the report source (renders without error)
-report.pdf            rendered report, max 12 pages excluding appendices
+report.pdf            rendered report (print the HTML or Word output to PDF), max 12 pages excluding appendices
 pitch.pdf             the pitch deck, max 8 slides
 allocation_2027.csv   columns country, channel, weekly_spend_k; 30 rows; sums to the weekly budget
 code/                 numbered scripts or notebooks that produce every table and figure
