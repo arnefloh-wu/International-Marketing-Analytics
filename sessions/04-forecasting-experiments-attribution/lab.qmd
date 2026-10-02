@@ -481,19 +481,20 @@ compare
 
 ### Interpretation
 
-The experiment says the extra 1.75 million euros of paid social generated about 75 000 incremental units, roughly 240 000 euros of revenue: an **incremental ROAS of about 0.14**, far below the MMM's average ROAS of about 1.5 to 2. Three reasons, in decreasing order of importance, and all three belong in the board deck:
+The experiment says the extra 155 000 euros of paid social generated about 75 000 incremental units, roughly 240 000 euros of revenue: an **incremental ROAS of about 1.5** (95 % CI 1.3 to 1.8). That is slightly below the MMM's average ROAS of about 1.7, and the comparison only makes sense once you see that the two numbers measure different things. Three points, all of which belong in the board deck:
 
-1. **Average vs marginal.** The MMM ROAS is the average return over *all* paid social spend. The test measures the return on the *last* 150 % of spend, in a channel with a saturating response. Under saturation marginal ROAS is always below average ROAS; the MMM's own response curve (Session 2) predicts a marginal ROAS well below its average for a 2.5× spend jump. Compare the test with the MMM's **mROAS at 2.5× spend**, not with its average ROAS.
-2. **Scale mismatch in the data.** The last column shows that the geo dataset records more than ten times as much paid social spend per unit sold as the national panel (0.96 vs 0.07 thousand EUR per thousand units). This is typical when experiment data come from the ad platform's reporting and the MMM from finance. Before you trust either ROAS, reconcile the spend definitions (gross vs net, agency fees, test-only line items). Flag it; do not hide it.
-3. **Short window.** Eight weeks capture the immediate effect plus two weeks of carryover; the MMM accumulates carryover over the full adstock window. This closes a small part of the gap, not most of it.
+1. **Average vs marginal.** The MMM ROAS is the *average* return over all paid social spend in 2023 to 2025. The test measures the return on the *extra* 150 % of spend, in a channel with a saturating response. Under diminishing returns the marginal ROAS is always below the average ROAS, so an experiment that comes in a little under the MMM average is exactly what a healthy model predicts. The right comparison is the test ROAS against the MMM's **marginal ROAS for a 2.5× spend increase**, read off your Session 2 response curve: if that mROAS lies inside the test's interval (1.3 to 1.8) model and experiment agree; if the curve says much less (below 1), the model saturates paid social too fast and the test should pull the curve up.
+2. **Like with like.** The last column shows that the geo data and the national panel record a similar level of paid social spend per unit sold (about 0.09 vs 0.07 thousand EUR per thousand units), so the two ROAS figures are on the same footing. Always check this: when experiment data come from the ad platform and the MMM from finance, gross vs net spend, agency fees and test-only line items can put the two numbers on different scales before any statistics are involved.
+3. **Short window.** Eight weeks capture the immediate effect plus two weeks of carryover; the MMM accumulates carryover over the full adstock window. Counting the post-period coefficient would raise the test ROAS by roughly a fifth.
 
 What should calibrate the budget? The **lift in units per extra euro** from the test, fed into the MMM as a lift-test measurement (PyMC-Marketing's `add_lift_test_measurements`), so the model's saturation curve for paid social in Germany is pulled towards the experimental slope while the model keeps estimating the other channels and countries. The concept is shown in the appendix; the mechanics belong in the group project.
 
 ::: {.callout-tip title="Check yourself"}
 - Reproduce the lift from the event-study plot by eye: is the average test-week gap close to 5.7 %?
 - Why do we cluster by region and not by week? What would happen to the standard error if we used plain OLS SEs?
-- What is the difference between the 5.7 % lift and the experimental ROAS of 0.14? Which number is causal, which depends on prices and spend definitions?
-- If the MMM's mROAS at 2.5× spend is, say, 0.4, is the experiment still in conflict with the model?
+- What is the difference between the 5.7 % lift and the experimental ROAS of 1.5? Which number is causal, which depends on prices and spend definitions?
+- Your Session 2 response curve for paid social in Germany: what marginal ROAS does it imply for a jump from the 2025 weekly spend to 2.5 times that level? Is it inside the test's interval of 1.3 to 1.8?
+- Why would an experimental ROAS *above* the MMM's average ROAS be a warning sign?
 :::
 
 ::: {.callout-note title="Prompt pattern"}
@@ -773,4 +774,4 @@ mmm_de.add_lift_test_measurements(df_lift)
 mmm_de.fit(X_de, y_de, draws=500, tune=500, chains=2, random_seed=42, progressbar=False)
 ```
 
-Note that the geo test covered 12 of about 40 regions; before feeding `delta_x` and `delta_y` into a national model, scale both to the national level (or run the calibration on a per-region model). The scale mismatch discussed in B6 has to be resolved first.
+Note that the geo test covered 12 of about 40 regions; before feeding `delta_x` and `delta_y` into a national model, scale both to the national level (for example by dividing by the treated regions' share of national sales), or run the calibration on a per-region model.

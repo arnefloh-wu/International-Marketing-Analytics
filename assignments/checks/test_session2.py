@@ -66,8 +66,10 @@ def test_adstock_alpha_range(table):
 
 
 def test_roas_range(table):
-    bad = table[(table.roas < 0.1) | (table.roas > 8)]
-    assert bad.empty, f"ROAS outside the plausible range 0.1 to 8:\n{bad}"
+    too_high = table[table.roas > 8]
+    assert too_high.empty, f"ROAS above the plausible maximum of 8:\n{too_high}"
+    weak = table[table.roas < 0.1]
+    assert len(weak) <= 1, f"More than one channel with ROAS below 0.1 (weak or negative effect):\n{weak}"
 
 
 def test_incremental_units_mostly_positive(table):

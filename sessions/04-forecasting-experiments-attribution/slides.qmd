@@ -466,7 +466,7 @@ Pre-specification matters: decide before the test how many post weeks count. Oth
 - Under saturation, marginal < average, always. Compare like with like
 
 ::: {.notes}
-This slide prepares students for the surprise in the lab: the experimental ROAS of the extra spend is far below the MMM's average ROAS. Part of that is average versus marginal, which is expected. Part is a mismatch in how spend is recorded in the experiment data versus the national panel, which the lab asks students to notice and flag rather than hide. Reconciling spend definitions is the unglamorous first step of every calibration.
+This slide prepares students for the result in the lab: the experimental ROAS of the extra spend is about 1.5 (interval 1.3 to 1.8), a little below the MMM's average ROAS of about 1.7. That is what diminishing returns predict: the extra 150 % of spend earns less per euro than the average euro. The honest comparison is with the MMM's marginal ROAS at 2.5 times the usual spend, read off the Session 2 response curve. Before any of this, check that experiment and model record spend on the same basis (gross versus net, agency fees, platform versus finance figures); the lab shows the spend-per-unit check.
 :::
 
 ## Calibrating the MMM with the lift test
@@ -639,11 +639,11 @@ Walk through the check-in chunk live at the end of the lab. The checker tests ra
 - Known future inputs (media plan, price, promotions) are what make regression forecasts beat time-series methods
 - Observational MMM has a planning confound; a geo experiment breaks it for one channel in one country
 - DiD = regression with region and week fixed effects, a treated × test interaction and clustered SEs
-- Compare marginal with marginal: experimental ROAS vs the MMM's mROAS, after reconciling spend definitions
+- Compare marginal with marginal: the experimental ROAS (about 1.5) vs the MMM's mROAS at the tested spend level, not its average ROAS
 - Attribution measures presence (rules) or influence (logit, Shapley) on tracked journeys; it differs by market and cannot see offline media
 
 ::: {.notes}
-Close with the decision of the day. Can we trust the model? The forecast says the structure predicts; the experiment says the direction is right but the marginal return on extra paid social is much lower than the average ROAS suggests; attribution says the within-digital split differs by market. The honest answer for the board: trust the model where it has been tested, and say where it has not.
+Close with the decision of the day. Can we trust the model? The forecast says the structure predicts; the experiment confirms the effect and returns a marginal ROAS of about 1.5, a little below the model's average ROAS, as diminishing returns predict; attribution says the within-digital split differs by market. The honest answer for the board: trust the model where it has been tested, and say where it has not.
 :::
 
 ## Before next week

@@ -1,0 +1,350 @@
+---
+title: "Session 3 · Instructor solutions"
+subtitle: "Exercises 1 to 5 and comparison of the Part C allocation with the ground truth"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    code-fold: true
+    fig-width: 8
+    fig-height: 4
+execute:
+  warning: false
+  error: false
+---
+
+::: {.callout-warning}
+Instructor material. This file reads `instructor/ground_truth/` and must not be shared with students before grading.
+:::
+
+## Setup: rebuild the lab's Part A and Part C objects
+
+The code below reproduces the lab's panel, Hill features, per-country log models, response-curve function and constrained optimiser, so that every exercise can start from the same objects.
+
+```{python}
+#| label: setup
+import sys, time, json, warnings, logging
+sys.path.append("../../assets")
+from mma import *
+import numpy as np, pandas as pd, matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
+from scipy.optimize import minimize
+plt.rcParams["figure.figsize"] = (8, 4)
+T0 = time.time()
+
+df = load_panel("../../data/mmm/alpenglow_weekly.csv")
+ALPHA = {"tv": 0.7, "online_video": 0.5, "paid_search": 0.1, "paid_social": 0.3, "ooh": 0.6}
+for ch in CHANNELS:
+    df[f"ad_{ch}"] = df.groupby("country")[f"spend_{ch}_k"].transform(lambda s: geometric_adstock(s.values, ALPHA[ch]))
+    df[f"x_{ch}"] = df[f"ad_{ch}"] / df.groupby("country")[f"spend_{ch}_k"].transform("mean")
+    df[f"k_{ch}"] = df.groupby("country")[f"ad_{ch}"].transform("median")
+    df[f"h_{ch}"] = hill(df[f"ad_{ch}"], df[f"k_{ch}"], 1.0)
+df["log_sales"] = np.log(df.sales_units_k); df["log_price"] = np.log(df.price_eur); df["log_comp"] = np.log(df.competitor_spend_k)
+df["lc"] = df.log_comp - df.log_comp.mean()                       # centred competitor spend (Exercise 4)
+df = add_fourier(df, order=2)
+MEDIA = " + ".join(f"x_{ch}" for ch in CHANNELS)
+HILL = " + ".join(f"h_{ch}" for ch in CHANNELS)
+CONTROLS = ("log_price + promo_share + distribution + xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2"
+            " + t + log_comp + consumer_confidence + temperature_c")
+last = df[df.week >= "2025-01-01"]
+cells = [(c, ch) for c in COUNTRIES for ch in CHANNELS]
+
+def fit_cells(formula_media=HILL, extra=""):
+    """Per-country log OLS with Hill features; returns the cell table and the per-country covariance of the Hill betas."""
+    rows, cov = [], {}
+    for c in COUNTRIES:
+        fit = smf.ols(f"log_sales ~ {formula_media} + {CONTROLS}{extra}", data=df[df.country == c]).fit()
+        hn = [f"h_{ch}" for ch in CHANNELS]
+        cov[c] = fit.cov_params().loc[hn, hn].values
+        sub = last[last.country == c]
+        for ch in CHANNELS:
+            rows.append({"country": c, "channel": ch, "current": sub[f"spend_{ch}_k"].mean(), "k": sub[f"k_{ch}"].iloc[0],
+                         "beta": fit.params[f"h_{ch}"], "se": fit.bse[f"h_{ch}"], "price": sub.price_eur.mean(),
+                         "sales_2025": sub.sales_units_k.mean(), "fit": fit})
+    cell = pd.DataFrame(rows)
+    mult = cell.assign(bh=lambda d: d.beta * hill(d.current, d.k, 1.0)).groupby("country").bh.sum()
+    cell["base"] = cell.sales_2025 / np.exp(cell.country.map(mult))
+    return cell, cov
+
+cell, cov_by_country = fit_cells()
+current = cell.current.values; BUDGET = current.sum()
+k_vec, beta_vec, base_vec, price_vec = cell.k.values, cell.beta.values, cell.base.values, cell.price.values
+
+def revenue(x, beta=beta_vec):
+    return np.sum(base_vec * (np.exp(beta * hill(x, k_vec, 1.0)) - 1.0) * price_vec)
+
+def allocate(bound_pct=0.30, floor_pct=0.70, ceiling_pct=None, beta=beta_vec, rev=None):
+    """SLSQP allocation with cell bounds, country floors and optional country ceilings."""
+    rev = rev or (lambda x: revenue(x, beta))
+    lb, ub = (1 - bound_pct) * current, (1 + bound_pct) * current
+    cons = [{"type": "eq", "fun": lambda x: x.sum() - BUDGET}]
+    for c in COUNTRIES:
+        idx = cell.index[cell.country == c].values
+        cons.append({"type": "ineq", "fun": lambda x, idx=idx, f=floor_pct * current[idx].sum(): x[idx].sum() - f})
+        if ceiling_pct is not None:
+            cons.append({"type": "ineq", "fun": lambda x, idx=idx, u=(1 + ceiling_pct) * current[idx].sum(): u - x[idx].sum()})
+    res = minimize(lambda x: -rev(x), x0=current, bounds=list(zip(lb, ub)), constraints=cons,
+                   method="SLSQP", options={"maxiter": 500, "ftol": 1e-10})
+    assert res.success, res.message
+    return res
+
+def summarise(res, rev=revenue, label=""):
+    gain = rev(res.x) - rev(current)
+    tot = pd.DataFrame({"current": current, "optimal": res.x, "country": cell.country}).groupby("country").sum()
+    tot["ratio"] = tot.optimal / tot.current
+    return {"plan": label, "gain_k_per_week": round(gain, 1), "gain_pct": round(gain / rev(current) * 100, 2),
+            "cells_at_bound": int(np.sum(np.isclose(res.x, 0.7 * current) | np.isclose(res.x, 1.3 * current) |
+                                         np.isclose(res.x, 0.5 * current) | np.isclose(res.x, 1.5 * current))),
+            "country_ratios": tot.ratio.round(2).to_dict()}
+
+res_lab = allocate()
+cell["optimal_lab"] = res_lab.x
+base_summary = summarise(res_lab, label="lab: ±30 %, floors 70 %")
+base_summary
+```
+
+## Exercise 1 · Priors matter in a small market
+
+We refit the Austrian model with (a) an informative TV adstock prior `Beta(7, 3)` (mean 0.7) on all channels' adstock, which is what the `priors` argument of `GeometricAdstock` applies, and (b) a `HalfNormal(sigma=4)` prior on `saturation_beta` (the default is `sigma=2`). We also raise `target_accept` to 0.95. One fit takes about 90 seconds.
+
+```{python}
+#| label: ex1-fit
+from pymc_marketing.mmm import MMM, GeometricAdstock, LogisticSaturation
+from pymc_marketing.prior import Prior
+import arviz as az
+
+at = df[df.country == "AT"].reset_index(drop=True)
+SPEND = [f"spend_{ch}_k" for ch in CHANNELS]
+CTRL = ["log_price", "promo_share", "distribution", "xmas", "easter", "valentine"]
+X, y = at[["week"] + SPEND + CTRL], at["sales_units_k"]
+
+logging.getLogger("pymc").setLevel(logging.ERROR)
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    mmm_prior = MMM(date_column="week", channel_columns=SPEND,
+                    adstock=GeometricAdstock(l_max=10, priors={"alpha": Prior("Beta", alpha=7, beta=3)}),
+                    saturation=LogisticSaturation(priors={"beta": Prior("HalfNormal", sigma=4),
+                                                           "lam": Prior("Gamma", alpha=3, beta=1)}),
+                    control_columns=CTRL, yearly_seasonality=2)
+    print("Default adstock prior:", GeometricAdstock(l_max=10).function_priors["alpha"],
+          "| default saturation priors:", LogisticSaturation().function_priors)
+    t0 = time.time()
+    mmm_prior.fit(X, y, draws=500, tune=500, chains=2, random_seed=42, progressbar=False, target_accept=0.95)
+print(f"fit: {time.time() - t0:.0f} s")
+az.summary(mmm_prior.idata, var_names=["adstock_alpha", "saturation_beta"], round_to=3)[["mean", "sd", "hdi_3%", "hdi_97%", "r_hat"]]
+```
+
+```{python}
+#| label: ex1-roas
+contrib = mmm_prior.compute_channel_contribution_original_scale().sum(dim="date")
+roas_new = contrib * at.price_eur.mean() / X[SPEND].sum().to_xarray().rename({"index": "channel"})
+# Lab values with the default priors (from the rendered lab, seed 42)
+lab_roas = pd.DataFrame({"roas_mean_default": [1.36, 1.16, 1.75, 2.55, 0.85],
+                         "p_roas_gt1_default": [0.97, 0.53, 0.80, 0.97, 0.35]},
+                        index=[CHANNEL_LABELS[ch] for ch in CHANNELS])
+lab_roas["roas_mean_informative"] = roas_new.mean(dim=("chain", "draw")).values.round(2)
+lab_roas["p_roas_gt1_informative"] = (roas_new > 1).mean(dim=("chain", "draw")).values.round(2)
+lab_roas["adstock_mean_default"] = [0.69, 0.26, 0.19, 0.29, 0.23]
+lab_roas["adstock_mean_informative"] = mmm_prior.idata.posterior.adstock_alpha.mean(dim=("chain", "draw")).values.round(2)
+lab_roas
+```
+
+**Solution notes.**
+
+- The default adstock prior in PyMC-Marketing 0.19 is `Beta(1, 3)` (mean 0.25). That is why the lab's digital adstock posteriors sit around 0.2 to 0.3: the data barely move them. With `Beta(7, 3)` the digital adstocks move towards 0.6 to 0.7, while TV stays near 0.69 whichever prior is used: the TV budget is large enough and flighted enough for the data to dominate.
+- Higher adstock for the digital channels spreads their effect over more weeks and changes the attribution between channels; ROAS for online video and OOH shifts most, paid social and TV least. The widened `saturation_beta` prior alone changes little: the likelihood already pins down the scale of the effects.
+- `target_accept=0.95` removes the r-hat message on the intercept and price coefficient.
+- For the manager: priors matter when the data are thin (small budgets, few weeks, little variation). They are justified the same way any assumption is justified: with evidence from other markets (Germany's adstock), past models, or experiments, and by showing that the conclusion is robust to reasonable alternatives (as this table does).
+
+## Exercise 2 · Country floors and their price
+
+```{python}
+#| label: ex2
+rows = [base_summary]
+res_90 = allocate(floor_pct=0.90);                   rows.append(summarise(res_90, label="floors 90 %"))
+res_c10 = allocate(ceiling_pct=0.10);               rows.append(summarise(res_c10, label="ceilings +10 %"))
+res_both = allocate(floor_pct=0.90, ceiling_pct=0.10); rows.append(summarise(res_both, label="floors 90 % and ceilings +10 %"))
+out = pd.DataFrame(rows)
+out["binding_countries"] = out.country_ratios.apply(lambda d: [c for c, r in d.items() if np.isclose(r, 0.9, atol=0.005) or np.isclose(r, 1.1, atol=0.005)])
+shadow_it = revenue(res_lab.x) - revenue(allocate(floor_pct=0.90).x)
+print(f"Shadow price of raising all floors from 70 % to 90 %: EUR {shadow_it:.1f}k per week")
+# Italian floor alone
+def allocate_it_floor(f):
+    lb, ub = 0.7 * current, 1.3 * current
+    cons = [{"type": "eq", "fun": lambda x: x.sum() - BUDGET}]
+    for c in COUNTRIES:
+        idx = cell.index[cell.country == c].values
+        fl = f if c == "IT" else 0.7
+        cons.append({"type": "ineq", "fun": lambda x, idx=idx, fl=fl * current[idx].sum(): x[idx].sum() - fl})
+    return minimize(lambda x: -revenue(x), x0=current, bounds=list(zip(lb, ub)), constraints=cons, method="SLSQP", options={"maxiter": 500, "ftol": 1e-10})
+print(f"Shadow price of the Italian floor alone (90 % vs 70 %): EUR {revenue(res_lab.x) - revenue(allocate_it_floor(0.90).x):.1f}k per week")
+out[["plan", "gain_k_per_week", "gain_pct", "binding_countries"]]
+```
+
+**Solution notes.** With 90 % floors, France and Italy become binding (both lost about 12 % in the lab solution) and the gain falls by a few kEUR per week. The Italian floor alone costs about EUR 1 to 2k per week, roughly EUR 50 to 100k per year: a number the Italian country manager can be asked to justify. A +10 % ceiling binds Germany, the Netherlands and Poland, which were the main recipients, and costs more than the floors because it blocks the highest marginal returns. The combination costs the most.
+
+## Exercise 3 · Wider bounds: ±50 %
+
+```{python}
+#| label: ex3
+res_50 = allocate(bound_pct=0.50)
+s50 = summarise(res_50, label="±50 %, floors 70 %")
+delta = pd.Series(res_50.x - current, index=[f"{c}-{ch}" for c, ch in cells])
+print(s50)
+print("Three largest absolute changes (kEUR per week):"); print(delta.abs().sort_values(ascending=False).head(3).round(1))
+
+rng = np.random.default_rng(42)
+g30, g50 = [], []
+for _ in range(200):
+    bd = np.concatenate([rng.multivariate_normal(cell.loc[cell.country == c, "beta"].values, cov_by_country[c]) for c in COUNTRIES])
+    g30.append(revenue(res_lab.x, bd) - revenue(current, bd)); g50.append(revenue(res_50.x, bd) - revenue(current, bd))
+for name, g in [("±30 %", np.array(g30)), ("±50 %", np.array(g50))]:
+    print(f"{name}: mean gain {g.mean():.1f}k, 90 % interval {np.percentile(g, 5):.1f} to {np.percentile(g, 95):.1f}k, P(gain>0) = {(g > 0).mean():.2f}")
+```
+
+```{python}
+#| label: fig-ex3
+#| fig-cap: "Estimated response curve for German online video; shaded band = observed adstocked spend range."
+i = cells.index(("DE", "online_video"))
+ad = df.loc[df.country == "DE", "ad_online_video"]
+xs = np.linspace(0, 2 * ad.max(), 200)
+curve = base_vec[i] * (np.exp(beta_vec[i] * hill(xs, k_vec[i], 1.0)) - 1) * price_vec[i]
+fig, ax = plt.subplots()
+ax.plot(xs, curve, label="estimated curve")
+ax.axvspan(ad.min(), ad.max(), color="grey", alpha=0.2, label="observed range")
+ax.axvline(current[i], color="C1", ls="--", label="current"); ax.axvline(res_50.x[i], color="C3", ls="--", label="±50 % plan")
+ax.set_xlabel("Weekly adstocked spend (kEUR)"); ax.set_ylabel("Weekly incremental revenue (kEUR)"); ax.legend()
+plt.tight_layout(); plt.show()
+```
+
+**Solution notes.** The ±50 % plan roughly doubles the estimated gain (bounds do most of the work in the ±30 % case), and even more cells sit at a bound. Its uncertainty band is wider in absolute terms but P(gain > 0) stays close to 1, because the draws only vary the coefficients. The chart shows that the ±50 % level for German online video sits inside the observed range, since German spend has varied a lot (campaign bursts, Q4 uplift); for small markets the same check often fails. Recommendation: ±30 % for 2027 as the default, ±50 % only for cells whose target spend lies within the observed range and where a geo-lift test (Session 4) can confirm the slope.
+
+## Exercise 4 · Competitor spend as a moderator
+
+```{python}
+#| label: ex4a
+inter_terms = " + ".join(f"x_{ch}:lc" for ch in CHANNELS)
+pooled_int = smf.ols(f"log_sales ~ {MEDIA} + {inter_terms} + {CONTROLS} + C(country)", data=df).fit()
+tab = pd.DataFrame({"coef": pooled_int.params, "se": pooled_int.bse}).loc[[f"x_{ch}:lc" for ch in CHANNELS]].round(4)
+tab["t"] = (tab.coef / tab.se).round(2)
+tab
+```
+
+```{python}
+#| label: ex4b
+rows = []
+for c in COUNTRIES:
+    sub = df[df.country == c]
+    fit = smf.ols(f"log_sales ~ {HILL} + h_tv:lc + {CONTROLS}", data=sub).fit()
+    i = cells.index((c, "tv"))
+    for q in (0.25, 0.75):
+        lc_q = sub.lc.quantile(q)
+        b_eff = fit.params["h_tv"] + fit.params["h_tv:lc"] * lc_q
+        x = current[i]; dh = k_vec[i] / (x + k_vec[i]) ** 2
+        rows.append({"country": c, "competitor_quantile": q, "beta_tv_effective": round(b_eff, 3),
+                     "mroas_tv": round(base_vec[i] * np.exp(b_eff * hill(x, k_vec[i], 1.0)) * b_eff * dh * price_vec[i], 2),
+                     "interaction_t": round(fit.tvalues["h_tv:lc"], 2)})
+pd.DataFrame(rows).pivot(index="country", columns="competitor_quantile", values=["mroas_tv", "interaction_t"]).round(2)
+```
+
+```{python}
+#| label: ex4c
+beta_2027 = beta_vec.copy()
+for c in ("DE", "FR"):
+    sub = df[df.country == c]
+    fit = smf.ols(f"log_sales ~ {HILL} + h_tv:lc + {CONTROLS}", data=sub).fit()
+    lc_2027 = np.log(1.2 * last.loc[last.country == c, "competitor_spend_k"].mean()) - df.log_comp.mean()
+    i = cells.index((c, "tv"))
+    beta_2027[i] = fit.params["h_tv"] + fit.params["h_tv:lc"] * lc_2027
+res_comp = allocate(beta=beta_2027)
+cmp = pd.DataFrame({"current": current, "lab_plan": res_lab.x, "plan_with_+20%_competitors_DE_FR": res_comp.x},
+                   index=[f"{c}-{ch}" for c, ch in cells]).loc[["DE-tv", "FR-tv", "DE-online_video", "FR-online_video"]].round(1)
+cmp
+```
+
+**Solution notes.** In the synthetic data competitor spend lowers the baseline (a 5 % log effect) but does not interact with media effectiveness, so the interaction coefficients are small and mostly insignificant: the honest finding is "no evidence that competitors blunt our media". Students should report this rather than invent a story. If a team finds a significant negative interaction for TV, the 2027 scenario with 20 % higher competitor spend lowers the effective TV coefficient in Germany and France and the optimiser shifts TV money to digital there; with the near-zero interaction estimated here, the plan barely changes.
+
+## Exercise 5 · The one-page memo (model answer)
+
+**To:** CMO, Alpenglow · **From:** Analytics team · **Re:** 2027 weekly media allocation
+
+**Decision requested.** Approve a re-allocation of the EUR 710k weekly media budget across six countries and five channels for 2027, keeping the total constant and moving no cell by more than 30 %.
+
+**Recommendation.** Shift about EUR 50k per week from TV in the Netherlands and Poland, from out-of-home in four markets and from paid social and search in France and Italy towards online video, paid search and paid social in Germany, the Netherlands and Poland, and towards TV in France (table in the lab, Part C).
+
+**Expected effect.** Weekly incremental revenue rises from about EUR 1.66m to EUR 1.72m, a gain of EUR 55k per week (3.3 %) or roughly EUR 2.9m per year. Across 200 re-estimations of the model the gain lies between EUR 36k and 79k per week and is positive in every case. The estimate is conditional on the response-curve shapes we assumed.
+
+**What drives it.** (1) The next euro is worth most in Dutch online video (about EUR 2.2) and least in Dutch and Polish TV (under EUR 0.5); the plan equalises these marginal returns as far as the bounds allow. (2) The Netherlands and Poland are young, digital-first markets with individualistic (NL) or price-sensitive (PL) consumers; Austria and Germany are mature and respond to TV. (3) Poland's revenue ROAS is depressed by its lower price level and by PLN costs; the recommendation holds in units but should be re-checked if the zloty moves by more than 10 %.
+
+**Risks and safeguards.** Three years of data cannot measure brand building in young markets, so the TV cuts in NL and PL are limited to 30 % and should be paired with a geo-lift test in Q1 2027. Every cell that sits at a bound is a judgement, not a model result. Country totals stay within 88 to 108 % of 2025, so no local team loses more than it can absorb.
+
+**Next steps.** Country managers confirm contractual minimums by 15 November; the analytics team re-runs the allocation with the Bayesian multi-country model and the Session 4 experiment before the January board meeting.
+
+## Comparison with the ground truth
+
+The data generator used Hill curves with channel-specific shape `s` (1.1 to 1.8) and country-scaled half-saturation `k`, the true adstock rates, and an additive baseline. The instructor files give the true parameters, the true unconstrained optimum and its gain (about 5.6 %).
+
+```{python}
+#| label: gt-load
+gt_alloc = pd.read_csv("../ground_truth/mmm_optimal_allocation.csv")
+gt_sum = json.load(open("../ground_truth/mmm_ground_truth_summary.json"))
+gt_par = pd.read_csv("../ground_truth/mmm_true_parameters.csv")
+price_c = last.groupby("country").price_eur.mean()
+
+def true_revenue(x):
+    """Weekly incremental revenue under the true curves (steady state, normalised adstock)."""
+    tot = 0.0
+    for i, (c, ch) in enumerate(cells):
+        kk = gt_sum["hill_k_base"][ch] * gt_sum["market_scale"][c]
+        tot += gt_sum["beta_max_units_k"][c][ch] * hill(np.array([x[i]]), kk, gt_sum["hill_s"][ch])[0] * price_c[c]
+    return tot
+
+gt_cur = true_revenue(current)
+true_constrained = allocate(rev=true_revenue)
+print(f"Ground-truth file: budget {gt_sum['optimisation']['weekly_budget_k']}k, current {gt_sum['optimisation']['weekly_incremental_revenue_current_k']}k, "
+      f"unconstrained optimum {gt_sum['optimisation']['weekly_incremental_revenue_optimal_k']}k (+{gt_sum['optimisation']['improvement_pct']} %)")
+print(f"Recomputed here: true revenue at current spend {gt_cur:.1f}k (prices = 2025 averages)")
+print(f"Lab model's view of current revenue: {revenue(current):.1f}k  -> the OLS curves overstate media's contribution by about {revenue(current) / gt_cur - 1:.0%}")
+print(f"True gain of the lab plan (±30 %, floors):      {(true_revenue(res_lab.x) / gt_cur - 1) * 100:+.2f} %  (model claimed +{base_summary['gain_pct']:.1f} %)")
+print(f"True gain of the ±50 % plan:                    {(true_revenue(res_50.x) / gt_cur - 1) * 100:+.2f} %")
+print(f"Best achievable under the same constraints:     {(true_revenue(true_constrained.x) / gt_cur - 1) * 100:+.2f} %")
+print(f"True unconstrained optimum (ground-truth file): +{gt_sum['optimisation']['improvement_pct']} %")
+```
+
+```{python}
+#| label: gt-compare
+comp = gt_alloc.copy()
+comp["lab_optimal"] = res_lab.x.round(2)
+comp["lab_change_pct"] = ((res_lab.x / current - 1) * 100).round(1)
+comp["true_constrained_change_pct"] = ((true_constrained.x / current - 1) * 100).round(1)
+comp["same_direction_as_truth"] = np.sign(comp.lab_change_pct) == np.sign(comp.change_pct)
+comp["roas_lab"] = (base_vec * (np.exp(beta_vec * hill(current, k_vec, 1.0)) - 1) * price_vec / current).round(2)
+comp["roas_true"] = gt_par.true_roas.values
+print(f"Direction agreement with the true unconstrained optimum: {comp.same_direction_as_truth.mean():.0%} of cells")
+print(f"Direction agreement with the true constrained optimum:   {(np.sign(comp.lab_change_pct) == np.sign(comp.true_constrained_change_pct)).mean():.0%} of cells")
+print(f"Correlation of lab ROAS with true ROAS: {np.corrcoef(comp.roas_lab, comp.roas_true)[0, 1]:.2f}")
+comp[["country", "channel", "current_weekly_spend_k_2025", "lab_optimal", "lab_change_pct", "true_constrained_change_pct", "change_pct", "roas_lab", "roas_true"]].rename(columns={"change_pct": "true_unconstrained_change_pct"})
+```
+
+```{python}
+#| label: fig-gt
+#| fig-cap: "Lab recommendation versus the true constrained optimum, per cell (% change in weekly spend)."
+fig, ax = plt.subplots()
+ax.scatter(comp.true_constrained_change_pct, comp.lab_change_pct, c=[CHANNELS.index(ch) for ch in comp.channel], cmap="tab10")
+for _, r in comp.iterrows():
+    ax.annotate(f"{r.country}-{r.channel[:3]}", (r.true_constrained_change_pct, r.lab_change_pct), fontsize=7, alpha=0.8)
+ax.plot([-35, 35], [-35, 35], color="grey", ls="--", lw=1); ax.axhline(0, color="black", lw=0.5); ax.axvline(0, color="black", lw=0.5)
+ax.set_xlabel("True constrained optimum: % change"); ax.set_ylabel("Lab plan: % change")
+plt.tight_layout(); plt.show()
+```
+
+### What the instructor should take from this
+
+1. **The constrained upside is small.** Under ±30 % bounds and 70 % country floors, even the *true* curves allow only about a 2 % gain. The 5.6 % in the ground-truth file comes from an unconstrained optimum that zeroes out OOH everywhere, TV in the Netherlands and Poland, and shifts heavily to TV in Austria, France and Italy. Constraints are costly; that is a legitimate discussion point for the board exercise.
+2. **The lab's curves overstate media and get some directions wrong.** Per-country log OLS with a concave Hill (`s = 1`, `k` = median) attributes about 30 % too much revenue to media and estimates ROAS with a correlation of only about 0.5 with the truth. The true curves are S-shaped (`s` from 1.1 to 1.8), and in the big markets TV spend sits *below* its true half-saturation point, where the marginal return is still rising. A concave approximation therefore understates TV's marginal ROAS in Germany, France and Italy and overstates it for digital channels that are already past their bend. The lab plan evaluated under the true curves gains little or nothing (around -1 %), even though the model claims +3.3 %.
+3. **This is the lesson, not an embarrassment.** The uncertainty band in Part C (coefficient draws with fixed shapes) is too narrow because the real uncertainty is in the curve shape. Session 4's geo-lift test is the remedy: it measures the slope where the plan wants to move. Use this comparison in Session 5 when revealing the ground truth: teams whose plans move gradually and propose tests will have done better than teams that followed an optimiser to the bounds.
+4. **Grading the milestone.** Reward teams that (a) justify their pooling choice per market, (b) report marginal rather than average ROAS, (c) show a band on the gain and (d) flag cells at a bound and cells outside the observed spend range.
+
+```{python}
+print(f"Solutions runtime: {time.time() - T0:.0f} s")
+```

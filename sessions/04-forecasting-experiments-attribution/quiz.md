@@ -81,14 +81,14 @@ Closed book, 10 questions, one correct answer each. Opens after Session 4, close
 
 ---
 
-**8. The German geo test gives an incremental ROAS of about 0.14 for the extra paid social spend, while the MMM reports an average ROAS of about 1.7. Which comparison is methodologically correct?**
+**8. The German geo test gives an incremental ROAS of about 1.5 for the extra paid social spend, while the MMM reports an average ROAS of about 1.7. What is the correct reading?**
 
-- A. The experiment proves the MMM is wrong and paid social should be cut to zero
-- B. The experiment measures the marginal return on a large spend increase and should be compared with the MMM's marginal ROAS at that spend level, after reconciling spend definitions **(correct)**
-- C. The MMM is right because it uses three years of data instead of eight weeks
+- A. The experiment proves the MMM overstates paid social and the channel's budget should be cut
+- B. The experiment measures the marginal return on a large spend increase; a value a little below the average ROAS is what diminishing returns predict, and the right comparison is with the MMM's marginal ROAS at that spend level **(correct)**
+- C. The MMM is right and the experiment is wrong because it uses three years of data instead of eight weeks
 - D. The two numbers cannot be compared because one is in logs
 
-*Rationale: under saturation marginal ROAS is below average ROAS; the two sources must also use the same spend and revenue definitions.*
+*Rationale: under saturation marginal ROAS is below average ROAS; compare like with like after checking that both use the same spend and revenue definitions.*
 
 ---
 
