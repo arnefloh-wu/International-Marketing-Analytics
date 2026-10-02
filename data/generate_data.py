@@ -383,7 +383,7 @@ treated[treated_idx] = 1
 TRUE_LIFT = 0.06  # 6% incremental sales during test weeks
 rows = []
 for i, r in enumerate(REGIONS):
-    base_social = 0.9 * region_size[i] * rng.lognormal(0, 0.2, len(EXP_WEEKS))  # thousand EUR
+    base_social = 0.08 * region_size[i] * rng.lognormal(0, 0.2, len(EXP_WEEKS))  # thousand EUR
     social = base_social.copy()
     social[TEST_START:TEST_END] *= np.where(treated[i], 2.5, 1.0)
     region_noise = rng.normal(0, 0.04, len(EXP_WEEKS))
