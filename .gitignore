@@ -15,3 +15,5 @@ __pycache__/
 *.html
 *.pptx
 !assets/**
+
+/.quarto/
