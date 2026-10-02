@@ -105,7 +105,7 @@ Grading scale (WU): 1 (≥ 90 %), 2 (80–89 %), 3 (70–79 %), 4 (60–69 %), 5
 - **Team exercise:** replicate for another country; compare TV ROAS across countries.
 - **Deliverables:** quiz 2; lab check-in 1 (`assignments/checks/check_session2.py`).
 
-### Session 3 — MMM II: many countries, one budget
+### Session 3 — MMM II: many countries, one budget (see caveat 3 in section 9)
 - **Concepts:** pooled vs country-by-country vs fixed effects vs hierarchical models; partial pooling as the solution for small markets (AT, PL); Bayesian MMM with priors; PyMC-Marketing workflow; budget optimisation under saturation and adstock; constraints (minimum spend, country floors); uncertainty in allocation.
 - **Lab:** panel OLS with country fixed effects (linearmodels / statsmodels), then PyMC-Marketing `MMM` per country and a hierarchical variant; `BudgetOptimizer` for one country; manual scipy optimiser across countries using fitted response curves.
 - **Team exercise:** first draft of the 2027 allocation.
@@ -126,3 +126,14 @@ Grading scale (WU): 1 (≥ 90 %), 2 (80–89 %), 3 (70–79 %), 4 (60–69 %), 5
 - Exercises: short, with hidden solutions in `instructor/solutions/`.
 - Language: British English; "modelling".
 - All code uses the project virtual environment (`.venv`) and relative paths from repo root.
+
+## 9. Known design caveats (first build, October 2026)
+
+These were found while validating the materials against the ground truth and are deliberate teaching points unless marked as open decisions.
+
+1. **Session 1 elasticities are attenuated.** The Session 1 model omits media, so estimated price elasticities (AT -0.9 to IT -1.4) sit below the true values (-1.4 to -2.3); the truth lies inside the 95 % CI for four of six countries. The lab says so and uses it to motivate Session 2.
+2. **Saturation shape is weakly identified with 156 weeks.** In Session 2 all saturation variants fit Germany equally well (R² 0.96) while TV ROAS ranges from 0.5 to 4.8. The lab and slides teach this explicitly; the final specification is Hill with k at the median adstocked spend.
+3. **Open decision: the Session 3 allocation under-performs the truth.** The Part C allocation (concave Hill, s = 1, ±30 % bounds, 70 % country floors) claims +3.3 % but scores -1.0 % on the true S-shaped curves (true s between 1.1 and 1.8); the best achievable under the same constraints is +2.0 %, the unconstrained optimum +5.6 %. The solutions document this as the "shape uncertainty" lesson and the reason Session 4 introduces experiments. If a positive realised gain is preferred for the Session 5 reveal, lower `HILL_S` in `data/generate_data.py` to 1.0 to 1.3 and regenerate; every session's quoted numbers must then be refreshed.
+4. **Geo-lift spend scale.** Fixed in this build: paid-social spend in the geo-lift file is now on the same per-unit footing as the national panel, so the experimental ROAS (about 1.5) sits slightly below the MMM average ROAS (about 1.7) and teaches diminishing returns.
+5. **PyMC-Marketing version.** Labs use the classic `MMM` class of PyMC-Marketing 0.19.2, which is deprecated in favour of the multidimensional MMM and scheduled for removal in 0.20. Pin the version in `requirements.txt` for the term, or port Part B of Session 3 before the next cohort.
+6. **2025 has 51 weeks in the panel** (156 ISO weeks from 2023-01-02 end on 2025-12-22); budgets are therefore quoted per week.

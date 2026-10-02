@@ -23,7 +23,8 @@ OUT_DIR = Path(__file__).resolve().parent
 RE_QUESTION = re.compile(r"^\s*(?:#+\s*)?(?:\*\*)?(\d{1,2})[.)](?:\*\*)?\s+(.*)$")
 RE_OPTION = re.compile(r"^\s*(?:[-*]\s+)?(?:\*\*)?\(?([a-dA-D])[.)](?:\*\*)?\s+(.*)$")
 RE_ANSWER = re.compile(r"^\s*(?:[-*]\s+)?(?:\*\*)?Answer(?:\*\*)?\s*:?(?:\*\*)?\s*:?\s*\(?([a-dA-D])\)?\b", re.I)
-RE_RATIONALE = re.compile(r"^\s*(?:[-*]\s+)?(?:\*\*)?Rationale(?:\*\*)?\s*:?(?:\*\*)?\s*:?\s*(.*)$", re.I)
+RE_RATIONALE = re.compile(r"^\s*(?:[-*]\s+)?\*?(?:\*\*)?Rationale(?:\*\*)?\s*:?(?:\*\*)?\s*:?\s*(.*?)\*?$", re.I)
+RE_CORRECT_MARK = re.compile(r"\s*(?:\*\*)?\((?:correct|richtig)\)(?:\*\*)?\s*$", re.I)
 
 
 @dataclass
@@ -49,13 +50,17 @@ def parse_quiz(text: str) -> list[Question]:
             current.rationale = m.group(1).strip()
             last_option = None
             continue
-        if current is not None and (m := RE_OPTION.match(line)) and current.answer is None:
+        if current is not None and (m := RE_OPTION.match(line)) and not current.rationale:
             letter = m.group(1).lower()
-            current.options[letter] = m.group(2).strip()
+            option_text = m.group(2).strip()
+            if RE_CORRECT_MARK.search(option_text):
+                option_text = RE_CORRECT_MARK.sub("", option_text).strip()
+                current.answer = letter
+            current.options[letter] = option_text
             last_option = letter
             continue
         if m := RE_QUESTION.match(line):
-            current = Question(number=int(m.group(1)), text=m.group(2).strip())
+            current = Question(number=int(m.group(1)), text=m.group(2).strip().rstrip("*").strip())
             questions.append(current)
             last_option = None
             continue
