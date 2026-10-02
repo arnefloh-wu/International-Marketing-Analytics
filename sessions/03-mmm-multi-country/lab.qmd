@@ -546,15 +546,15 @@ show
 #| label: fig-partC-heatmap
 #| fig-cap: "Recommended change in weekly spend per cell (%), 2025 average as the base."
 heat = cell.pivot(index="country", columns="channel", values="change_pct")[CHANNELS]
-fig, ax = plt.subplots(figsize=(8, 4))
+fig, ax = plt.subplots(figsize=(8, 4.5))
 im = ax.imshow(heat.values, cmap="RdBu", vmin=-35, vmax=35)
-ax.set_xticks(range(len(CHANNELS))); ax.set_xticklabels([CHANNEL_LABELS[ch] for ch in CHANNELS])
+ax.set_xticks(range(len(CHANNELS))); ax.set_xticklabels([CHANNEL_LABELS[ch] for ch in CHANNELS], rotation=20, ha="right")
 ax.set_yticks(range(len(COUNTRIES))); ax.set_yticklabels(COUNTRIES)
 for i in range(len(COUNTRIES)):
     for j in range(len(CHANNELS)):
         ax.text(j, i, f"{heat.values[i, j]:+.0f}%", ha="center", va="center", fontsize=9)
 fig.colorbar(im, ax=ax, label="% change in weekly spend")
-ax.set_title("Where the next euro goes: optimal change vs 2025 (±30 % bounds, country floors 70 %)")
+ax.set_title("Optimal change vs 2025 weekly spend (±30 % bounds, country floors 70 %)", fontsize=10)
 plt.tight_layout(); plt.show()
 ```
 
