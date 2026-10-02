@@ -88,14 +88,16 @@ def allocate(bound_pct=0.30, floor_pct=0.70, ceiling_pct=None, beta=beta_vec, re
     assert res.success, res.message
     return res
 
-def summarise(res, rev=revenue, label=""):
+def summarise(res, rev=revenue, label="", floor_pct=0.70, ceiling_pct=None):
     gain = rev(res.x) - rev(current)
     tot = pd.DataFrame({"current": current, "optimal": res.x, "country": cell.country}).groupby("country").sum()
     tot["ratio"] = tot.optimal / tot.current
+    binding = [c for c, r in tot.ratio.items() if np.isclose(r, floor_pct, atol=0.003)
+               or (ceiling_pct is not None and np.isclose(r, 1 + ceiling_pct, atol=0.003))]
     return {"plan": label, "gain_k_per_week": round(gain, 1), "gain_pct": round(gain / rev(current) * 100, 2),
             "cells_at_bound": int(np.sum(np.isclose(res.x, 0.7 * current) | np.isclose(res.x, 1.3 * current) |
                                          np.isclose(res.x, 0.5 * current) | np.isclose(res.x, 1.5 * current))),
-            "country_ratios": tot.ratio.round(2).to_dict()}
+            "country_ratios": tot.ratio.round(3).to_dict(), "binding_countries": binding}
 
 res_lab = allocate()
 cell["optimal_lab"] = res_lab.x
@@ -152,7 +154,7 @@ lab_roas
 **Solution notes.**
 
 - The default adstock prior in PyMC-Marketing 0.19 is `Beta(1, 3)` (mean 0.25). That is why the lab's digital adstock posteriors sit around 0.2 to 0.3: the data barely move them. With `Beta(7, 3)` the digital adstocks move towards 0.6 to 0.7, while TV stays near 0.69 whichever prior is used: the TV budget is large enough and flighted enough for the data to dominate.
-- Higher adstock for the digital channels spreads their effect over more weeks and changes the attribution between channels; ROAS for online video and OOH shifts most, paid social and TV least. The widened `saturation_beta` prior alone changes little: the likelihood already pins down the scale of the effects.
+- Higher adstock for the digital channels spreads their effect over more weeks and changes the attribution between them: paid social's ROAS rises from about 2.6 to 3.2 and paid search's falls from 1.8 to 1.6, while TV (1.36 to 1.34) and OOH (0.85) are unchanged. The widened `saturation_beta` prior alone changes little: the likelihood already pins down the scale of the effects. The ranking of channels does not change, which is the robustness check a manager needs.
 - `target_accept=0.95` removes the r-hat message on the intercept and price coefficient.
 - For the manager: priors matter when the data are thin (small budgets, few weeks, little variation). They are justified the same way any assumption is justified: with evidence from other markets (Germany's adstock), past models, or experiments, and by showing that the conclusion is robust to reasonable alternatives (as this table does).
 
@@ -160,14 +162,13 @@ lab_roas
 
 ```{python}
 #| label: ex2
+print("Country totals in the lab plan (ratio to 2025):", base_summary["country_ratios"])
 rows = [base_summary]
-res_90 = allocate(floor_pct=0.90);                   rows.append(summarise(res_90, label="floors 90 %"))
-res_c10 = allocate(ceiling_pct=0.10);               rows.append(summarise(res_c10, label="ceilings +10 %"))
-res_both = allocate(floor_pct=0.90, ceiling_pct=0.10); rows.append(summarise(res_both, label="floors 90 % and ceilings +10 %"))
+res_95 = allocate(floor_pct=0.95);                      rows.append(summarise(res_95, label="floors 95 %", floor_pct=0.95))
+res_c5 = allocate(ceiling_pct=0.05);                    rows.append(summarise(res_c5, label="ceilings +5 %", ceiling_pct=0.05))
+res_both = allocate(floor_pct=0.95, ceiling_pct=0.05);  rows.append(summarise(res_both, label="floors 95 % and ceilings +5 %", floor_pct=0.95, ceiling_pct=0.05))
 out = pd.DataFrame(rows)
-out["binding_countries"] = out.country_ratios.apply(lambda d: [c for c, r in d.items() if np.isclose(r, 0.9, atol=0.005) or np.isclose(r, 1.1, atol=0.005)])
-shadow_it = revenue(res_lab.x) - revenue(allocate(floor_pct=0.90).x)
-print(f"Shadow price of raising all floors from 70 % to 90 %: EUR {shadow_it:.1f}k per week")
+print(f"Shadow price of raising all floors from 70 % to 95 %: EUR {revenue(res_lab.x) - revenue(res_95.x):.1f}k per week")
 # Italian floor alone
 def allocate_it_floor(f):
     lb, ub = 0.7 * current, 1.3 * current
@@ -177,11 +178,11 @@ def allocate_it_floor(f):
         fl = f if c == "IT" else 0.7
         cons.append({"type": "ineq", "fun": lambda x, idx=idx, fl=fl * current[idx].sum(): x[idx].sum() - fl})
     return minimize(lambda x: -revenue(x), x0=current, bounds=list(zip(lb, ub)), constraints=cons, method="SLSQP", options={"maxiter": 500, "ftol": 1e-10})
-print(f"Shadow price of the Italian floor alone (90 % vs 70 %): EUR {revenue(res_lab.x) - revenue(allocate_it_floor(0.90).x):.1f}k per week")
+print(f"Shadow price of the Italian floor alone (95 % vs 70 %): EUR {revenue(res_lab.x) - revenue(allocate_it_floor(0.95).x):.1f}k per week")
 out[["plan", "gain_k_per_week", "gain_pct", "binding_countries"]]
 ```
 
-**Solution notes.** With 90 % floors, France and Italy become binding (both lost about 12 % in the lab solution) and the gain falls by a few kEUR per week. The Italian floor alone costs about EUR 1 to 2k per week, roughly EUR 50 to 100k per year: a number the Italian country manager can be asked to justify. A +10 % ceiling binds Germany, the Netherlands and Poland, which were the main recipients, and costs more than the floors because it blocks the highest marginal returns. The combination costs the most.
+**Solution notes.** In the lab plan no country moves by more than about 12 % (France and Italy at 0.88 and 0.89, Germany, the Netherlands and Poland at 1.07 to 1.09), so floors of 90 % or ceilings of 10 % would hardly bind; that is why the exercise uses 95 % and 5 %. With 95 % floors, Austria, France and Italy become binding and the gain falls by a few kEUR per week; the Italian floor alone costs well under EUR 1k per week, a number the Italian country manager can easily justify. A +5 % ceiling binds Germany, the Netherlands and Poland, which were the main recipients, and costs more than the floors because it blocks the cells with the highest marginal returns. The combination costs the most, but even then most of the gain survives: the bulk of the improvement comes from re-mixing channels *within* countries, not from moving money between countries. That is a useful message for country managers who fear the optimiser.
 
 ## Exercise 3 · Wider bounds: ±50 %
 
@@ -217,7 +218,7 @@ ax.set_xlabel("Weekly adstocked spend (kEUR)"); ax.set_ylabel("Weekly incrementa
 plt.tight_layout(); plt.show()
 ```
 
-**Solution notes.** The ±50 % plan roughly doubles the estimated gain (bounds do most of the work in the ±30 % case), and even more cells sit at a bound. Its uncertainty band is wider in absolute terms but P(gain > 0) stays close to 1, because the draws only vary the coefficients. The chart shows that the ±50 % level for German online video sits inside the observed range, since German spend has varied a lot (campaign bursts, Q4 uplift); for small markets the same check often fails. Recommendation: ±30 % for 2027 as the default, ±50 % only for cells whose target spend lies within the observed range and where a geo-lift test (Session 4) can confirm the slope.
+**Solution notes.** The ±50 % plan raises the estimated gain by about a third (EUR 75k against 55k per week, 4.5 % against 3.3 %). Fewer cells sit at a bound (10 instead of 17): with wider bounds the optimiser can equalise marginal ROAS in more cells before a bound stops it, which is exactly the behaviour the lecture describes. Its uncertainty band is wider in absolute terms (46 to 106k) but P(gain > 0) stays at 1, because the draws only vary the coefficients. The chart shows that the ±50 % level for German online video sits inside the observed range, since German spend has varied a lot (campaign bursts, Q4 uplift); for small markets the same check often fails. Recommendation: ±30 % for 2027 as the default, ±50 % only for cells whose target spend lies within the observed range and where a geo-lift test (Session 4) can confirm the slope.
 
 ## Exercise 4 · Competitor spend as a moderator
 
@@ -262,7 +263,7 @@ cmp = pd.DataFrame({"current": current, "lab_plan": res_lab.x, "plan_with_+20%_c
 cmp
 ```
 
-**Solution notes.** In the synthetic data competitor spend lowers the baseline (a 5 % log effect) but does not interact with media effectiveness, so the interaction coefficients are small and mostly insignificant: the honest finding is "no evidence that competitors blunt our media". Students should report this rather than invent a story. If a team finds a significant negative interaction for TV, the 2027 scenario with 20 % higher competitor spend lowers the effective TV coefficient in Germany and France and the optimiser shifts TV money to digital there; with the near-zero interaction estimated here, the plan barely changes.
+**Solution notes.** In the data-generating process competitor spend lowers the baseline (a 5 % log effect) but does *not* interact with media effectiveness. The pooled model nevertheless finds a significant positive TV x competitor interaction (t about 4) and a marginally negative one for paid social; the other three are insignificant. The TV result is spurious: competitor spend follows the same Q4 seasonality as TV spend and sales, and two Fourier harmonics leave some of that pattern unexplained. Students who report "TV works better when competitors spend more" should be challenged to explain the mechanism and to check the per-country models, where the interaction is significant nowhere (|t| < 2 in every country). In (c), the +20 % competitor scenario moves German TV up by about EUR 5k and French TV down by about EUR 3k per week; the rest of the plan is unchanged. The honest conclusion is "no robust evidence that competitors moderate our media", and the recommendation should not depend on it.
 
 ## Exercise 5 · The one-page memo (model answer)
 
@@ -306,7 +307,7 @@ print(f"Ground-truth file: budget {gt_sum['optimisation']['weekly_budget_k']}k, 
 print(f"Recomputed here: true revenue at current spend {gt_cur:.1f}k (prices = 2025 averages)")
 print(f"Lab model's view of current revenue: {revenue(current):.1f}k  -> the OLS curves overstate media's contribution by about {revenue(current) / gt_cur - 1:.0%}")
 print(f"True gain of the lab plan (±30 %, floors):      {(true_revenue(res_lab.x) / gt_cur - 1) * 100:+.2f} %  (model claimed +{base_summary['gain_pct']:.1f} %)")
-print(f"True gain of the ±50 % plan:                    {(true_revenue(res_50.x) / gt_cur - 1) * 100:+.2f} %")
+print(f"True gain of the ±50 % plan:                    {(true_revenue(res_50.x) / gt_cur - 1) * 100:+.2f} %  (wider bounds, more extrapolation, worse)")
 print(f"Best achievable under the same constraints:     {(true_revenue(true_constrained.x) / gt_cur - 1) * 100:+.2f} %")
 print(f"True unconstrained optimum (ground-truth file): +{gt_sum['optimisation']['improvement_pct']} %")
 ```

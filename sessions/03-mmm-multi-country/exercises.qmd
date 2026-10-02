@@ -28,11 +28,11 @@ Write three sentences for a manager: when do priors matter, and how would you ju
 
 Management in Italy and France object to the allocation: both countries lose about 12 % of their budget.
 
-a. Add a constraint that every country keeps at least **90 %** of its 2025 budget. Re-run the SLSQP optimisation and report the new allocation and gain.
-b. Compute the *shadow price* of the Italian floor: the weekly revenue the company gives up by protecting Italy at 90 % instead of 70 %.
-c. Now add the opposite constraint: no country may *gain* more than 10 %. Which countries are affected? Does the gain fall more than in (a)?
+a. Add a constraint that every country keeps at least **95 %** of its 2025 budget. Re-run the SLSQP optimisation and report the new allocation and gain.
+b. Compute the *shadow price* of the Italian floor: the weekly revenue the company gives up by protecting Italy at 95 % instead of 70 %.
+c. Now add the opposite constraint: no country may *gain* more than 5 %. Which countries are affected? Does the gain fall more than in (a)?
 
-Deliverable: a table with four rows (lab constraints, 90 % floors, 10 % ceilings, both) and columns `gain_k_per_week`, `gain_pct`, `binding_countries`.
+Deliverable: a table with four rows (lab constraints, 95 % floors, 5 % ceilings, both) and columns `gain_k_per_week`, `gain_pct`, `binding_countries`.
 
 ## Exercise 3 · Wider bounds: ±50 % (Part C)
 
