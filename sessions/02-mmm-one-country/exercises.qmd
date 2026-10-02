@@ -1,0 +1,74 @@
+---
+title: "Exercises 2: Marketing mix modelling for one country"
+subtitle: "Team exercise (60 min) and homework"
+format:
+  html:
+    toc: true
+    embed-resources: true
+---
+
+All exercises start from your completed `lab.qmd` for Germany. Work in your project team, keep your code in a new Quarto file `exercises_session2.qmd` in your group repository, and write every answer as two or three sentences a manager would understand, followed by the number that supports it. Solutions are discussed at the start of Session 3.
+
+::: {.callout-note title="Before you start"}
+Load the data and re-run the lab's helper functions (`fit_ols`, `design`, `select_alphas`, `evaluate`) so that `ALPHAS`, `SATURATION`, `m_final` and `contrib` exist. The simplest way is to copy the setup, data and helper chunks from the lab into your new file.
+:::
+
+## Exercise 1: How long is the memory window? (`max_lag` 4 vs 12)
+
+`geometric_adstock` cuts the carryover after `max_lag` weeks (12 by default). Re-run the alpha grid search for Germany with `max_lag = 4` and compare with the lab's result.
+
+1. Which alphas are selected with a 4-week window? Which channels change?
+2. Does the TV ROAS change? By how much?
+3. With `max_lag = 4` and alpha = 0.8, what share of the effect is assigned to weeks 0 to 3 and what share is cut off? (Compute $\sum_{l=0}^{3} 0.8^l / \sum_{l=0}^{\infty} 0.8^l$.) Explain in one sentence why a short window pushes the selected alpha upwards.
+4. Which window would you recommend for TV, and why?
+
+**Prompt pattern.** *"Repeat the coordinate-descent alpha search from the lab but pass `max_lag=4` to `geometric_adstock`. Show the selected alphas side by side with the 12-week results and the TV ROAS for both."* Verify that only `max_lag` changed, and that the normalisation still makes the weights sum to one.
+
+## Exercise 2: Add competitor spend
+
+The panel has `competitor_spend_k`, an index of competitor media activity. Add `log(competitor_spend_k)` to the controls and re-run steps (c) to (f) of the lab.
+
+1. What is the sign and significance of the competitor coefficient? Is the sign what you expect?
+2. Do the media ROAS change? Which channel changes most?
+3. Does the holdout MAPE improve?
+4. Competitor spend is itself seasonal. Why might its coefficient be hard to separate from the Fourier terms, and what does the VIF say?
+
+**Prompt pattern.** *"Add a new control `log_comp = np.log(competitor_spend_k)` to the `CONTROLS` list and re-run the final model. Print the coefficient table and a before/after ROAS comparison."* Verify that the log was taken of a strictly positive variable and that the number of observations did not change.
+
+## Exercise 3: log1p vs Hill saturation
+
+The lab showed that saturation forms fit equally well but give different ROAS. Compare the two final models in depth: Hill (the lab's choice) and `log1p`.
+
+1. Build the ROAS table and the baseline share (share of fitted sales not explained by media) for both.
+2. Plot the TV response curve for both on the same axes, from 0 to 2x the maximum weekly spend. Where do they differ most?
+3. Compute the marginal ROAS of TV at the current average spend under both. Which model would tell the manager to cut TV, and which to keep it?
+4. Which model would you present, and what sentence would you add about the uncertainty?
+
+**Prompt pattern.** *"Fit the final model twice, once with `saturation='log1p'` and once with the Hill setting from the lab. For each, return the ROAS table, the baseline share and the TV marginal ROAS at mean spend, and plot both TV response curves."* Verify that the log1p marginal ROAS is computed as the derivative of `beta * log1p(x)`, i.e. `beta / (1 + x)`, times price.
+
+## Exercise 4: What if we drop the seasonality controls?
+
+Remove the Fourier terms and the holiday dummies from `CONTROLS` (keep log price, promo, distribution and trend) and re-run the whole sequence (c) to (f).
+
+1. What happens to the TV ROAS? To the other channels? To the baseline share?
+2. What happens to the Durbin-Watson statistic and to the residual plot? Explain what the pattern in the residuals is.
+3. Which channels are credited with the Christmas peak, and why those?
+4. A vendor's MMM reports a paid-social ROAS of 8 for Germany. What is the first question you ask?
+
+**Prompt pattern.** *"Define `CONTROLS_NOSEASON` without the sin/cos and holiday variables, re-run alpha selection, saturation selection and the final model, and compare the ROAS table, Durbin-Watson and holdout MAPE with the lab's model."* Verify that the trend term is still included and that the alpha search really ran again (the selected alphas usually change).
+
+## Exercise 5: Memo to the German country manager
+
+Write a memo of at most 250 words to the German country manager, who has to defend the 2026 TV budget to the CFO next week. Use the lab's results. The memo must contain:
+
+1. The answer to "what did TV do for us" with one number and one range.
+2. The answer to "would the next euro be better spent elsewhere", with the marginal ROAS comparison.
+3. Two caveats, each in one sentence, that an honest analyst must mention (carryover assumption, saturation assumption, trend in digital spend, channels that cannot be measured).
+4. One concrete proposal for what would narrow the range before the 2027 plan (hint: Session 4).
+5. One chart, chosen from the lab, with a one-line caption.
+
+Rubric: correct numbers (40 %), decision-oriented structure (30 %), honesty about uncertainty (20 %), length and clarity (10 %).
+
+::: {.callout-tip title="Prompt pattern for writing"}
+*"Here is my ROAS table, the marginal ROAS table and the alpha sensitivity table [paste]. Draft a 200-word memo to a country manager that states the TV ROAS as a point and a range, compares marginal ROAS across channels, and lists two caveats. Do not invent numbers that are not in the tables."* Then check every number in the draft against your tables; assistants round, swap channels and invent percentages.
+:::

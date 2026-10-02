@@ -1,0 +1,617 @@
+---
+title: "Lab 3 · Many countries, one budget"
+subtitle: "Panel MMM, a Bayesian MMM for Austria, and a cross-country allocation"
+author: "International Marketing Analytics · WU Vienna"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    code-tools: true
+    fig-width: 8
+    fig-height: 4
+execute:
+  warning: false
+  error: false
+---
+
+## Setup
+
+::: {.callout-note title="Before you start"}
+Open the course folder in Positron, activate `.venv`, and run this notebook from `sessions/03-mmm-multi-country/`. The whole lab runs end to end in under five minutes; the Bayesian model in Part B is the slow step (about 90 seconds).
+:::
+
+```{python}
+#| label: setup
+import sys, time, warnings
+sys.path.append("../../assets")
+from mma import *                      # CHANNELS, COUNTRIES, load_panel, geometric_adstock, hill, add_fourier
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
+from scipy.optimize import minimize
+
+pd.set_option("display.width", 120)
+plt.rcParams["figure.figsize"] = (8, 4)
+T_START = time.time()
+
+df = load_panel("../../data/mmm/alpenglow_weekly.csv")
+meta = pd.read_csv("../../data/mmm/country_meta.csv")
+print(df.shape, "rows x columns;", df.country.nunique(), "countries;", df.week.min().date(), "to", df.week.max().date())
+```
+
+## The decision
+
+::: {.callout-important title="Decision of the day"}
+Alpenglow spends on average about EUR 710k per week on media across six countries and five channels. The CMO's question for 2027 is simple: **where should the next euro go?** Which country-channel cells deserve more, which deserve less, and how sure are we?
+:::
+
+Session 2 answered "what did TV do for us in Germany?" with one model for one country. Today the problem has three new layers:
+
+1. **Six countries, unequal data quality.** Germany has large, smooth sales; Austria and Poland are small and noisy. One regression per country gives noisy estimates where we most need precision.
+2. **One budget.** Money moved to Poland is money taken from Germany. The allocation is a constrained optimisation, not a ranking of ROAS.
+3. **Uncertainty.** The board will ask "how confident are you?". We need a distribution of the gain, not a point estimate.
+
+The lab has three parts: **A** panel OLS across all countries (pooling trade-off), **B** a Bayesian MMM for Austria with PyMC-Marketing (priors, posterior ROAS, budget optimiser), **C** a cross-country allocation with `scipy.optimize`.
+
+## Data: adstock within country, scale per country
+
+We re-use the adstock decay rates found in Session 2 (TV 0.7, online video 0.5, paid search 0.1, paid social 0.3, OOH 0.6). Adstock must be computed **within** each country: the first week of Germany must not inherit carry-over from the last week of France. `groupby("country").transform` does exactly that.
+
+Spend levels differ by a factor of six between Germany and Austria. To make coefficients comparable across countries we divide each country's adstocked spend by that country's mean weekly spend in the channel. A value of 1.0 then means "an average week of spend for this country", in every country.
+
+```{python}
+#| label: data-adstock
+ALPHA = {"tv": 0.7, "online_video": 0.5, "paid_search": 0.1, "paid_social": 0.3, "ooh": 0.6}
+
+for ch in CHANNELS:
+    # adstock within country
+    df[f"ad_{ch}"] = df.groupby("country")[f"spend_{ch}_k"].transform(
+        lambda s: geometric_adstock(s.values, ALPHA[ch]))
+    # scale: adstocked spend relative to the country's mean weekly spend
+    df[f"x_{ch}"] = df[f"ad_{ch}"] / df.groupby("country")[f"spend_{ch}_k"].transform("mean")
+
+df["log_sales"] = np.log(df.sales_units_k)
+df["log_price"] = np.log(df.price_eur)
+df["log_comp"]  = np.log(df.competitor_spend_k)
+df = add_fourier(df, t_col="t", order=2)
+
+df.groupby("country")[["sales_units_k", "spend_tv_k", "x_tv"]].mean().round(2)
+```
+
+The scaled TV variable `x_tv` has mean 1.0 in every country by construction, while raw TV spend ranges from EUR 12k (Poland) to EUR 100k (Germany) per week.
+
+::: {.callout-tip title="Prompt pattern"}
+*"Add geometric adstock to the five spend columns of this panel, computed separately per country with `groupby('country').transform`, using these decay rates: ... Then divide each adstocked series by the country's mean weekly spend in that channel."*
+
+**What to verify:** the first weeks of each country start from zero carry-over (print `df.groupby('country').head(2)`); the scaled series has mean 1 within every country (`df.groupby('country')['x_tv'].mean()`).
+:::
+
+## Part A · Panel OLS: separate, pooled, interacted
+
+**The decision in this part:** how much should we trust the TV coefficient estimated from 156 weeks of Austrian data alone, compared with what the other five countries tell us?
+
+We use the log of sales as the outcome, so a coefficient of 0.05 on `x_tv` reads "an average week of adstocked TV lifts sales by about 5 %". Controls are the same as in Session 2 plus a linear trend, competitor spend, consumer confidence and temperature, which all move the baseline over time and would otherwise be absorbed by media that follows the same seasonal pattern.
+
+```{python}
+#| label: partA-formulas
+MEDIA    = " + ".join(f"x_{ch}" for ch in CHANNELS)
+CONTROLS = ("log_price + promo_share + distribution + xmas + easter + valentine"
+            " + sin_1 + cos_1 + sin_2 + cos_2 + t + log_comp + consumer_confidence + temperature_c")
+print("log_sales ~", MEDIA, "+", CONTROLS)
+```
+
+### (i) One OLS per country
+
+```{python}
+#| label: partA-separate
+sep_rows = []
+sep_fits = {}
+for c in COUNTRIES:
+    fit = smf.ols(f"log_sales ~ {MEDIA} + {CONTROLS}", data=df[df.country == c]).fit()
+    sep_fits[c] = fit
+    for ch in CHANNELS:
+        sep_rows.append({"country": c, "channel": ch, "approach": "separate",
+                         "coef": fit.params[f"x_{ch}"], "se": fit.bse[f"x_{ch}"]})
+separate = pd.DataFrame(sep_rows)
+
+print("R-squared per country:", {c: round(f.rsquared, 3) for c, f in sep_fits.items()})
+separate.pivot(index="country", columns="channel", values="coef").round(3)[CHANNELS]
+```
+
+Reading the table: TV is worth a 5 to 7 % lift per average week in Austria, Germany, France and Italy, but only about 1 to 2 % in the Netherlands and Poland. Online video and paid social are the strong channels in NL and PL. OOH is small everywhere. The R-squared values are above 0.95 because price, promotion, distribution and seasonality explain most of the week-to-week variation; the media coefficients are estimated from what is left.
+
+The first time you see this table, also look at the standard errors: a coefficient of 0.015 with a standard error of 0.008 is barely two standard errors from zero. Small markets give wide intervals.
+
+```{python}
+#| label: partA-separate-se
+separate.pivot(index="country", columns="channel", values="se").round(3)[CHANNELS]
+```
+
+### (ii) Pooled OLS with country fixed effects
+
+The pooled model forces one media coefficient per channel for all countries and lets only the intercept differ by country (`C(country)` adds five dummies). It uses 936 observations instead of 156 and therefore has much smaller standard errors, but it assumes that TV works the same way in Poland as in Germany.
+
+```{python}
+#| label: partA-pooled
+pooled = smf.ols(f"log_sales ~ {MEDIA} + {CONTROLS} + C(country)", data=df).fit()
+pooled_tab = pd.DataFrame({"coef": pooled.params[[f"x_{ch}" for ch in CHANNELS]],
+                           "se": pooled.bse[[f"x_{ch}" for ch in CHANNELS]]}).round(4)
+pooled_tab["t"] = (pooled_tab.coef / pooled_tab.se).round(1)
+pooled_tab
+```
+
+The pooled TV coefficient is about 0.05 with a standard error of 0.003, more than twice as precise as any single country. The country dummies (not shown) capture that German sales are structurally five times Austrian sales. The same model can be estimated with `linearmodels.PanelOLS(..., entity_effects=True)`, which also offers clustered standard errors by country; the point estimates are identical.
+
+```{python}
+#| label: partA-panelols
+from linearmodels.panel import PanelOLS
+pdf = df.set_index(["country", "week"])
+Xcols = [f"x_{ch}" for ch in CHANNELS] + ["log_price", "promo_share", "distribution", "xmas", "easter",
+                                           "valentine", "sin_1", "cos_1", "sin_2", "cos_2", "t", "log_comp",
+                                           "consumer_confidence", "temperature_c"]
+fe = PanelOLS(pdf.log_sales, pdf[Xcols], entity_effects=True).fit(cov_type="clustered", cluster_entity=True)
+print(f"PanelOLS TV coefficient {fe.params['x_tv']:.4f} (clustered SE {fe.std_errors['x_tv']:.4f});"
+      f"  statsmodels C(country): {pooled.params['x_tv']:.4f}")
+```
+
+### (iii) Country x channel interactions
+
+The interaction model keeps the pooled controls (one price elasticity, one seasonality pattern) but gives every country its own media coefficients: `x_tv:C(country)` creates six TV slopes. It sits between (i) and (ii): the media effects are country-specific, but the controls borrow strength from the whole panel.
+
+```{python}
+#| label: partA-interactions
+inter = smf.ols(f"log_sales ~ ({MEDIA}):C(country) + {CONTROLS} + C(country)", data=df).fit()
+inter_rows = []
+for c in COUNTRIES:
+    for ch in CHANNELS:
+        name = f"x_{ch}:C(country)[{c}]"
+        inter_rows.append({"country": c, "channel": ch, "approach": "interactions",
+                           "coef": inter.params[name], "se": inter.bse[name]})
+interactions = pd.DataFrame(inter_rows)
+interactions.pivot(index="country", columns="channel", values="coef").round(3)[CHANNELS]
+```
+
+### Partial pooling by hand: shrinkage
+
+A hierarchical model would estimate each country's TV effect as a compromise between its own data and the cross-country average, weighting by precision. We can mimic that with an empirical-Bayes shrinkage formula: with between-country variance $\tau^2$ and country standard error $se_c$, the shrunk estimate is
+
+$$\hat\beta_c^{\text{shrunk}} = w_c\,\hat\beta_c + (1 - w_c)\,\hat\beta_{\text{pooled}}, \qquad w_c = \frac{\tau^2}{\tau^2 + se_c^2}.$$
+
+A precisely estimated country (small $se_c$) keeps its own estimate ($w_c \to 1$); a noisy one is pulled towards the pool.
+
+```{python}
+#| label: partA-shrinkage
+def shrink(est: pd.DataFrame, pooled_coef: float) -> pd.DataFrame:
+    """Empirical-Bayes shrinkage of country estimates towards the pooled coefficient."""
+    b, se = est.coef.values, est.se.values
+    tau2 = max(b.var(ddof=1) - np.mean(se**2), 0.0)       # between-country variance net of noise
+    w = tau2 / (tau2 + se**2)
+    out = est.copy()
+    out["coef"] = w * b + (1 - w) * pooled_coef
+    out["se"] = np.sqrt(w) * se                             # approximate posterior sd
+    out["approach"] = "shrunk (partial pooling)"
+    out["weight_own_data"] = w
+    return out
+
+tv_sep = separate[separate.channel == "tv"].reset_index(drop=True)
+tv_shr = shrink(tv_sep, pooled.params["x_tv"])
+tv_shr[["country", "coef", "se", "weight_own_data"]].round(3)
+```
+
+The weights on own data are between 0.85 and 0.95: the Alpenglow panel is clean enough that each country's TV estimate stands largely on its own. In a messier dataset (shorter history, more noise, more channels) the weights drop and shrinkage becomes decisive. Note how the Netherlands and Poland are pulled slightly up towards the pool and Italy slightly down.
+
+### One chart: three approaches, one coefficient
+
+```{python}
+#| label: fig-partA-compare
+#| fig-cap: "TV coefficient per country under four estimation strategies (95 % intervals). The pooled estimate is the horizontal band."
+tv_int = interactions[interactions.channel == "tv"].reset_index(drop=True)
+fig, ax = plt.subplots()
+xs = np.arange(len(COUNTRIES))
+for off, tab, lab, mk in [(-0.22, tv_sep, "separate OLS", "o"),
+                          (0.0, tv_int, "country x channel interactions", "s"),
+                          (0.22, tv_shr, "shrunk (partial pooling)", "D")]:
+    ax.errorbar(xs + off, tab.coef, yerr=1.96 * tab.se, fmt=mk, capsize=3, label=lab)
+lo, hi = pooled.params["x_tv"] - 1.96 * pooled.bse["x_tv"], pooled.params["x_tv"] + 1.96 * pooled.bse["x_tv"]
+ax.axhspan(lo, hi, color="grey", alpha=0.25, label="pooled with country FE")
+ax.axhline(pooled.params["x_tv"], color="grey", lw=1)
+ax.set_xticks(xs); ax.set_xticklabels(COUNTRIES)
+ax.set_ylabel("TV coefficient (log sales per average week of adstocked TV)")
+ax.set_xlabel("Country"); ax.legend(fontsize=8, loc="upper right")
+plt.tight_layout(); plt.show()
+```
+
+**Interpretation.** The pooled band (about 0.045 to 0.055) is narrow but wrong for the Netherlands and Poland, where TV is clearly weaker: a pooled model would tell the Dutch team to keep buying TV. The separate and interaction estimates agree closely here because every country has three full years of data; the interaction model borrows the controls and so has slightly tighter intervals. The shrunk estimates move the two small-TV countries a little towards the pool. The trade-off in one sentence: pooling buys precision at the price of assuming homogeneity; partial pooling lets the data decide how much homogeneity to assume.
+
+::: {.callout-note title="Check yourself"}
+- Does the pooled TV coefficient lie inside the separate-OLS interval for every country? For which countries does it not?
+- Why does the interaction model have *more* parameters than six separate regressions combined would suggest, yet tighter intervals on the media terms?
+- What would happen to the shrinkage weights if you only had 2025 data (52 weeks per country)? Try it: filter `df.week >= "2025-01-01"` and re-run the separate models.
+:::
+
+::: {.callout-tip title="Prompt pattern"}
+*"Estimate three OLS models on this panel with statsmodels formulas: one per country, one pooled with `C(country)` fixed effects, and one with `x_channel:C(country)` interactions. Return the TV coefficient and standard error per country for each approach in a tidy DataFrame."*
+
+**What to verify:** the number of parameters in each model (`fit.df_model`); that `C(country)` dropped one level as the reference; that the interaction names match `x_tv:C(country)[AT]` (print `fit.params.index`).
+:::
+
+## Part B · Bayesian MMM for Austria with PyMC-Marketing
+
+**The decision in this part:** Austria is Alpenglow's home market but a small one (EUR 44k per week of media). With noisy data, what we assume *before* seeing the data matters. A Bayesian MMM makes those assumptions explicit as priors, estimates adstock and saturation jointly with the coefficients, and returns a full distribution for every ROAS.
+
+### Prepare X and y
+
+PyMC-Marketing's `MMM` expects a DataFrame `X` with the date column, the raw spend columns (it applies adstock and saturation itself) and the control columns, and a Series `y` with the target.
+
+```{python}
+#| label: partB-data
+from pymc_marketing.mmm import MMM, GeometricAdstock, LogisticSaturation
+import arviz as az
+
+at = df[df.country == "AT"].reset_index(drop=True)
+SPEND = [f"spend_{ch}_k" for ch in CHANNELS]
+CTRL  = ["log_price", "promo_share", "distribution", "xmas", "easter", "valentine"]
+
+X = at[["week"] + SPEND + CTRL]
+y = at["sales_units_k"]
+X.head(3)
+```
+
+### Define and fit
+
+- `GeometricAdstock(l_max=10)`: carry-over up to ten weeks, decay rate estimated per channel (Session 2 fixed it by grid search; here it gets a prior and a posterior).
+- `LogisticSaturation()`: diminishing returns, one `lam` per channel.
+- `control_columns`: price, promotion, distribution and holidays enter linearly.
+- `yearly_seasonality=2`: two Fourier harmonics, exactly like our `add_fourier(order=2)`.
+
+Sampling settings follow the course convention (`draws=500, tune=500, chains=2, random_seed=42`). We collect any warnings and print them afterwards so that nothing is hidden.
+
+```{python}
+#| label: partB-fit
+mmm = MMM(
+    date_column="week",
+    channel_columns=SPEND,
+    adstock=GeometricAdstock(l_max=10),
+    saturation=LogisticSaturation(),
+    control_columns=CTRL,
+    yearly_seasonality=2,
+)
+
+t0 = time.time()
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    mmm.fit(X, y, draws=500, tune=500, chains=2, random_seed=42, progressbar=False, target_accept=0.9)
+print(f"Sampling took {time.time() - t0:.0f} seconds.")
+
+seen = set()
+for w in caught:
+    msg = str(w.message).strip().split("\n")[0]
+    if (w.category.__name__, msg) not in seen:
+        seen.add((w.category.__name__, msg))
+        print(f"- {w.category.__name__}: {msg[:160]}")
+```
+
+::: {.callout-warning title="What the warnings mean"}
+- **FutureWarning: the `MMM` class is deprecated.** PyMC-Marketing 0.19 is moving to `pymc_marketing.mmm.multidimensional.MMM`, which handles several countries in one model. The classic class still works and has the simpler API, so we use it; the lab will migrate when the course environment updates.
+- **"We recommend running at least 4 chains"**: two chains are a time-saving compromise for a 90-second lab. For a report, use four.
+- **"The rhat statistic is larger than 1.01 for some parameters"**: the two chains did not fully agree on the intercept and the price coefficient (r-hat about 1.02). This is mild; it means the control effects are slightly uncertain across chains, not the media effects. More draws or `target_accept=0.95` removes it (Exercise 1).
+:::
+
+### Check: did the model learn what Session 2 found?
+
+```{python}
+#| label: partB-summary
+summ = az.summary(mmm.idata, var_names=["adstock_alpha", "saturation_lam", "saturation_beta"], round_to=3)
+summ[["mean", "sd", "hdi_3%", "hdi_97%", "ess_bulk", "r_hat"]]
+```
+
+How to read this table (the first Bayesian summary in the course):
+
+- `mean`, `sd`: posterior mean and standard deviation of the parameter.
+- `hdi_3%`, `hdi_97%`: the 94 % highest-density interval, the Bayesian analogue of a confidence interval, read as "the parameter is in this range with 94 % probability given model and data".
+- `ess_bulk`: effective sample size; above about 400 is fine for means.
+- `r_hat`: agreement between chains; 1.00 is perfect, above 1.01 deserves a second look.
+
+The TV adstock posterior (`adstock_alpha[spend_tv_k]` mean about 0.69, interval about 0.58 to 0.79) recovers the Session 2 grid-search value of 0.7. The digital channels have wide adstock intervals (0.05 to 0.6): with EUR 7k per week of paid search in Austria, the data cannot pin down the carry-over, and the posterior mostly reflects the prior. That is the point of priors in a small market: they keep the model sensible where the data are silent. `saturation_beta` is the maximum effect of each channel on the scaled target; TV has the largest.
+
+```{python}
+#| label: fig-partB-components
+#| fig-cap: "Posterior decomposition of Austrian sales into intercept, media, controls and seasonality."
+fig = mmm.plot_components_contributions(original_scale=True)
+fig.set_size_inches(8, 4.5)
+plt.show()
+```
+
+### Contribution shares and ROAS with uncertainty
+
+`compute_channel_contribution_original_scale()` returns the incremental units per week for every posterior draw (dimensions `chain, draw, date, channel`). Summing over dates gives total incremental units per draw; multiplying by the average price and dividing by total spend gives a *distribution* of ROAS.
+
+```{python}
+#| label: partB-roas
+contrib = mmm.compute_channel_contribution_original_scale()      # thousand units, per draw
+total_units = contrib.sum(dim="date")                              # (chain, draw, channel)
+share = total_units / total_units.sum(dim="channel")
+
+price_at = at.price_eur.mean()
+spend_total = X[SPEND].sum().to_xarray().rename({"index": "channel"})
+roas = total_units * price_at / spend_total                        # EUR revenue per EUR spend
+
+roas_tab = pd.DataFrame({
+    "share_of_media_contribution": share.mean(dim=("chain", "draw")).values,
+    "roas_mean": roas.mean(dim=("chain", "draw")).values,
+    "roas_hdi_5%": roas.quantile(0.05, dim=("chain", "draw")).values,
+    "roas_hdi_95%": roas.quantile(0.95, dim=("chain", "draw")).values,
+    "p(roas > 1)": (roas > 1).mean(dim=("chain", "draw")).values,
+}, index=[CHANNEL_LABELS[ch] for ch in CHANNELS]).round(2)
+roas_tab
+```
+
+**Interpretation.** TV and paid social each account for roughly 30 % of the media-driven units in Austria; OOH for under 5 %. Paid social has the highest expected ROAS (about 2.5) and paid search is next (about 1.8). TV earns about EUR 1.4 per euro, with a 90 % interval of roughly 1.0 to 1.6: profitable, but not spectacular. OOH has an expected ROAS below 1 and a wide interval. The last column is the kind of statement only a Bayesian model gives directly: "the probability that TV pays back its cost is about 99 %, for OOH it is under 40 %".
+
+```{python}
+#| label: fig-partB-curves
+#| fig-cap: "Direct response curves per channel (posterior median and 90 % band), Austria."
+fig = mmm.plot_direct_contribution_curves(same_axes=False)
+fig.set_size_inches(8, 7)
+plt.show()
+```
+
+The response curves translate "spend x" into "incremental scaled sales". TV is still steep at its observed spend (far from saturation); online video and OOH flatten early. The grey bands widen where there are few observations: the model does not know what happens at twice the maximum historical spend, and neither do we. Never read a curve beyond its band.
+
+### Budget optimisation for Austria
+
+`optimize_budget` searches for the weekly allocation that maximises the expected total contribution over `num_periods` weeks under a total-budget constraint. We give it the 2025 average weekly budget and bounds of 50 % to 150 % of current spend per channel. Before running it, inspect the signature so that you know what the library expects.
+
+```{python}
+#| label: partB-signature
+import inspect
+sig = inspect.signature(mmm.optimize_budget)
+print({k: str(v.annotation).split(" | ")[0] for k, v in sig.parameters.items() if k in ("budget", "num_periods", "budget_bounds")})
+```
+
+`budget_bounds` accepts a dictionary `{channel column: (low, high)}` in the original spend units (or an xarray DataArray). Let us build it.
+
+```{python}
+#| label: partB-optimise
+last_at = at[at.week >= "2025-01-01"]
+current_at = last_at[SPEND].mean()                       # thousand EUR per week per channel
+budget_at = float(current_at.sum())
+bounds_at = {ch: (0.5 * float(v), 1.5 * float(v)) for ch, v in current_at.items()}
+print(f"Weekly budget 2025: EUR {budget_at:.1f}k")
+
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    alloc_bounded, res_b = mmm.optimize_budget(budget=budget_at, num_periods=8, budget_bounds=bounds_at)
+    alloc_free, res_f    = mmm.optimize_budget(budget=budget_at, num_periods=8)      # no bounds
+for w in {str(w.message).split("\n")[0] for w in caught}:
+    print("-", w[:140])
+
+opt_at = pd.DataFrame({"current": current_at.values,
+                       "optimal (50-150 % bounds)": alloc_bounded.values,
+                       "optimal (no bounds)": alloc_free.values},
+                      index=[CHANNEL_LABELS[ch] for ch in CHANNELS]).round(2)
+opt_at["change_pct_bounded"] = ((opt_at.iloc[:, 1] / opt_at.current - 1) * 100).round(0)
+opt_at
+```
+
+**Why bounds are needed.** Without bounds the optimiser puts the entire EUR 44k into paid social and nothing anywhere else: a *corner solution*. Paid social has the highest posterior ROAS and its response curve is nearly linear over the observed range, so the optimiser keeps buying until the budget is exhausted. This is mathematically correct and managerially absurd: the model has never seen EUR 44k of weekly social spend in Austria and knows nothing about what happens there. The bounded solution cuts TV to its floor, raises paid search and paid social to their 150 % ceilings, and keeps online video near current spend. Several channels sit exactly at a bound, which tells you the bounds are binding and the answer is partly a management assumption. The "Using default equality constraint" message simply confirms that total spend is held fixed.
+
+We can also quantify the expected gain with uncertainty by sampling the response under both allocations:
+
+```{python}
+#| label: partB-gain
+resp_opt = mmm.sample_response_distribution(allocation_strategy=alloc_bounded, time_granularity="weekly",
+                                            num_periods=8, noise_level=0.01)
+resp_cur = mmm.sample_response_distribution(allocation_strategy=current_at.to_dict(), time_granularity="weekly",
+                                            num_periods=8, noise_level=0.01)
+y_max = float(mmm.y.max())                                   # the target is scaled by its maximum
+units_opt = resp_opt["channel_contribution"].sum("channel").mean("date") * y_max
+units_cur = resp_cur["channel_contribution"].sum("channel").mean("date") * y_max
+gain_at = (units_opt - units_cur) * price_at                 # thousand EUR revenue per week
+print(f"Expected weekly incremental revenue, current plan: EUR {float(units_cur.mean() * price_at):.1f}k")
+print(f"Expected gain from re-allocation: EUR {float(gain_at.mean()):.1f}k per week "
+      f"(90 % interval {float(gain_at.quantile(0.05)):.1f} to {float(gain_at.quantile(0.95)):.1f}), "
+      f"P(gain > 0) = {float((gain_at > 0).mean()):.2f}")
+```
+
+::: {.callout-note title="Check yourself"}
+- Which channels sit at a bound in the optimal allocation? What would you ask the Austrian marketing team before accepting a 150 % increase in paid social?
+- The gain interval includes some small or negative values. Which parameters drive that uncertainty (hint: look at `sd` of `saturation_lam`)?
+- Re-run `optimize_budget` with `num_periods=1`. Why does the allocation change when carry-over is cut short?
+:::
+
+::: {.callout-tip title="Prompt pattern"}
+*"Using pymc_marketing 0.19 `MMM` with GeometricAdstock(l_max=10) and LogisticSaturation, fit a model for the Austrian subset with these controls ... and yearly_seasonality=2, draws=500, tune=500, chains=2, random_seed=42. Then compute the posterior ROAS per channel as total contribution x mean price / total spend and report mean and 90 % interval."*
+
+**What to verify:** `az.summary` r-hat values; that `X` contains no NaN and the date column is datetime; that the ROAS uses contributions in the *original* scale (`compute_channel_contribution_original_scale`, not the scaled `channel_contribution`); that spend and contribution are in the same units (thousands).
+:::
+
+## Part C · Cross-country allocation with response curves
+
+**The decision in this part:** take the 2025 average weekly budget across all 30 country-channel cells (about EUR 710k) and re-allocate it to maximise next year's weekly incremental revenue, subject to the constraints managers insist on.
+
+### Response curves for 30 cells
+
+We need a response curve for each cell that we can evaluate at any spend level. Part A used a linear scaled-spend term, which cannot saturate. Here we transform the adstocked spend with a Hill curve, `hill(x, k, s)` from `mma.py`, with `k` = median adstocked spend of the cell and shape `s = 1` (a concave curve, half-saturated at the median). We then estimate one OLS per country on log sales with the same controls as Part A, which gives a coefficient `beta` per cell: the log-lift at full saturation.
+
+Steady-state logic: with normalised adstock weights, a constant weekly spend of `x` produces an adstocked value of `x`, so the weekly incremental units of a cell at constant spend `x` are
+
+$$\text{units}(x) = B_c \left(e^{\beta\, \text{hill}(x, k, 1)} - 1\right),$$
+
+where $B_c$ is the country's baseline weekly sales (2025 average sales divided by the media multiplier at current spend). Revenue is units times the 2025 average price.
+
+```{python}
+#| label: partC-curves
+for ch in CHANNELS:
+    df[f"k_{ch}"] = df.groupby("country")[f"ad_{ch}"].transform("median")
+    df[f"h_{ch}"] = hill(df[f"ad_{ch}"], df[f"k_{ch}"], 1.0)
+
+HILL = " + ".join(f"h_{ch}" for ch in CHANNELS)
+last = df[df.week >= "2025-01-01"]
+cells = [(c, ch) for c in COUNTRIES for ch in CHANNELS]
+cell_rows, cov_by_country = [], {}
+for c in COUNTRIES:
+    fit = smf.ols(f"log_sales ~ {HILL} + {CONTROLS}", data=df[df.country == c]).fit()
+    hnames = [f"h_{ch}" for ch in CHANNELS]
+    cov_by_country[c] = fit.cov_params().loc[hnames, hnames].values
+    sub = last[last.country == c]
+    for ch in CHANNELS:
+        cell_rows.append({"country": c, "channel": ch,
+                          "current": sub[f"spend_{ch}_k"].mean(),       # 2025 avg weekly spend, kEUR
+                          "k": sub[f"k_{ch}"].iloc[0],
+                          "beta": fit.params[f"h_{ch}"], "se": fit.bse[f"h_{ch}"],
+                          "price": sub.price_eur.mean(), "sales_2025": sub.sales_units_k.mean()})
+cell = pd.DataFrame(cell_rows)
+
+# Baseline per country: 2025 sales divided by the media multiplier at current spend
+mult = cell.assign(bh=lambda d: d.beta * hill(d.current, d.k, 1.0)).groupby("country").bh.sum()
+cell["base"] = cell.sales_2025 / np.exp(cell.country.map(mult))
+
+current = cell.current.values
+BUDGET = current.sum()
+k_vec, beta_vec, base_vec, price_vec = cell.k.values, cell.beta.values, cell.base.values, cell.price.values
+
+def revenue(x, beta=beta_vec):
+    """Weekly incremental revenue (kEUR) across all cells at constant weekly spend x."""
+    return np.sum(base_vec * (np.exp(beta * hill(x, k_vec, 1.0)) - 1.0) * price_vec)
+
+def mroas(x, beta=beta_vec):
+    """Marginal ROAS per cell: d revenue / d spend at x."""
+    dh = k_vec / (x + k_vec) ** 2                               # derivative of hill with s = 1
+    return base_vec * np.exp(beta * hill(x, k_vec, 1.0)) * beta * dh * price_vec
+
+cell["roas"]  = base_vec * (np.exp(beta_vec * hill(current, k_vec, 1.0)) - 1) * price_vec / current
+cell["mroas"] = mroas(current)
+print(f"Total 2025 weekly budget: EUR {BUDGET:.1f}k;  modelled weekly incremental revenue: EUR {revenue(current):.1f}k")
+cell.pivot(index="country", columns="channel", values="mroas").round(2)[CHANNELS]
+```
+
+**Interpretation.** This table already answers "where should the next euro go" in the small: the marginal ROAS is the revenue the *next* euro in that cell would bring. Online video and paid search in the Netherlands, paid social in Austria and Poland, and online video in Germany and Poland have marginal returns above EUR 2. OOH in the Netherlands and Germany, paid social in France and paid search in Italy are below EUR 1 (a few are negative: the coefficient is indistinguishable from zero and the point estimate happened to be below it). An optimiser moves money from low to high marginal ROAS until they are equalised, within the constraints.
+
+### The constrained optimisation
+
+Constraints requested by management:
+
+1. The total stays at the 2025 weekly budget (equality).
+2. No cell changes by more than 30 % (bounds), because agencies, contracts and creative cannot absorb more.
+3. No country loses more than 30 % of its total budget (country floors), to protect the local teams and distribution relationships.
+
+```{python}
+#| label: partC-optimise
+lb, ub = 0.7 * current, 1.3 * current
+cons = [{"type": "eq", "fun": lambda x: x.sum() - BUDGET}]
+for c in COUNTRIES:
+    idx = cell.index[cell.country == c].values
+    cons.append({"type": "ineq",
+                 "fun": lambda x, idx=idx, floor=0.7 * current[idx].sum(): x[idx].sum() - floor})
+
+res = minimize(lambda x: -revenue(x), x0=current, bounds=list(zip(lb, ub)),
+               constraints=cons, method="SLSQP", options={"maxiter": 500, "ftol": 1e-10})
+print(res.message, "| iterations:", res.nit)
+cell["optimal"] = res.x
+cell["change_pct"] = (cell.optimal / cell.current - 1) * 100
+rev_cur, rev_opt = revenue(current), revenue(res.x)
+print(f"Weekly incremental revenue: current EUR {rev_cur:.1f}k -> optimal EUR {rev_opt:.1f}k; "
+      f"gain EUR {rev_opt - rev_cur:.1f}k per week ({(rev_opt / rev_cur - 1) * 100:.1f} %), "
+      f"about EUR {(rev_opt - rev_cur) * 52 / 1000:.1f}m per year")
+```
+
+```{python}
+#| label: partC-table
+show = cell.pivot(index="country", columns="channel", values=["current", "optimal"]).round(1)
+show = show.reindex(columns=pd.MultiIndex.from_product([["current", "optimal"], CHANNELS]))
+show["total", "current"] = cell.groupby("country").current.sum().round(1)
+show["total", "optimal"] = cell.groupby("country").optimal.sum().round(1)
+show
+```
+
+```{python}
+#| label: fig-partC-heatmap
+#| fig-cap: "Recommended change in weekly spend per cell (%), 2025 average as the base."
+heat = cell.pivot(index="country", columns="channel", values="change_pct")[CHANNELS]
+fig, ax = plt.subplots(figsize=(8, 4))
+im = ax.imshow(heat.values, cmap="RdBu", vmin=-35, vmax=35)
+ax.set_xticks(range(len(CHANNELS))); ax.set_xticklabels([CHANNEL_LABELS[ch] for ch in CHANNELS])
+ax.set_yticks(range(len(COUNTRIES))); ax.set_yticklabels(COUNTRIES)
+for i in range(len(COUNTRIES)):
+    for j in range(len(CHANNELS)):
+        ax.text(j, i, f"{heat.values[i, j]:+.0f}%", ha="center", va="center", fontsize=9)
+fig.colorbar(im, ax=ax, label="% change in weekly spend")
+ax.set_title("Where the next euro goes: optimal change vs 2025 (±30 % bounds, country floors 70 %)")
+plt.tight_layout(); plt.show()
+```
+
+**What moves where, and why.** The optimiser is doing marginal-ROAS arithmetic:
+
+- **Digital up in the Netherlands and Poland.** Online video, paid search and paid social in NL and online video and paid social in PL hit their +30 % ceilings: these cells had the highest marginal returns. TV in both countries is cut to its floor (-30 %), consistent with Part A, where the Dutch and Polish TV coefficients were small.
+- **Away from OOH.** OOH in the Netherlands, Germany, France and Austria is cut by 20 to 30 %; its coefficients are small and its curves flat.
+- **Germany reshuffles rather than shrinks.** Germany gains budget overall; TV gives up about 10 % and digital takes it, but German TV is so large that a 10 % cut funds most of the increases elsewhere.
+- **Italy and France lose a little in total.** Several of their cells (paid search and paid social in Italy, paid social in France) have low estimated marginal returns; the country floor (70 %) is not binding, the cell bounds are.
+- **The gain is modest.** About 3 % more weekly incremental revenue, or roughly EUR 2.9m per year, because ±30 % bounds keep every cell close to where it is. Loosen the bounds (Exercise 3) and the gain grows, together with the extrapolation risk.
+
+Most cells sit exactly at +30 % or -30 %. That is normal with concave, nearly linear curves: the optimiser pushes until a bound stops it, and the bounds (a management decision) determine the answer as much as the model does.
+
+### Uncertainty: 200 coefficient draws
+
+The betas are estimates with standard errors and covariances. We draw 200 coefficient vectors from each country's OLS sampling distribution (`numpy.random.multivariate_normal` with the estimated covariance) and recompute the gain of *our* plan under each draw. This answers "if the true curves are a bit different from the estimated ones, how much do we still gain?".
+
+```{python}
+#| label: fig-partC-uncertainty
+#| fig-cap: "Distribution of the weekly revenue gain of the recommended plan over 200 coefficient draws."
+rng = np.random.default_rng(42)
+gains = []
+for _ in range(200):
+    beta_draw = np.concatenate([
+        rng.multivariate_normal(cell.loc[cell.country == c, "beta"].values, cov_by_country[c]) for c in COUNTRIES])
+    gains.append(revenue(res.x, beta_draw) - revenue(current, beta_draw))
+gains = np.array(gains)
+
+fig, ax = plt.subplots()
+ax.hist(gains, bins=25, color="C0", alpha=0.8)
+ax.axvline(rev_opt - rev_cur, color="C3", lw=2, label="point estimate")
+ax.axvline(0, color="black", lw=1)
+ax.set_xlabel("Weekly incremental revenue gain (kEUR)"); ax.set_ylabel("Draws"); ax.legend()
+plt.tight_layout(); plt.show()
+print(f"Gain: mean EUR {gains.mean():.1f}k, 90 % interval {np.percentile(gains, 5):.1f} to {np.percentile(gains, 95):.1f}k, "
+      f"P(gain > 0) = {(gains > 0).mean():.2f}")
+```
+
+**Interpretation.** The band is wide relative to the point estimate (roughly 30 to 90k per week), but the plan gains in every draw. That is reassuring but also slightly flattering: the draws vary the betas while keeping the curve *shape* (`k`, `s = 1`) fixed, and in Part B we saw that shape parameters are where the real uncertainty sits. A Bayesian multi-country model would propagate both. The honest statement for the board is "expected gain about 3 %, very likely positive, exact size uncertain".
+
+::: {.callout-note title="Check yourself"}
+- Count how many of the 30 cells sit at a bound. What does that tell you about the shape of the response curves?
+- Remove the country-floor constraints. Does any country drop below 70 % of its budget? If not, why were the floors not binding?
+- Compare Austria's optimal shares here with Part B's. They differ: list two reasons (different saturation form; estimated versus fixed adstock; log model versus levels).
+:::
+
+::: {.callout-tip title="Prompt pattern"}
+*"I have a table with 30 rows (country, channel) and columns current spend, k, beta, base, price. Write a function that returns total weekly revenue = sum of base x (exp(beta x hill(x, k, 1)) - 1) x price and maximise it with scipy.optimize.minimize (SLSQP) subject to: sum(x) = sum(current), each x within ±30 % of current, each country's total at least 70 % of current. Return the optimal vector and the gain."*
+
+**What to verify:** `res.success` is True and `res.message` says the optimisation terminated successfully; `res.x.sum()` equals the budget to numerical precision; no cell violates its bounds; the gain is non-negative (the current allocation is feasible, so the optimum cannot be worse).
+:::
+
+## Your turn
+
+1. Run Part C with bounds of ±50 % instead of ±30 %. Report the new gain and list which cells now sit at a bound.
+2. Replace the country floor of 70 % with 90 %. Which countries become constrained, and by how much does the gain fall?
+3. Re-estimate the Part C curves with `s = 1.5` in `hill`. Does the direction of the recommendation change for TV in Germany and France?
+4. **Project milestone (due before Session 4):** commit your team's first *model table* to your group repository: a CSV or Markdown table with one row per country-channel cell and columns `country, channel, model, adstock_alpha, coefficient, se, roas, mroas`. State which model (separate, pooled, interactions, Bayesian) produced each row and why you chose it for that market.
+
+```{python}
+#| label: timing
+print(f"Total lab runtime: {time.time() - T_START:.0f} seconds")
+```
+
+## Prompt patterns: a summary
+
+| Task | Prompt sketch | What to verify |
+|---|---|---|
+| Panel set-up | "Compute adstock within country with `groupby.transform`, then scale by country mean" | first weeks start at zero; scaled mean is 1 |
+| Three OLS models | "Separate, `C(country)` pooled, `x:C(country)` interactions; tidy coefficient table" | parameter counts, reference level, coefficient names |
+| PyMC-Marketing fit | "MMM with GeometricAdstock, LogisticSaturation, controls, yearly_seasonality=2, draws/tune/chains/seed" | r-hat, ESS, warnings, original-scale contributions |
+| Budget optimiser | "`optimize_budget(budget, num_periods, budget_bounds={ch: (lo, hi)})`" | corner solutions, binding bounds, sum equals budget |
+| Cross-country allocation | "SLSQP with total equality, cell bounds, country floors" | `res.success`, budget preserved, gain non-negative |
+| Uncertainty | "Draw 200 coefficient vectors from the OLS covariance and recompute the gain" | the point estimate is inside the band; P(gain > 0) |

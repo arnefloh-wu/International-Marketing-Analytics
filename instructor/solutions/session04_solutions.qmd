@@ -1,0 +1,222 @@
+---
+title: "Session 4 solutions: Forecasting, experiments and attribution"
+subtitle: "Instructor material, not for distribution before grading"
+author: "Dr. Arne Floh"
+format:
+  html:
+    toc: true
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+::: {.callout-warning}
+This file reads `instructor/ground_truth/`. Student-facing material must never do that.
+:::
+
+## Setup (replicates the lab objects)
+
+```{python}
+import sys, json, warnings
+sys.path.append("../../assets")
+from mma import *
+import numpy as np, pandas as pd, matplotlib.pyplot as plt
+import statsmodels.api as sm, statsmodels.formula.api as smf
+warnings.filterwarnings("ignore")
+plt.rcParams["figure.figsize"] = (8, 4)
+
+panel = load_panel("../../data/mmm/alpenglow_weekly.csv")
+geo = pd.read_csv("../../data/experiments/geolift_germany.csv", parse_dates=["week"])
+geo["period"] = np.select([geo.test_period == 1, geo.post_period == 1], ["test", "post"], default="pre")
+geo["log_sales"] = np.log(geo.sales_units_k)
+test_start, test_end = geo.loc[geo.test_period == 1, "week"].agg(["min", "max"])
+journeys = pd.read_csv("../../data/attribution/journeys.csv")
+ATT_CH = ["display", "paid_search", "paid_social", "email", "affiliate", "organic"]
+gt_geo = json.load(open("../ground_truth/geolift_ground_truth.json"))
+gt_att = json.load(open("../ground_truth/attribution_ground_truth.json"))
+
+ADSTOCK = {"tv": 0.7, "online_video": 0.5, "paid_search": 0.1, "paid_social": 0.3, "ooh": 0.6}
+def build_features(df):
+    df = add_fourier(df, order=2)
+    for ch in CHANNELS:
+        df[f"ad_{ch}"] = geometric_adstock(df[f"spend_{ch}_k"].values, ADSTOCK[ch])
+    df["lag1"] = df.sales_units_k.shift(1); df["lag52"] = df.sales_units_k.shift(52)
+    df["log_price"] = np.log(df.price_eur)
+    return df
+TREND_SEASON = ["t", "sin_1", "cos_1", "sin_2", "cos_2"]; HOLIDAYS = ["xmas", "easter", "valentine"]
+LAGS = ["lag1", "lag52"]; MEDIA = [f"ad_{c}" for c in CHANNELS]; COMMERCIAL = ["log_price", "promo_share"]
+XCOLS_FULL = TREND_SEASON + HOLIDAYS + LAGS + MEDIA + COMMERCIAL
+XCOLS_NO_COMMERCIAL = TREND_SEASON + HOLIDAYS + LAGS + MEDIA
+country_data = {c: build_features(panel[panel.country == c].reset_index(drop=True)) for c in COUNTRIES}
+
+def design(df, cols): return sm.add_constant(df[cols], has_constant="add")
+def forecast_mean(model, history, future, cols):
+    sales = list(history.sales_units_k.values); out = []
+    for i in range(len(future)):
+        row = future.iloc[[i]].copy(); row["lag1"] = sales[-1]; row["lag52"] = sales[-52]
+        p = float(np.asarray(model.predict(design(row, cols)))[0]); out.append(p); sales.append(p)
+    return np.array(out)
+def rolling_mape(cols, H, origins):
+    res = []
+    for c in COUNTRIES:
+        d = country_data[c]
+        for o in origins:
+            train, test = d.iloc[52:o], d.iloc[o:o + H]
+            m = sm.OLS(train.sales_units_k, design(train, cols)).fit()
+            res.append({"country": c, "origin": o, "method": "regression", "mape": mape(test.sales_units_k, forecast_mean(m, d.iloc[:o], test, cols))})
+            res.append({"country": c, "origin": o, "method": "seasonal_naive", "mape": mape(test.sales_units_k, d.sales_units_k.iloc[o - 52:o - 52 + H].values)})
+    return pd.DataFrame(res).pivot_table(index="country", columns="method", values="mape")
+```
+
+## Exercise 1: 26-week horizon and the commercial calendar
+
+```{python}
+m13 = rolling_mape(XCOLS_FULL, 13, [104, 117, 130, 143])
+m26 = rolling_mape(XCOLS_FULL, 26, [104, 130])
+m13_nc = rolling_mape(XCOLS_NO_COMMERCIAL, 13, [104, 117, 130, 143])
+out = pd.DataFrame({"reg_13w": m13.regression, "naive_13w": m13.seasonal_naive,
+                    "reg_26w": m26.regression, "naive_26w": m26.seasonal_naive,
+                    "reg_13w_no_price_promo": m13_nc.regression}).round(1)
+out
+```
+
+**a, b.** At 26 weeks the regression's MAPE rises in most countries while seasonal naive barely changes (it does not accumulate error: every week's forecast is simply last year's value). The recursive lag-1 term feeds its own errors forward; the further the horizon, the more the forecast path drifts from the actual path, although the known inputs (price, promotions, media) keep it anchored and it still beats seasonal naive in every country.
+
+**c.** Without `log_price` and `promo_share` the regression is roughly as bad as seasonal naive (compare the last column with `naive_13w`). Almost all of the regression's advantage comes from knowing the commercial calendar. Message to finance: the baseline is only as good as the promotion plan it assumes; if the 2026 calendar is not fixed, present scenarios.
+
+## Exercise 2: Placebo difference-in-differences
+
+```{python}
+pre = geo[geo.period == "pre"].copy()
+pre["week_no"] = pre.groupby("region").cumcount() + 1
+def placebo(start):
+    pre["placebo_test"] = pre.week_no.between(start, start + 7).astype(int)
+    m = smf.ols("log_sales ~ treated:placebo_test + C(region) + C(week)", data=pre).fit(cov_type="cluster", cov_kwds={"groups": pre.region})
+    b = m.params["treated:placebo_test"]; ci = m.conf_int().loc["treated:placebo_test"]
+    return {"window": f"pre weeks {start}-{start + 7}", "lift_pct": (np.exp(b) - 1) * 100, "lo": (np.exp(ci[0]) - 1) * 100, "hi": (np.exp(ci[1]) - 1) * 100}
+plac = pd.DataFrame([placebo(s) for s in [37, 9, 17, 25]])
+
+did = smf.ols("log_sales ~ treated:test_period + treated:post_period + C(region) + C(week)", data=geo).fit(cov_type="cluster", cov_kwds={"groups": geo.region})
+b = did.params["treated:test_period"]; ci = did.conf_int().loc["treated:test_period"]
+real = {"window": "real test", "lift_pct": (np.exp(b) - 1) * 100, "lo": (np.exp(ci[0]) - 1) * 100, "hi": (np.exp(ci[1]) - 1) * 100}
+plac = pd.concat([plac, pd.DataFrame([real])], ignore_index=True)
+print(plac.round(2))
+
+fig, ax = plt.subplots(figsize=(8, 3.5))
+ax.errorbar(range(len(plac)), plac.lift_pct, yerr=[plac.lift_pct - plac.lo, plac.hi - plac.lift_pct], fmt="o", capsize=4,
+            color=["tab:blue"] * 4 + ["tab:orange"])
+ax.axhline(0, color="black", lw=0.8); ax.set_xticks(range(len(plac))); ax.set_xticklabels(plac.window, rotation=20)
+ax.set_ylabel("estimated lift (%)"); plt.tight_layout()
+```
+
+**b, c.** Every placebo estimate is within about plus or minus 1 % and its confidence interval contains zero; the real estimate of 5.7 % is many standard errors away from the placebo distribution. The method does not produce lifts where there are none, which supports the credibility of the real estimate. (The placebo at weeks 37 to 44 also serves as a check that nothing happened just before the test.)
+
+## Exercise 3: Lift in levels
+
+```{python}
+did_lv = smf.ols("sales_units_k ~ treated:test_period + treated:post_period + C(region) + C(week)", data=geo).fit(cov_type="cluster", cov_kwds={"groups": geo.region})
+b_lv = did_lv.params["treated:test_period"]; ci_lv = did_lv.conf_int().loc["treated:test_period"]
+pre_treated_mean = geo[(geo.treated == 1) & (geo.period == "pre")].sales_units_k.mean()
+test_treated_mean = geo[(geo.treated == 1) & (geo.period == "test")].sales_units_k.mean()
+print(f"Level DiD: {b_lv:.3f} k units per region-week (95 % CI {ci_lv[0]:.3f} to {ci_lv[1]:.3f})")
+print(f"As % of treated pre-period mean ({pre_treated_mean:.2f}): {b_lv / pre_treated_mean * 100:.2f} %")
+print(f"As % of treated test-period mean ({test_treated_mean:.2f}): {b_lv / test_treated_mean * 100:.2f} %")
+print(f"Total incremental units: {b_lv * 12 * 8:.1f} k  (lab B6 from the log model: {geo[(geo.treated == 1) & (geo.period == 'test')].sales_units_k.sum() * (1 - 1 / (1 + real['lift_pct'] / 100)):.1f} k)")
+```
+
+**b.** The level coefficient divided by the pre-period mean overstates the percentage because sales in the test weeks (September, October) are above the pre-period average; divided by the test-period mean it is close to the log estimate. In levels every region contributes in proportion to its size, so large treated regions dominate; in logs every region contributes its own percentage. With a homogeneous proportional effect the two agree, which is the case here.
+
+**c.** Both totals are close. The deck should carry the log-model lift with its CI (the design-consistent percentage) converted to units with the actual test-period sales, as in lab B6, and state the range from the CI.
+
+## Exercise 4: New vs returning customers
+
+```{python}
+def removal_shares(model, df):
+    base = np.asarray(model.predict(df)).sum(); out = {}
+    for c in ATT_CH:
+        dd = df.copy(); dd[f"n_{c}"] = 0; out[c] = base - np.asarray(model.predict(dd)).sum()
+    s = pd.Series(out); return s / s.sum()
+f_sub = "converted ~ " + " + ".join(f"n_{c}" for c in ATT_CH) + " + mobile + C(country)"
+new, ret = journeys[journeys.new_customer == 1], journeys[journeys.new_customer == 0]
+logit_new = smf.logit(f_sub, data=new).fit(disp=0); logit_ret = smf.logit(f_sub, data=ret).fit(disp=0)
+coefs = pd.DataFrame({"new": logit_new.params, "returning": logit_ret.params}).filter(like="n_", axis=0).round(3)
+shares = pd.DataFrame({"new": removal_shares(logit_new, new), "returning": removal_shares(logit_ret, ret)}).round(3)
+print(coefs); print(shares)
+(shares * 100).plot.bar(figsize=(8, 3.5), ylabel="attributed share (%)", rot=0); plt.tight_layout()
+```
+
+**c.** The data were generated with the same channel coefficients for both groups and a lower intercept for new customers, so the coefficients are statistically indistinguishable and the shares differ only by noise and by the non-linearity of the logit (lower base rate for new customers makes every channel's removal effect slightly smaller in absolute terms, but the shares are nearly identical). The CRM team's claim finds no support: email's attributed share is the same for both groups. Caveat: the logit measures association between touches and conversion within the observed journeys; if email is sent only to likely buyers, its coefficient is inflated for both groups equally and only a holdout can settle it.
+
+## Exercise 5: Memo on a geo test in Poland
+
+```{python}
+gap = geo.groupby(["week", "treated"]).log_sales.mean().unstack(); gap = gap[1] - gap[0]
+pre_gap = gap[gap.index < test_start]
+noise_de = pre_gap.std() * 100
+scale = np.sqrt(1 / 5 + 1 / 11) / np.sqrt(1 / 12 + 1 / 28)
+noise_pl = noise_de * scale
+for weeks in (8, 12):
+    print(f"Germany pre-period gap noise {noise_de:.2f} pp -> Poland (5 vs 11 voivodeships) {noise_pl:.2f} pp; "
+          f"MDE for a {weeks}-week test: {2.8 * noise_pl / np.sqrt(weeks):.1f} %")
+```
+
+**Model memo (key points a strong answer contains).**
+
+- *Why:* the Session 3 hierarchical estimate for paid social in Poland borrows strength from other countries and has a wide interval; Polish spend grew with distribution, so the planning confound is severe. A test gives a causal anchor for the market where the allocation moves most money.
+- *Design:* 16 voivodeships, stratified by size into pairs, 5 treated and 11 control (or 6 and 10), 26 weeks of pre-period (shorter than Germany because Polish data start later), 8 weeks of test outside Q4, 4 weeks of post-period, spend doubled in treated regions, primary metric weekly sales units from retail panel data, DiD with region and week fixed effects pre-registered.
+- *Power:* with the German noise scaled to five treated regions, the minimum detectable lift is around 3 to 4 % for an 8-week test (about 3 % for 12 weeks). The MMM expects an effect of that order, so an 8-week test is borderline; recommend 12 weeks or a larger spend change.
+- *Cost and risk:* extra spend about one quarter of the Polish paid social budget; control regions lose nothing because they stay at plan (the "holdout" here is the absence of the uplift, not a cut); brief the two largest retail chains; if inconclusive, the result still bounds the effect from above and the model prior is updated accordingly.
+- *Recommendation:* run a 12-week test in H1 2027 before the Q4 budget is committed; do not run an 8-week test in Q4 where seasonality noise is highest.
+
+## Comparison with ground truth
+
+### Geo-lift
+
+```{python}
+print(f"True lift {gt_geo['true_lift_pct']} %, carryover {gt_geo['carryover_weeks_after_test']} weeks after test")
+print(f"DiD estimate {real['lift_pct']:.2f} % (95 % CI {real['lo']:.2f} to {real['hi']:.2f}): true value inside the CI = {real['lo'] <= gt_geo['true_lift_pct'] <= real['hi']}")
+# are the treated regions in the data the true ones?
+treated_in_data = sorted(geo.loc[geo.treated == 1, "region"].unique())
+print("Treated regions match ground truth:", treated_in_data == sorted(gt_geo["treated_regions"]))
+# weekly post-period gaps: carryover should be visible in the first two post weeks only
+post_gap = (gap - pre_gap.mean())[(gap.index > test_end)] * 100
+print(post_gap.round(2).rename("post-test gap (%)").to_frame().T)
+```
+
+The DiD estimate of 5.74 % is slightly below the true 6 % because the test window and the two carryover weeks are in different coefficients and the log specification compounds a 6 % multiplicative lift with regional noise; the truth lies well inside the 95 % interval. The post-period gaps show the generated carryover (40 % and 15 % of the lift in the first two post weeks) and nothing afterwards, which matches the ground truth of two carryover weeks. The lab's `treated:post_period` coefficient (about 1.1 % averaged over eight weeks) is what two weeks of 2.4 % and 0.9 % look like when spread over eight.
+
+### Attribution
+
+```{python}
+f_pool = "converted ~ " + " + ".join(f"n_{c}" for c in ATT_CH) + " + mobile + new_customer + C(country)"
+logit = smf.logit(f_pool, data=journeys).fit(disp=0)
+cmp = pd.DataFrame({"true_beta": pd.Series(gt_att["beta"]), "estimated_pooled": logit.params.filter(like="n_").rename(lambda s: s[2:])})
+cmp["ratio"] = cmp.estimated_pooled / cmp.true_beta
+print(cmp.round(3))
+print(f"\nmobile: est {logit.params['mobile']:.3f} vs true {gt_att['mobile_effect']}; new_customer: est {logit.params['new_customer']:.3f} vs true {gt_att['new_customer_effect']}")
+
+f_int = "converted ~ (" + " + ".join(f"n_{c}" for c in ATT_CH) + ") * C(country) + mobile + new_customer"
+logit_int = smf.logit(f_int, data=journeys).fit(disp=0, maxiter=200)
+rows = []
+for c in COUNTRIES:
+    for ch in ATT_CH:
+        est = logit_int.params[f"n_{ch}"] + (logit_int.params.get(f"n_{ch}:C(country)[T.{c}]", 0.0) if c != "AT" else 0.0)
+        true = gt_att["beta"][ch] * gt_att["country_modifier"].get(c, {}).get(ch, 1.0)
+        rows.append({"country": c, "channel": ch, "estimated": est, "true": true})
+mods = pd.DataFrame(rows)
+print(mods.pivot(index="channel", columns="country", values="estimated").round(2))
+print(mods.pivot(index="channel", columns="country", values="true").round(2))
+```
+
+The pooled coefficients recover the true betas within about 10 %, except paid search, whose estimate (0.68) exceeds the true per-touch effect (0.55) because the generator adds a 0.3 last-touch bonus for search that the count model absorbs into the search coefficient: exactly the intent effect that makes last-touch attribution favour search. `mobile` and `new_customer` are recovered almost exactly. The interaction model recovers the country modifiers in direction and roughly in size: paid social in Italy (true 0.525) and Poland (0.56) against Austria (0.315) and Germany (0.35); affiliate in Poland; display in France; email in the Netherlands. Austria's estimates are the noisiest because it has the fewest journeys.
+
+### Expected check-in values (for the auto-check tolerance bands)
+
+```{python}
+lt = journeys[journeys.converted == 1].groupby("country").last_touch.value_counts(normalize=True).unstack().reindex(columns=ATT_CH)
+lg = pd.DataFrame({c: removal_shares(logit_int, journeys[journeys.country == c]) for c in COUNTRIES}).T
+print("MAPE by country (regression / seasonal naive):"); print(m13.round(2))
+print("\nLast-touch shares by country:"); print(lt.round(3))
+print("\nLogit (interaction) removal shares by country:"); print(lg.round(3))
+```
