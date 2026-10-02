@@ -1,0 +1,603 @@
+---
+title: "Toolkit and regression foundations"
+subtitle: "Session 1 · International Marketing Analytics"
+author: "Dr. Arne Floh · WU Vienna · CEMS"
+date: 2026-10-06
+format:
+  revealjs:
+    theme: [default, ../../assets/wu.scss]
+    slide-number: true
+    footer: "International Marketing Analytics · WU Vienna"
+    width: 1280
+    height: 720
+    fig-width: 8
+    fig-height: 4
+    fig-align: center
+  pptx:
+    fig-width: 8
+    fig-height: 4
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+#| include: false
+import sys; sys.path.append("../../assets")
+from mma import *
+import matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+import warnings; warnings.filterwarnings("ignore")
+
+plt.rcParams.update({"figure.figsize": (8, 4), "axes.spines.top": False,
+                     "axes.spines.right": False, "font.size": 11})
+df = load_panel("../../data/mmm/alpenglow_weekly.csv")
+df = add_fourier(df, order=2)
+df["log_sales"] = np.log(df.sales_units_k)
+df["log_price"] = np.log(df.price_eur)
+meta = pd.read_csv("../../data/mmm/country_meta.csv")
+FULL = ("log_sales ~ log_price + promo_share + xmas + easter + valentine "
+        "+ sin_1 + cos_1 + sin_2 + cos_2 + t")
+de = df[df.country == "DE"]
+pl = df[df.country == "PL"]
+```
+
+## Welcome
+
+- Five Tuesdays, one company, one final decision: Alpenglow's 2027 media budget
+- Today: the toolkit and the regression you will use in every session
+- Lecture 60 min, guided lab 90 min, team exercise 60 min, debrief and quiz
+- You will not write Python from scratch: you specify, run, read, check, communicate
+- Everything lives in GitHub and renders with Quarto
+- Bring questions about setup to the clinic in the first 20 minutes
+
+::: {.notes}
+Open with the arc of the course: Session 1 builds the regression toolkit, Sessions 2 and 3 turn it into a marketing mix model for one and then six countries, Session 4 asks whether we can trust it, Session 5 is the board meeting. Make the point that the single running case means every dataset they see describes the same company, so by Session 5 they know the business as well as the model.
+:::
+
+## The company: Alpenglow
+
+- Vienna-based premium chocolate brand, founded 40 years ago
+- Six markets: Austria, Germany, France, Italy, Netherlands, Poland
+- Weekly data 2023 to 2025: units, revenue, price, promotion, distribution, media
+- Oldest market Austria (40 years), youngest Poland (4 years)
+- Germany is five times the Austrian volume; Poland grows fastest
+- All data are synthetic, with a truth the instructor reveals in Session 5
+
+::: {.notes}
+Students need the business facts before the statistics. Stress that Poland is a young, fast-growing, lower-income market with the lowest shelf price. The question "Is our price too high?" sounds odd for the cheapest market until you relate price to income.
+:::
+
+## Decision of the day
+
+::: {.decision}
+**Is our price too high in Poland?**
+The Polish country manager wants a 10 % list-price cut. Finance says Poland already has the lowest price in the group. You have three years of weekly data for six countries. What does the data say about price sensitivity, and how sure are you?
+:::
+
+```{python}
+tab = (df.groupby("country")
+         .agg(price=("price_eur", "mean"), units_k=("sales_units_k", "mean"),
+              promo=("promo_share", "mean"))
+         .join(meta.set_index("country")[["gdp_per_capita_eur_k"]]))
+tab["price_per_gdp"] = tab.price / tab.gdp_per_capita_eur_k * 1000
+tab.columns = ["Avg price (EUR)", "Avg weekly units (k)", "Promo share", "GDP per head (k EUR)", "Price per 1 000 EUR GDP"]
+tab.round(2)
+```
+
+::: {.notes}
+Read the table with them. Poland has the lowest nominal price (about 2.52 EUR) but the highest price relative to income. Finance and the country manager are both right about a fact and both wrong about what it implies. The data cannot settle "too high" on its own: we need the elasticity, the margin and an honest statement of uncertainty. That is the whole session.
+:::
+
+## Why marketing mix modelling is back
+
+- Marketing is the largest discretionary budget in most consumer companies
+- User-level tracking broke: cookie deprecation, Apple's App Tracking Transparency, GDPR
+- Multi-touch attribution needs the tracking that no longer exists
+- MMM uses aggregate data (weekly sales, spend, price) that privacy rules do not touch
+- Open-source tools (PyMC-Marketing, Robyn, Meridian) made it cheap to run
+- International firms need one method that works the same in six markets
+
+::: {.notes}
+Give the two-minute history: MMM was invented in the 1960s for packaged goods, lost ground to digital attribution in the 2010s because click data looked more precise, and returned after 2020 because that precision depended on tracking individuals. Aggregate weekly data are privacy-safe. The international angle is our angle: a board allocating a budget across countries needs comparable numbers, and MMM is the only method that produces them for TV, out-of-home and digital alike.
+:::
+
+## What this course is, and is not
+
+- It is a course about decisions: price, promotion, budget allocation across countries
+- Regression is the one language: MMM, forecasting, experiments, attribution are all regressions with different design matrices
+- It is not a programming course: an AI assistant writes most code
+- It is a course about checking code and numbers you did not write yourself
+- Assessment: 4 quizzes (best 3), 2 lab check-ins, group project, peer evaluation
+- Reading: Yildirim and Kübler (2025); Schwarz, Chapman and Feit (2020)
+
+::: {.notes}
+Point to the syllabus for the exact weights and the "to align" items. Repeat the assessment logic: quizzes test concepts without code, check-ins test that you can run and read an analysis, the project tests whether you can defend a decision.
+:::
+
+# The analytics workflow
+
+## Question, data, model, check, decide
+
+| Step | Today's example |
+|---|---|
+| Question | Is Polish demand sensitive enough to justify a price cut? |
+| Data | Weekly units and price for six countries, 2023 to 2025 |
+| Model | log(units) on log(price), promotion, seasonality, trend |
+| Check | Sign and size plausible? CI width? Holdout fit? Collinearity? |
+| Decide | Cut, hold, or test; and say how sure you are |
+
+::: {.notes}
+This table is the skeleton of every lab in the course. Make the students notice that "check" sits between model and decide. Most mistakes in practice come from skipping it: a coefficient with the wrong sign gets reported, a model that fits 2023 but not 2025 gets used for 2027.
+:::
+
+## The decision drives the model, not the other way round
+
+- Start from the decision and the number that would change it
+- "Too high" means: a cut would raise profit, not only units
+- Needed: price elasticity, promotion response, margin, uncertainty
+- A model that is not connected to a decision is a hobby
+- Translate every coefficient back into euros or percentage points
+- Write the one-sentence answer before you write the code
+
+::: {.notes}
+A good exercise to run live: ask the class what elasticity would make the 10 % cut pay for itself. If the gross margin is about 40 %, units need to rise by roughly 33 % for profit to hold, so the elasticity would need to be around minus 3. That number frames everything they estimate later.
+:::
+
+# The toolkit
+
+## Positron
+
+- One window: editor, console, variables pane, plots pane, terminal
+- Open the course folder, select the `.venv` interpreter at the top right
+- Run a code cell with Ctrl+Enter (Cmd+Enter on macOS)
+- Variables pane shows every DataFrame; click to open a data viewer
+- Quarto preview renders the notebook to HTML next to the code
+- The assistant lives in the side bar and sees your open files
+
+::: {.notes}
+Do a one-minute live demo: open lab.qmd, run the setup cell, show the DataFrame in the data viewer, render. The lab repeats this as a guided tour, so keep the lecture version short.
+:::
+
+## Quarto
+
+- A `.qmd` file is Markdown text plus executable code cells
+- Rendering runs the code and produces HTML, PDF, Word or slides
+- Prose explains the decision; code produces the evidence; both stay together
+- Labs, exercises, your project report and these slides are all Quarto
+- `#|` lines at the top of a cell set options, for example `#| echo: false`
+- Reproducible: anyone who clones your repo can re-render your report
+
+::: {.notes}
+The reproducibility argument matters for the group project. The grader renders the repository; if it does not render, there is no report. Mention that these slides are a Quarto file that also renders to PowerPoint, which is the format the board will expect in Session 5.
+:::
+
+## GitHub
+
+- A repository is a folder with a complete history of every change
+- Clone once, then: pull, work, commit, push
+- Commit small and often, with a message that says what changed
+- GitHub Desktop does all of this with buttons; the lab walks you through it
+- Your group project is a repository; commit history is part of the grade
+- Conflicts happen when two people edit the same lines: ask the assistant to explain the markers
+
+::: {.notes}
+Students fear Git. Reassure them: four verbs and one rule (pull before you start, push when you stop). Tell them the first commit in the group repository is a deliverable of Session 1.
+:::
+
+## AI assistants: what they do well
+
+- Translate a clear request into working pandas and statsmodels code
+- Explain an error message and propose a fix
+- Explain a regression table line by line
+- Refactor repetitive code into a loop or a function
+- Draft prose from a table of results
+- Remember the conventions of this course if you tell them (log-log, Fourier terms, relative paths)
+
+::: {.notes}
+Show one example prompt from the lab. The claim is not that the assistant is always right; it is that specifying and checking is a far better use of the student's time than typing syntax.
+:::
+
+## AI assistants: what they do badly
+
+- Invent column names, functions and package arguments that do not exist
+- Quietly change the model when the first attempt fails (drop a variable, switch to levels)
+- Report a coefficient with the wrong sign without comment
+- Confuse statistical significance with business relevance
+- Produce a confident interpretation of a model it has not actually run
+- Forget the working directory, so paths break when you render
+
+::: {.notes}
+Each of these appears in the labs as a "what to verify" item. The most dangerous one is the second: the assistant fixes an error by changing the specification, and the student does not notice that the model no longer answers the question.
+:::
+
+## Course rules on AI use
+
+1. You are responsible for every number you report; verify with the checks taught in class
+2. Document the prompts that produced non-trivial code in a short prompt log in your notebook
+3. Quizzes are closed-book and test understanding, not code
+4. Fabricated references or results are academic misconduct under WU rules
+
+- Any assistant is fine: Positron Assistant, GitHub Copilot, Claude Code
+- When in doubt, paste the output and ask the assistant to find what is wrong with it
+
+::: {.notes}
+These four rules are copied from the syllabus. The prompt log is a small habit with a large effect: it makes the student re-read what they asked for, and it lets the grader see the reasoning. Make clear that the rule against fabricated results includes numbers typed from memory instead of computed.
+:::
+
+# Regression refresher on the Alpenglow data
+
+## The data: a weekly country panel
+
+```{python}
+fig, ax = plt.subplots()
+for c in COUNTRIES:
+    d = df[df.country == c]
+    ax.plot(d.week, d.sales_units_k, label=COUNTRY_NAMES[c], lw=1.2)
+ax.set_xlabel("Week"); ax.set_ylabel("Units sold (thousand)")
+ax.set_title("Weekly unit sales by country, 2023 to 2025")
+ax.legend(ncol=3, frameon=False, fontsize=9)
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Three things to see: strong Christmas peaks everywhere, Germany on a different scale, and Poland growing steadily from the smallest to overtaking Austria. Each of those is a variable in the model: seasonality, country level, trend. 936 rows, 6 countries times 156 weeks.
+:::
+
+## Start simple: log sales against log price (Germany)
+
+```{python}
+fig, ax = plt.subplots()
+ax.scatter(de.log_price, de.log_sales, s=14, alpha=0.7)
+m0 = smf.ols("log_sales ~ log_price", data=de).fit()
+xs = np.linspace(de.log_price.min(), de.log_price.max(), 50)
+ax.plot(xs, m0.params.Intercept + m0.params.log_price * xs, color="tab:red", lw=2,
+        label=f"OLS: slope = {m0.params.log_price:.2f}")
+ax.set_xlabel("log(price per unit, EUR)"); ax.set_ylabel("log(units sold, thousand)")
+ax.set_title("Germany, 156 weeks"); ax.legend(frameon=False)
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+A scatter plot before any regression, always. The slope is about minus 2: a 1 % higher price goes with about 2 % fewer units. Ask the class whether they believe that number. Then point at the vertical spread: price explains very little of the week-to-week variation. We will find out that this slope is wrong for an interesting reason.
+:::
+
+## Ordinary least squares in one slide
+
+- Model: $\log y_t = \beta_0 + \beta_1 \log p_t + \varepsilon_t$
+- OLS picks $\beta_0, \beta_1$ to minimise the sum of squared residuals $\sum_t \hat\varepsilon_t^2$
+- $\hat\beta_1$ is the slope of the best-fitting line; $\hat\beta_0$ the intercept
+- Each estimate comes with a standard error: how much it would move in a new sample
+- Everything else in the output (t, p, confidence interval) is derived from the estimate and its standard error
+- In Python: `smf.ols("log_sales ~ log_price", data=de).fit()`
+
+::: {.notes}
+Keep the maths to one line. The formula syntax is the thing to learn: left of the tilde is the outcome, right of the tilde are the explanatory variables, and statsmodels adds the intercept. Everything they estimate this term uses this syntax.
+:::
+
+## Reading a statsmodels summary {.smaller}
+
+```{python}
+#| echo: true
+model = smf.ols("log_sales ~ log_price", data=de).fit()
+print(model.summary())
+```
+
+::: {.notes}
+Walk through the table slowly. Top left: dependent variable, 156 observations. Top right: R-squared 0.15. Middle: one row per coefficient with coef, standard error, t, p, and the 95 % interval. Bottom: Durbin-Watson 0.24 indicates strongly autocorrelated residuals, which tells us the model is missing something that moves slowly, such as seasonality or a trend. The condition number warning is harmless here.
+:::
+
+## The coefficient table, column by column
+
+| Column | Meaning | Germany, simple model |
+|---|---|---|
+| coef | Estimated effect of a one-unit change in x on y | -2.02 |
+| std err | Uncertainty of the estimate | 0.39 |
+| t | coef divided by std err | -5.2 |
+| P>\|t\| | Probability of a t this large if the true coef were 0 | 0.000 |
+| [0.025, 0.975] | 95 % confidence interval: coef ± about 2 std err | -2.79 to -1.24 |
+
+- Rule of thumb: |t| > 2 means the interval excludes zero at the 5 % level
+
+::: {.notes}
+Students know p-values from their bachelor's degree, but usually not the confidence interval. Push the interval: it is the honest statement of what we know. Here the interval says the elasticity is somewhere between minus 2.8 and minus 1.2, which already spans a large range of business implications.
+:::
+
+## R-squared: what it does and does not tell you
+
+- R² = share of the variance of y explained by the model, 0 to 1
+- Simple German model: 0.15; the full model later today: 0.95
+- A high R² does not mean the coefficients are right
+- A low R² does not mean the price coefficient is useless
+- Adjusted R² penalises extra variables; use it to compare models of different size
+- The real test of a model is how it predicts data it has not seen
+
+::: {.notes}
+Seasonality alone pushes R-squared from 0.15 to over 0.9 in this data without changing what we learn about price. Conversely, the first model with promotion has a decent R-squared and a price coefficient with the wrong sign. Get the class used to reading R-squared as "how much of the wiggle is accounted for", not as a quality seal.
+:::
+
+## Log-log means elasticity
+
+- $\log y = \beta_0 + \beta_1 \log p$ implies $\beta_1 = \frac{\partial \log y}{\partial \log p} = \frac{\% \Delta y}{\% \Delta p}$
+- $\beta_1 = -1.4$: a 1 % price increase lowers units by about 1.4 %
+- $|\beta_1| > 1$: elastic, a price cut raises revenue; $|\beta_1| < 1$: inelastic
+- Elasticities are unit-free, so they can be compared across countries and currencies
+- A dummy variable in a log model: effect is $e^{\beta} - 1$, roughly $\beta$ for small $\beta$
+- A share such as promo_share: $\beta \times 0.10$ is the effect of 10 percentage points more promotion
+
+::: {.notes}
+This is the most important slide of the refresher. Make sure every student can convert a log-log coefficient to a percentage statement and a dummy coefficient to a percentage uplift. Note that revenue-maximising is not profit-maximising: with a 40 % margin, the cut that raises revenue may still cut profit.
+:::
+
+## Add promotion: the sign flips
+
+```{python}
+steps = {
+    "price only": "log_sales ~ log_price",
+    "+ promo": "log_sales ~ log_price + promo_share",
+    "+ holidays": "log_sales ~ log_price + promo_share + xmas + easter + valentine",
+    "+ Fourier": "log_sales ~ log_price + promo_share + xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2",
+    "+ trend": FULL,
+}
+rows = []
+for name, f in steps.items():
+    m = smf.ols(f, data=de).fit()
+    rows.append({"Model": name, "Price coef": round(m.params.log_price, 2),
+                 "Std err": round(m.bse.log_price, 2),
+                 "Promo coef": round(m.params.get("promo_share", np.nan), 2),
+                 "R²": round(m.rsquared, 3)})
+pd.DataFrame(rows).set_index("Model")
+```
+
+- Adding promotion share turns the German price coefficient from -2.0 to +1.2
+- Seasonality lifts R² to 0.92 but the sign stays wrong
+- Only the time trend restores a negative elasticity
+
+::: {.notes}
+Build suspense: the assistant would happily report the +1.2 if asked. Why does it happen? Promotions cut the price and raise sales at the same time, so price and promotion share are correlated at about minus 0.75. Once promotion is in the model, the remaining price variation is mostly inflation, and inflation goes along with the growth of the brand. Without a trend, the model attributes growth to higher prices. The fix is on the next slides.
+:::
+
+## Why: price moves with promotion and with time
+
+```{python}
+fig, ax = plt.subplots()
+sc = ax.scatter(de.promo_share, de.price_eur, c=de.t, cmap="viridis", s=16)
+ax.set_xlabel("Promotion share of volume"); ax.set_ylabel("Average price (EUR)")
+ax.set_title("Germany: price falls with promotion and rises over time")
+cb = plt.colorbar(sc, ax=ax); cb.set_label("Week index (0 = Jan 2023)")
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Two sources of price variation: promotional dips (left to right) and inflation (dark to light). The promotional dips are also weeks with more sales because of the promotion itself, not only because of the lower price. Inflation runs parallel to brand growth. A regression can only separate these if both confounders are in the model. This is the omitted-variable logic that returns in Session 2 as "budget follows seasonality".
+:::
+
+## Seasonality: holiday dummies and Fourier terms
+
+- Chocolate peaks before Christmas, Easter and Valentine's Day: three 0/1 dummies
+- The smooth annual cycle: $\sin(2\pi k t/52.18)$ and $\cos(2\pi k t/52.18)$ for $k = 1, 2$
+- Two Fourier pairs capture most of a yearly curve with four coefficients instead of 51 week dummies
+- `mma.add_fourier(df, order=2)` adds the columns `sin_1, cos_1, sin_2, cos_2`
+- Trend: a linear term in `t` in a log model is a constant growth rate
+- German trend coefficient 0.0020 per week, about 11 % per year
+
+::: {.notes}
+The Fourier idea is new to most students. Draw a sine wave on the board: one pair gives a single annual hump, the second pair sharpens the shape. Explain why 51 weekly dummies would overfit on three years of data: each dummy is estimated from three observations. The lab compares both approaches on holdout data.
+:::
+
+## The full model for one country (Germany) {.smaller}
+
+```{python}
+#| echo: true
+m_full = smf.ols(FULL, data=de).fit()
+print(m_full.summary().tables[1])
+```
+
+- Price elasticity -1.40 (95 % CI -2.04 to -0.76); promotion +0.45; R² 0.95
+
+::: {.notes}
+Read the coefficients as business statements. Price: a 1 % increase cuts units by 1.4 %. Promotion: 10 percentage points more volume on promotion lifts units by about 4.5 %, net of the price cut that comes with it. Christmas adds about 5 % on top of the seasonal curve. The confidence interval for price is wide because, once promotion and trend are controlled, little price variation is left. That is a fact about the data, not a failure of the model.
+:::
+
+## Elasticities for all six countries
+
+```{python}
+rows = []
+for c in COUNTRIES:
+    m = smf.ols(FULL, data=df[df.country == c]).fit()
+    ci = m.conf_int().loc["log_price"]
+    rows.append({"country": c, "elasticity": m.params.log_price, "lo": ci[0], "hi": ci[1],
+                 "promo": m.params.promo_share, "r2": m.rsquared})
+el = pd.DataFrame(rows).set_index("country")
+fig, ax = plt.subplots()
+ax.errorbar(el.index, el.elasticity, yerr=[el.elasticity - el.lo, el.hi - el.elasticity],
+            fmt="o", capsize=5, color="tab:blue", ecolor="tab:gray")
+ax.axhline(-1, color="tab:red", ls="--", lw=1, label="unit elastic")
+ax.set_ylabel("Price elasticity (95 % CI)"); ax.set_xlabel("")
+ax.set_title("Log-log model with promotion, holidays, Fourier seasonality and trend")
+ax.legend(frameon=False); plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Point estimates run from about minus 0.9 in Austria and the Netherlands to minus 1.4 in Germany and Italy; Poland sits at minus 1.2. Every interval overlaps every other interval. The honest reading: all markets are around unit elastic, and three years of weekly data cannot rank them reliably on price. The lab produces this table with the exact numbers.
+:::
+
+## Dummies and interactions: one model, six slopes
+
+- Country dummies shift the intercept: $\log y = \alpha_c + \ldots$
+- An interaction lets the slope differ: $\beta_{\text{price}} + \gamma_c \cdot \text{country}_c$
+- Formula: `log_sales ~ C(country) * log_price + ...`
+- Reference country is the first alphabetically (AT); each $\gamma_c$ is the difference from Austria
+- Pooled data give 936 observations; common seasonality is estimated more precisely
+- A t-test on $\gamma_{DE} - \gamma_{PL}$ answers "do Germany and Poland differ?"
+
+::: {.notes}
+Students often estimate six separate regressions and then compare coefficients by eye. The interaction model does the comparison with a standard error. Make sure they can read the output: log_price is the Austrian elasticity, C(country)[T.PL]:log_price is Poland minus Austria.
+:::
+
+## Pooled model with country × log price
+
+```{python}
+pooled = smf.ols("log_sales ~ C(country) * log_price + C(country):promo_share + C(country):t "
+                 "+ xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2", data=df).fit()
+base = pooled.params["log_price"]
+rows = [{"country": "AT", "elasticity": base}]
+for c in COUNTRIES[1:]:
+    rows.append({"country": c, "elasticity": base + pooled.params[f"C(country)[T.{c}]:log_price"]})
+pe = pd.DataFrame(rows).set_index("country")
+fig, ax = plt.subplots()
+x = np.arange(len(COUNTRIES))
+ax.bar(x - 0.2, el.elasticity, width=0.4, label="Six separate regressions", color="tab:blue")
+ax.bar(x + 0.2, pe.elasticity, width=0.4, label="Pooled with interactions", color="tab:orange")
+ax.set_xticks(x); ax.set_xticklabels(COUNTRIES)
+ax.set_ylabel("Price elasticity"); ax.legend(frameon=False)
+ax.set_title("Same slopes, two ways of estimating them")
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+When the pooled model lets promotion and trend differ by country too, it reproduces the six separate elasticities almost exactly. The joint F-test for "all interaction terms are zero" does not reject (p about 0.73). If instead you force one promotion effect and one trend on all countries, the Polish elasticity comes out positive again, because Poland's 28 % growth is squeezed into a common trend. Pooling is powerful and dangerous in equal measure; Session 3 makes this the central theme.
+:::
+
+## Multicollinearity and the VIF
+
+```{python}
+cols = ["log_price", "promo_share", "xmas", "easter", "valentine", "sin_1", "cos_1", "sin_2", "cos_2", "t"]
+X = sm.add_constant(de[cols])
+vif = pd.Series([variance_inflation_factor(X.values, i) for i in range(X.shape[1])], index=X.columns)
+vif.drop("const").round(2).to_frame("VIF").T
+```
+
+- VIF = 1 / (1 - R² of regressing that variable on all the others)
+- Rule of thumb: above 5 is worth a look, above 10 is a problem
+- Price (10.5) and promotion (7.1) are collinear because promotions cut the price
+- Consequence: wider standard errors, not biased coefficients
+- Cure: more variation (a price test), not dropping a variable that belongs in the model
+
+::: {.notes}
+Students tend to drop a variable to fix a VIF. Push back: dropping promotion gave us the wrong sign. Collinearity is the data telling us that price and promotion rarely move independently, so the model cannot tell them apart precisely. The confidence interval already reports that. The real cure is a price experiment, which is Session 4 material.
+:::
+
+## In-sample fit versus holdout fit (Poland)
+
+```{python}
+train = pl[pl.year < 2025]; test = pl[pl.year == 2025]
+m_tr = smf.ols(FULL, data=train).fit()
+pred = np.exp(m_tr.predict(test))
+fig, ax = plt.subplots()
+ax.plot(pl.week, pl.sales_units_k, color="tab:gray", lw=1.2, label="Actual")
+ax.plot(train.week, np.exp(m_tr.fittedvalues), color="tab:blue", lw=1.2, label="Fitted 2023 to 2024")
+ax.plot(test.week, pred, color="tab:red", lw=1.5, label="Predicted 2025 (holdout)")
+ax.axvline(pd.Timestamp("2025-01-01"), color="black", ls=":", lw=1)
+ax.set_ylabel("Units (thousand)"); ax.set_xlabel("")
+ax.set_title(f"Poland: MAPE in-sample {mape(np.exp(m_tr.fittedvalues), train.sales_units_k):.1f} %, "
+             f"holdout {mape(pred, test.sales_units_k):.1f} %")
+ax.legend(frameon=False); plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Fit the model on 2023 and 2024, predict 2025. The mean absolute percentage error rises only from about 4 % to 5 %: the model generalises. Contrast with the lab's overfitting demo: twelve Fourier pairs plus 52 week dummies push the in-sample error below 2 % and the holdout error above 15 %. R-squared cannot see that; a holdout can. Every model in this course gets a holdout check.
+:::
+
+## Correlation is not causation
+
+- The price coefficient is causal only if nothing left out moves both price and sales
+- We saw one omission (promotion) flip the sign and another (trend) flip it back
+- Still missing today: media spend, competitor activity, distribution
+- Prices are set by managers who look at demand: reverse causality
+- Experiments break this circle: Session 4 covers geo-lift tests
+- Until then: report elasticities as "associations under the model's assumptions"
+
+::: {.notes}
+Preview Session 4 without teaching it. The geo-lift test in Germany is an experiment where the firm chose which regions get more spend at random, so the comparison is causal by design. For price, the equivalent is a regional price test. Mention that the media omitted today is exactly why Session 2 exists; the instructor solutions show how its omission biases today's elasticities towards zero.
+:::
+
+## Elasticities and country characteristics
+
+```{python}
+mm = el.join(meta.set_index("country"))
+fig, axes = plt.subplots(1, 2, figsize=(8, 4), sharey=True)
+for ax, var, lab in zip(axes, ["gdp_per_capita_eur_k", "hofstede_uai"],
+                        ["GDP per capita (thousand EUR)", "Hofstede uncertainty avoidance"]):
+    ax.errorbar(mm[var], mm.elasticity, yerr=[mm.elasticity - mm.lo, mm.hi - mm.elasticity],
+                fmt="o", capsize=4, color="tab:blue", ecolor="tab:gray")
+    for c, r in mm.iterrows():
+        ax.annotate(c, (r[var], r.elasticity), textcoords="offset points", xytext=(6, 4), fontsize=9)
+    ax.set_xlabel(lab)
+axes[0].set_ylabel("Price elasticity (95 % CI)")
+fig.suptitle("Does price sensitivity follow income or culture?")
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Six points and wide intervals: this is a conversation starter, not a test. Economic theory predicts more elastic demand where the product takes a larger share of income, which would put Poland at the bottom. Culture theory predicts that high uncertainty avoidance favours known brands and lowers price sensitivity, which would put Poland and France higher. In the data, Poland is in the middle, Italy and Germany most elastic. The next slide turns this into a discussion.
+:::
+
+## Discussion: what moderates price sensitivity across countries?
+
+- Income: the same price is a larger share of a Polish budget; theory says more elastic
+- Market maturity: Alpenglow is 4 years old in Poland, 40 in Austria; young brands have less loyalty
+- Culture: high uncertainty avoidance (PL 93, FR 86) favours trusted brands; collectivism favours shared, visible brands
+- Retail structure: concentrated retail (DE 0.85) means fewer, larger promotions
+- Category: premium chocolate is a gift as much as a snack, and gifts are less price-sensitive
+- With six countries, which of these could you ever separate statistically?
+
+::: {.notes}
+Run this as a five-minute discussion. The honest answer to the last bullet is "none of them": six observations cannot separate five moderators. That is why the group project will use within-country variation and hierarchical models rather than cross-country regressions of elasticities on Hofstede scores. Still, the moderators matter for the story the board hears, and for judging whether an estimate is plausible.
+:::
+
+## Back to the decision: Poland
+
+- Estimated price elasticity -1.2, 95 % CI -1.8 to -0.6: around unit elastic
+- Promotion response is the strongest of the six markets: +6 % units per 10 points of promo share
+- Poland has the lowest shelf price but the highest price relative to income
+- A 10 % permanent cut would raise units by about 13 % and revenue by about 2 %, and cut profit by about 15 % at a 40 % margin
+- The model omits media and distribution, which may bias the elasticity towards zero
+- Recommendation: do not cut the list price yet; run a regional price test and keep promotion as the lever
+
+::: {.notes}
+Walk through the arithmetic: 0.9 to the power of minus 1.2 gives plus 13 % units; revenue is 0.9 times 1.13, about 1.02; profit per unit falls from 0.40 to 0.30 of the old price, so profit falls by roughly 15 % even with the extra volume. Break-even needs an elasticity of about minus 2.7, which the interval does not support. The team exercise asks each group to write this answer in five sentences.
+:::
+
+# Lab bridge
+
+## In the lab today
+
+- Positron tour and your first commit with GitHub Desktop
+- Warm-up: regional sales shares and a first regression on video game data
+- Alpenglow: load, describe, plot sales and price by country
+- Build the log-log model step by step and watch the price sign flip and flip back
+- Six elasticities with confidence intervals, pooled model, VIF, 2025 holdout
+- Merge with country metadata and write the Poland answer as a team
+
+::: {.notes}
+The lab is designed to be run cell by cell with the assistant open. Every section has a prompt pattern and a "what to verify" list. The team exercise at the end produces the five-sentence answer to the decision of the day.
+:::
+
+## Recap
+
+- Decision first: the question defines the model and the number that matters
+- OLS: coef, standard error, t, p and confidence interval; read the interval
+- Log-log coefficients are elasticities; dummies are percentage uplifts
+- Omitted variables bias coefficients; promotion and trend both mattered
+- Interactions give country-specific slopes with a standard error for the difference
+- VIF measures collinearity; holdout fit measures usefulness; neither is R²
+
+::: {.notes}
+Six bullets, six quiz questions. The quiz tests exactly these ideas without code.
+:::
+
+## Before next week
+
+- Quiz 1 opens tonight, closes Sunday 23:59; closed book, 10 questions
+- Exercises 1 to 5 in `sessions/01-foundations/exercises.qmd`; solutions discussed next week
+- Group repositories: one commit per member by Friday
+- Read: Yildirim and Kübler, chapter on market response models; Chan and Perry (2017) sections 1 to 3
+- Next session: "What did TV do for us in Germany?" adstock, saturation, ROAS
+- Bring the elasticity table you produced today; the MMM builds on it
+
+::: {.notes}
+Close by connecting to Session 2: the model today has a baseline and no media. Next week we add the five media channels with carryover and saturation, and the elasticities move. Ask them to keep their lab output so they can compare.
+:::

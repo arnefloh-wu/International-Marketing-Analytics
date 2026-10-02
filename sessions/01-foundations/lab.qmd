@@ -1,0 +1,572 @@
+---
+title: "Lab 1: Toolkit and price elasticities across six countries"
+subtitle: "International Marketing Analytics · Session 1 · WU Vienna"
+author: "Dr. Arne Floh"
+date: 2026-10-06
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    code-tools: true
+execute:
+  warning: false
+---
+
+::: {.callout-note title="How to use this lab"}
+Open this file in Positron, select the `.venv` interpreter and run the cells top to bottom with Ctrl+Enter (Cmd+Enter on macOS). Each section has five parts: **the decision**, **the code**, **an interpretation**, a **check yourself** list and a **prompt pattern** for your AI assistant. Read the interpretation only after you have looked at your own output. The whole lab runs in under two minutes.
+:::
+
+::: {.callout-important title="Decision of the day"}
+**Is our price too high in Poland?** The Polish country manager asks for a 10 % list-price cut. Finance points out that Poland already has the lowest price of the six Alpenglow markets. By the end of this lab you will have a price elasticity for every country, with a confidence interval, a check of how well the model predicts a year it has not seen, and a five-sentence answer for the management meeting.
+:::
+
+## 0. Setup
+
+```{python}
+import sys; sys.path.append("../../assets")
+from mma import *                      # pandas as pd, numpy as np, load_panel, add_fourier, mape, COUNTRIES, ...
+import matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+import warnings; warnings.filterwarnings("ignore")
+
+plt.rcParams.update({"figure.figsize": (8, 4), "axes.spines.top": False, "axes.spines.right": False})
+pd.set_option("display.width", 120)
+print("pandas", pd.__version__, "| statsmodels", sm.__version__)
+```
+
+If the cell above prints two version numbers, your environment works. If it reports `ModuleNotFoundError`, the wrong interpreter is selected: click the interpreter name at the top right of Positron and choose the one inside `.venv`.
+
+## 1. A tour of Positron
+
+Positron is an IDE for data science made by Posit. Everything you need for this course is in one window. The screenshots are described in words so that the tour works on any screen and in any colour theme.
+
+**Screenshot 1: the whole window.** Imagine four regions. On the left, a narrow vertical bar with icons (Explorer, Search, Source Control, Extensions, and the Assistant). Next to it, the file explorer showing the course folder: `assets`, `data`, `sessions`, `syllabus`. The large centre region holds the editor with `lab.qmd` open. The right-hand third is split in two: the **Variables** pane on top, the **Plots** pane below. At the bottom runs the **Console**, where code results appear, with tabs for **Terminal** and **Problems** beside it.
+
+**Screenshot 2: the interpreter selector.** At the top right of the window a small label says something like `Python 3.12 (.venv)`. Clicking it lists every Python installation on your machine. The one you want ends in `.venv`. If it is missing, open a terminal and run `uv venv` followed by `uv pip install -r requirements.txt`, as in the setup guide.
+
+**Screenshot 3: running a cell.** In a `.qmd` file, code lives between lines with three backticks and `{python}`. Positron draws a faint "Run Cell" button above each one. Put your cursor anywhere inside the cell and press Ctrl+Enter. The code is sent to the console and the result appears there; any DataFrame you created appears in the Variables pane with its dimensions, for example `df  DataFrame [936 x 21]`.
+
+**Screenshot 4: the data viewer.** Clicking a DataFrame in the Variables pane opens it as a spreadsheet-like grid in a new editor tab. Columns can be sorted and filtered, and a summary panel on the left shows the type, missing values and a small histogram for every column. Use it every time you load data; it catches wrong delimiters, dates read as text and empty columns in seconds.
+
+**Screenshot 5: the Plots pane.** Every `plt.show()` sends a figure here. Arrows at the top step back through earlier plots; a save icon exports PNG or SVG. Figures are also embedded in the rendered HTML when you click **Preview** (the small icon with a play symbol at the top right of the editor, or Ctrl+Shift+K).
+
+**Screenshot 6: the Assistant.** The sidebar icon with a speech bubble opens the chat. It can see the file you have open. A good first message is in Section 7. The two modes you will use are *Ask* (explain, propose) and *Edit* (change the code in the file). Always read a proposed change before you accept it.
+
+::: {.callout-tip title="Prompt pattern: getting oriented"}
+*"I am working in a Quarto notebook in Positron. The project helper module is in `../../assets/mma.py`. Read it and tell me in five lines what functions it provides and what `load_panel` returns."*
+
+**What to verify:** the assistant names `load_panel`, `add_fourier`, `geometric_adstock`, `hill`, `mape`, `rmse` and `contribution_table`. If it invents a function, ask it to quote the line where the function is defined.
+:::
+
+## 2. GitHub Desktop: clone, pull, commit, push
+
+You already cloned the course repository during setup. Your group repository works the same way. Four verbs are all you need this term.
+
+1. **Clone** (once): in GitHub Desktop, *File → Clone repository → URL*, paste the address of your group repository, choose a folder without spaces, click *Clone*. Then *Repository → Open in Positron* (or open the folder from Positron).
+2. **Pull** (every time you start): click *Fetch origin* at the top. If the button changes to *Pull origin*, click it. This brings your teammates' changes to your machine. Never start work on a stale copy.
+3. **Commit** (every time something works): GitHub Desktop lists changed files on the left. Tick the ones that belong together, write a one-line summary in the box at the bottom left (good: "add Polish elasticity table", bad: "changes"), click *Commit to main*.
+4. **Push** (every time you stop): click *Push origin*. Until you push, the commit exists only on your laptop.
+
+Try it now: create a file `sessions/01-foundations/notes_YOURNAME.md` in your group repository, write one line, commit with the message "first commit from <name>", push, and check on github.com that the file is there. This is the Session 1 deliverable for the group repository.
+
+If GitHub Desktop reports a **conflict** after pulling, open the file in Positron. You will see blocks marked `<<<<<<<`, `=======` and `>>>>>>>`. Keep the version you want, delete the markers, save, commit, push. Your assistant can explain any conflict if you paste the block.
+
+::: {.callout-tip title="Prompt pattern: Git trouble"}
+*"GitHub Desktop says: 'This branch has conflicts that must be resolved' in file `lab.qmd`. Here is the block with the markers: [paste]. Explain which part is mine, which part is my colleague's, and how to keep both."*
+
+**What to verify:** the explanation distinguishes HEAD (yours) from the incoming change, and the final file has no `<<<<<<<` left before you commit.
+:::
+
+## 3. Warm-up: video game sales by region
+
+Before the chocolate data, a lighter dataset to practise the two pandas operations you will use all term: `groupby` and a regression with a categorical variable. `Video_Games_Sales.csv` has 16 719 games with sales in millions of units for North America, Europe, Japan and the rest of the world, plus critic and user scores.
+
+**The decision:** a publisher asks whether European and North American buyers respond differently to critic reviews and to genre, so that marketing can be regionalised.
+
+### 3.1 Load and inspect
+
+```{python}
+vg = pd.read_csv("../../data/legacy/Video_Games_Sales.csv")
+print(vg.shape)
+vg.head()
+```
+
+```{python}
+vg.isna().sum().to_frame("missing").T
+```
+
+Half of the games have no critic score, and `User_Score` is read as text because some entries say `tbd`. We will handle both: drop rows without a critic score for the regression, and convert the user score with `pd.to_numeric`.
+
+### 3.2 Regional sales shares with groupby
+
+```{python}
+regions = ["NA_Sales", "EU_Sales", "JP_Sales", "Other_Sales"]
+total = vg[regions].sum()
+(total / total.sum() * 100).round(1).to_frame("share of global units, %")
+```
+
+```{python}
+by_genre = vg.groupby("Genre")[regions + ["Global_Sales"]].sum().sort_values("Global_Sales", ascending=False)
+shares = by_genre[regions].div(by_genre.Global_Sales, axis=0) * 100
+shares.round(1)
+```
+
+```{python}
+fig, ax = plt.subplots()
+shares[["NA_Sales", "EU_Sales", "JP_Sales"]].plot.barh(ax=ax, color=["tab:blue", "tab:orange", "tab:green"], width=0.8)
+ax.set_xlabel("Share of the genre's global units, %"); ax.set_ylabel("")
+ax.set_title("Where each genre sells"); ax.legend(["North America", "Europe", "Japan"], frameon=False)
+ax.invert_yaxis(); plt.tight_layout(); plt.show()
+```
+
+**Interpretation.** North America takes 49 % of all units, Europe 27 %, Japan 15 %. The mix differs sharply by genre: role-playing games sell 38 % of their units in Japan against 4 % for shooters, and racing games have the highest European share (32 %). `groupby("Genre")[...].sum()` is the pattern: split the rows by a key, apply a function to each group, glue the results back together. `.div(..., axis=0)` divides each row by that row's global total.
+
+### 3.3 A first regression with a categorical variable
+
+Does the critic score lift European sales as much as North American sales? We regress log sales on the critic score and genre dummies, separately for each region, then on the log of the EU/NA ratio, which asks the regional question directly.
+
+```{python}
+vg2 = vg.dropna(subset=["Critic_Score", "Genre"]).copy()
+vg2 = vg2[(vg2.NA_Sales > 0) & (vg2.EU_Sales > 0)]            # logs need positive sales
+vg2["User_Score"] = pd.to_numeric(vg2.User_Score, errors="coerce")
+vg2["log_eu"] = np.log(vg2.EU_Sales)
+vg2["log_na"] = np.log(vg2.NA_Sales)
+vg2["log_ratio"] = vg2.log_eu - vg2.log_na
+print(len(vg2), "games with a critic score and sales in both regions")
+
+m_eu = smf.ols("log_eu ~ Critic_Score + C(Genre, Treatment('Action'))", data=vg2).fit()
+m_na = smf.ols("log_na ~ Critic_Score + C(Genre, Treatment('Action'))", data=vg2).fit()
+m_ratio = smf.ols("log_ratio ~ Critic_Score + C(Genre, Treatment('Action'))", data=vg2).fit()
+
+compare = pd.DataFrame({"EU": m_eu.params, "NA": m_na.params, "EU / NA ratio": m_ratio.params}).round(3)
+compare.index = [i.replace("C(Genre, Treatment('Action'))[T.", "Genre: ").replace("]", "") for i in compare.index]
+compare
+```
+
+```{python}
+print(m_ratio.summary().tables[1])
+```
+
+**Interpretation.** `C(Genre, Treatment('Action'))` turns the text column into eleven 0/1 dummies with Action as the reference genre. Each genre coefficient is the difference in log sales from an Action game with the same critic score. One extra critic point raises European sales by about 4.1 % and North American sales by about 3.6 %; the ratio model confirms that the difference, 0.5 percentage points per critic point, is statistically clear (t about 5) but small. Genre matters more for the regional mix: a sports game sells about 22 % less in Europe relative to North America than an action game ($e^{-0.25} - 1$), a racing game about 15 % more. The R² of the ratio model is 0.02: critic score and genre explain almost nothing of *where* a game sells, even though they are statistically significant with 6 000 observations. Significance and importance are different things.
+
+**Check yourself**
+
+- Does `vg2` have fewer rows than `vg`? Why do we lose almost 10 000 games?
+- Which genre is the reference category, and how do you know from the output?
+- Convert the Sports coefficient in the ratio model to a percentage by hand.
+- Would you present R² = 0.02 as a success or a failure? For which question?
+
+::: {.callout-tip title="Prompt pattern: groupby"}
+*"Using pandas, compute for each `Genre` in `vg` the share of `EU_Sales` in `Global_Sales` (in %), sorted descending, as a one-column DataFrame. Do not use a loop."*
+
+**What to verify:** shares are between 0 and 100 and the top genre is Racing (about 32 %). If the assistant sums shares across genres to 100 %, it computed the wrong share.
+:::
+
+## 4. Alpenglow: price elasticities across six countries
+
+### 4.1 The decision and the data
+
+Alpenglow sells premium chocolate in six European markets. The panel `alpenglow_weekly.csv` has one row per country and week: 6 countries × 156 weeks = 936 rows. `load_panel` parses the dates, sorts, and adds a week counter `t`, `year` and `week_of_year`.
+
+```{python}
+df = load_panel("../../data/mmm/alpenglow_weekly.csv")
+meta = pd.read_csv("../../data/mmm/country_meta.csv")
+print(df.shape)
+df.head()
+```
+
+```{python}
+df.groupby("country")[["sales_units_k", "revenue_eur_k", "price_eur", "promo_share", "distribution"]].mean().round(2)
+```
+
+```{python}
+df.groupby(["country", "year"]).price_eur.mean().unstack().round(2)
+```
+
+**Interpretation.** Germany sells 757 thousand units a week on average, Austria 128 thousand, Poland 147 thousand. Poland's average price is 2.52 EUR against 3.08 to 3.36 EUR elsewhere, and its distribution (share of outlets stocking the brand) is 0.62 against 0.78: the brand is still rolling out there. Prices rise every year in every market; Poland's price rose fastest, from 2.37 to 2.68 EUR (13 % in two years). Roughly a fifth of volume sells on promotion in every country.
+
+### 4.2 Plot sales and price by country
+
+```{python}
+fig, axes = plt.subplots(2, 3, figsize=(10, 5), sharex=True)
+for ax, c in zip(axes.flat, COUNTRIES):
+    d = df[df.country == c]
+    ax.plot(d.week, d.sales_units_k, color="tab:blue", lw=1)
+    ax.set_title(COUNTRY_NAMES[c]); ax.tick_params(axis="x", labelrotation=45, labelsize=8)
+axes[0, 0].set_ylabel("Units (k)"); axes[1, 0].set_ylabel("Units (k)")
+fig.suptitle("Weekly unit sales"); plt.tight_layout(); plt.show()
+```
+
+```{python}
+fig, ax = plt.subplots()
+for c in COUNTRIES:
+    d = df[df.country == c]
+    ax.plot(d.week, d.price_eur, label=COUNTRY_NAMES[c], lw=1.1)
+ax.set_ylabel("Average price (EUR)"); ax.set_title("Weekly average realised price")
+ax.legend(ncol=3, frameon=False, fontsize=9); plt.tight_layout(); plt.show()
+```
+
+**Interpretation.** Every market peaks before Christmas and dips in summer; Poland trends upward strongly. Prices show two kinds of movement: a slow upward drift (inflation and list-price increases) and sharp weekly dips when a large share of volume sells on promotion. Both will matter for the regression. Note the scales: the German y-axis runs to 1 400 thousand units, the Austrian to 200 thousand. Logs will put them on a comparable footing.
+
+**Check yourself**
+
+- How many rows per country, and does `t` run from 0 to 155 in each?
+- Which country has the highest *relative* Christmas peak? Eyeball it, then compute December mean over annual mean with `groupby`.
+- Is the Polish price trend steeper than the others in percentage terms? Compare 2025 with 2023.
+
+::: {.callout-tip title="Prompt pattern: describing a panel"}
+*"`df` is a weekly panel with columns `country`, `week`, `sales_units_k`, `price_eur`. Make a 2 × 3 grid of matplotlib line charts of `sales_units_k` over `week`, one panel per country in the order AT, DE, FR, IT, NL, PL, with the country name as title and shared x-axis."*
+
+**What to verify:** six panels, dates on the x-axis (not row numbers), Christmas peaks visible in December of each year.
+:::
+
+### 4.3 The first regression: log sales on log price
+
+```{python}
+df["log_sales"] = np.log(df.sales_units_k)
+df["log_price"] = np.log(df.price_eur)
+de = df[df.country == "DE"]
+
+m1 = smf.ols("log_sales ~ log_price", data=de).fit()
+print(m1.summary())
+```
+
+```{python}
+fig, ax = plt.subplots()
+ax.scatter(de.log_price, de.log_sales, s=14, alpha=0.7)
+xs = np.linspace(de.log_price.min(), de.log_price.max(), 50)
+ax.plot(xs, m1.params.Intercept + m1.params.log_price * xs, color="tab:red", lw=2)
+ax.set_xlabel("log(price, EUR)"); ax.set_ylabel("log(units, k)"); ax.set_title("Germany: simple log-log fit")
+plt.tight_layout(); plt.show()
+```
+
+**Reading the output, line by line.** The formula `log_sales ~ log_price` says: explain `log_sales` with an intercept (added automatically) and `log_price`. In the summary:
+
+- **Dep. Variable / No. Observations:** we model `log_sales` with 156 weekly observations.
+- **R-squared 0.147:** price explains about 15 % of the variance of log sales. The rest is seasonality, promotion, trend and noise.
+- **coef:** the intercept 8.89 is log sales at a price of 1 EUR (log price = 0), not interesting in itself. The `log_price` coefficient -2.02 is the **price elasticity**: a 1 % higher price goes with 2.0 % fewer units, because in a log-log model the slope is the ratio of percentage changes.
+- **std err 0.39:** if we drew another three years of data, the estimate would typically move by about 0.4.
+- **t = -5.15:** the coefficient is five standard errors from zero. **P>|t| = 0.000:** if the true elasticity were zero, a t this large would almost never happen.
+- **[0.025, 0.975]:** the 95 % confidence interval, -2.79 to -1.24. This is the honest statement of what we know. Report it, not only the point estimate.
+- **Durbin-Watson 0.24:** residuals are strongly positively autocorrelated (2 would be none). The model misses something that moves slowly from week to week, for example seasonality.
+- **Cond. No.:** a numerical warning about the scale of the variables; harmless here.
+
+**Check yourself**
+
+- Compute the t statistic by hand from coef and std err. Does it match?
+- Compute the interval by hand as coef ± 1.98 × std err (the 97.5 % quantile of a t distribution with 154 degrees of freedom).
+- What does `np.exp(m1.params.Intercept)` mean in units?
+
+::: {.callout-tip title="Prompt pattern: explaining a regression table"}
+*"Here is a statsmodels OLS summary of log sales on log price: [paste]. Explain each number in the coefficient table in one sentence for a marketing manager, and tell me what Durbin-Watson = 0.24 implies about the model."*
+
+**What to verify:** the assistant calls the slope an elasticity, says the interval is about ±2 standard errors, and does not claim the model proves causation.
+:::
+
+### 4.4 Building the model step by step
+
+Managers promote by cutting the price, so price and promotion move together. Sales also follow a strong seasonal pattern and, in Poland, a steep trend. Watch what happens to the price coefficient as each block of controls enters. We use Fourier terms for the smooth annual cycle (`add_fourier` adds `sin_1, cos_1, sin_2, cos_2` based on the week counter `t`) plus three holiday dummies for the sharp peaks.
+
+```{python}
+df = add_fourier(df, order=2)
+de = df[df.country == "DE"]
+pl = df[df.country == "PL"]
+
+steps = {
+    "1 price only":  "log_sales ~ log_price",
+    "2 + promo":     "log_sales ~ log_price + promo_share",
+    "3 + holidays":  "log_sales ~ log_price + promo_share + xmas + easter + valentine",
+    "4 + Fourier":   "log_sales ~ log_price + promo_share + xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2",
+    "5 + trend":     "log_sales ~ log_price + promo_share + xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2 + t",
+}
+FULL = steps["5 + trend"]
+
+def step_table(data):
+    rows = []
+    for name, f in steps.items():
+        m = smf.ols(f, data=data).fit()
+        rows.append({"model": name, "price coef": m.params.log_price, "price se": m.bse.log_price,
+                     "promo coef": m.params.get("promo_share", np.nan), "R²": m.rsquared, "adj. R²": m.rsquared_adj})
+    return pd.DataFrame(rows).set_index("model").round(3)
+
+print("Germany"); display(step_table(de))
+print("Poland");  display(step_table(pl))
+```
+
+```{python}
+print(de[["log_price", "promo_share", "t"]].corr().round(2))
+```
+
+**Interpretation.** In Germany the price coefficient is -2.0 with price alone, jumps to **+1.2** when promotion share enters, stays positive through holidays and Fourier terms, and only returns to **-1.4** when the trend is added. Poland is even more dramatic: +0.6, then +2.6, and finally -1.2 with the trend. Two mechanisms are at work. First, price and promotion share correlate at -0.75: promotion weeks have low prices and high sales, so without `promo_share` the price coefficient also carries the promotion effect (it is too negative). Second, once promotion is controlled, most of the remaining price variation is the slow upward drift of inflation (correlation with `t` of 0.56), and the brand grew at the same time. Without a trend the model attributes growth to higher prices and gets a positive sign. Both are examples of **omitted-variable bias**: a variable left out that is correlated with both price and sales. R² is of no help here: model 4 has R² = 0.92 and the wrong sign. The step from 4 to 5 adds a single variable and changes the business conclusion completely.
+
+**Check yourself**
+
+- Which step adds most to R²? Which step changes the price coefficient most? Are they the same?
+- In model 5, what is the German trend in percent per year? (Hint: `np.exp(52 * coef) - 1`.)
+- Why do we not simply use 52 week-of-year dummies instead of Fourier terms? (Section 4.8 tests this.)
+
+::: {.callout-tip title="Prompt pattern: specifying a model"}
+*"Fit an OLS model with statsmodels formula API on `de`: `log_sales` on `log_price`, `promo_share`, the dummies `xmas`, `easter`, `valentine`, the Fourier terms `sin_1, cos_1, sin_2, cos_2` and a linear trend `t`. Print the coefficient table. Do not change the variable list or the functional form; if something fails, show me the error instead of fixing it silently."*
+
+**What to verify:** the formula in the code is exactly what you asked for (count the terms); the price coefficient is negative; the number of observations is 156.
+:::
+
+### 4.5 Elasticities for every country, with 95 % confidence intervals
+
+```{python}
+rows = []
+models = {}
+for c in COUNTRIES:
+    m = smf.ols(FULL, data=df[df.country == c]).fit()
+    models[c] = m
+    ci = m.conf_int()
+    rows.append({
+        "country": c,
+        "price_elasticity": m.params.log_price, "se": m.bse.log_price,
+        "ci_low": ci.loc["log_price", 0], "ci_high": ci.loc["log_price", 1],
+        "promo_coef": m.params.promo_share, "promo_se": m.bse.promo_share,
+        "xmas_uplift_pct": 100 * (np.exp(m.params.xmas) - 1),
+        "trend_pct_per_year": 100 * (np.exp(52 * m.params.t) - 1),
+        "R2": m.rsquared, "n": int(m.nobs),
+    })
+elast = pd.DataFrame(rows).set_index("country")
+elast.round(3)
+```
+
+```{python}
+fig, ax = plt.subplots()
+ax.errorbar(elast.index, elast.price_elasticity,
+            yerr=[elast.price_elasticity - elast.ci_low, elast.ci_high - elast.price_elasticity],
+            fmt="o", capsize=5, color="tab:blue", ecolor="tab:gray")
+ax.axhline(-1, color="tab:red", ls="--", lw=1, label="unit elastic (-1)")
+ax.set_ylabel("Price elasticity with 95 % CI"); ax.set_title("Own-price elasticity by country")
+ax.legend(frameon=False); plt.tight_layout(); plt.show()
+```
+
+**Interpretation.** Point estimates range from -0.93 (Austria) and -0.96 (Netherlands) through -1.09 (France) and -1.18 (Poland) to -1.39 (Italy) and -1.40 (Germany). Every standard error is about 0.3, so every interval is roughly 1.2 wide and every interval overlaps every other one: the data say "around unit elastic everywhere" and cannot rank the countries on price sensitivity with confidence. The promotion coefficients are estimated far more precisely (standard errors about 0.07) and do differ: Poland's 0.64 and Italy's 0.58 are clearly above the Netherlands' 0.40 and France's 0.37. Ten percentage points more volume on promotion lift Polish units by about 6.4 %, net of the price cut that comes with it. R² is between 0.91 and 0.96 in every country. The Polish trend of 28 % per year is the brand rolling out; it is captured by `t` here and by distribution in Exercise 2.
+
+**Check yourself**
+
+- Which country's interval comes closest to excluding -1? What would "inelastic" imply for a price cut?
+- Why are the promotion standard errors so much smaller than the price standard errors? (Think about how much each variable varies once the other is controlled.)
+- Re-run the loop with `order=3` in `add_fourier`. Do the elasticities move by more than a tenth of a standard error?
+
+::: {.callout-tip title="Prompt pattern: looping over groups"}
+*"Loop over the six values of `country` in `df`, fit the model stored in the string `FULL` on each subset, and collect into one DataFrame: country, the `log_price` coefficient, its standard error, the 95 % confidence bounds from `conf_int()`, the `promo_share` coefficient and R². Then draw a matplotlib errorbar chart of the elasticities."*
+
+**What to verify:** six rows; `ci_low < price_elasticity < ci_high` in every row; the chart's error bars have the same length as `ci_high - ci_low`.
+:::
+
+### 4.6 One pooled model with country × log price interactions
+
+Six separate regressions tell you the six elasticities but not whether they *differ*. A pooled model with interactions estimates all six slopes at once and gives a standard error for any difference. Because Poland's promotion response and trend also differ, we let those vary by country as well; seasonality is shared.
+
+```{python}
+pooled = smf.ols("log_sales ~ C(country) * log_price + C(country):promo_share + C(country):t "
+                 "+ xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2", data=df).fit()
+print(f"n = {int(pooled.nobs)}, R² = {pooled.rsquared:.4f}")
+pooled.params.filter(like="log_price").to_frame("coef").join(pooled.bse.filter(like="log_price").to_frame("se")).round(3)
+```
+
+```{python}
+base = pooled.params["log_price"]
+pooled_elast = pd.Series({c: base + (pooled.params.get(f"C(country)[T.{c}]:log_price", 0.0)) for c in COUNTRIES})
+pd.DataFrame({"separate regressions": elast.price_elasticity, "pooled with interactions": pooled_elast}).round(3)
+```
+
+```{python}
+print(pooled.t_test("C(country)[T.DE]:log_price - C(country)[T.PL]:log_price = 0").summary())
+print(pooled.f_test("C(country)[T.DE]:log_price = 0, C(country)[T.FR]:log_price = 0, C(country)[T.IT]:log_price = 0, "
+                    "C(country)[T.NL]:log_price = 0, C(country)[T.PL]:log_price = 0"))
+```
+
+**Interpretation.** `C(country) * log_price` expands to country dummies, `log_price`, and five interaction terms. `log_price` alone (-0.95) is the elasticity of the reference country, Austria (first alphabetically). `C(country)[T.PL]:log_price` (-0.37) is the Polish elasticity *minus* the Austrian one, so Poland's elasticity is -0.95 - 0.37 = -1.32 in this model, close to the -1.18 from its own regression; the small differences come from the shared seasonality. The t-test of Germany minus Poland gives a difference of -0.24 with a standard error of 0.47 (p = 0.61): the two elasticities are statistically indistinguishable. The joint F-test of all five interactions (p = 0.73) says the same for all six countries at once. A warning for Session 3: if you pool with a *common* promotion effect and a *common* trend, the Polish elasticity comes out positive, because Poland's 28 % annual growth is forced into a trend shared with Austria's 5 %. Pooling helps only when what is pooled is actually common.
+
+**Check yourself**
+
+- Reconstruct the German elasticity from the pooled output by hand and compare with the table.
+- What is the reference category and why is it Austria? How would you make Germany the reference? (Hint: `C(country, Treatment('DE'))`.)
+- Why does the pooled model have more degrees of freedom for the seasonal terms than any single-country model?
+
+::: {.callout-tip title="Prompt pattern: testing a difference"}
+*"In the fitted statsmodels model `pooled`, test whether the `log_price` interaction for DE differs from the one for PL using `t_test` with a string constraint. Also run an F-test that all five country × log_price interactions are jointly zero. Report both p-values and say in one sentence what each means."*
+
+**What to verify:** the constraint strings use the exact parameter names from `pooled.params.index`; the t-test p-value equals the F-test p-value when you test the same single constraint both ways.
+:::
+
+### 4.7 Multicollinearity and the variance inflation factor
+
+```{python}
+cols = ["log_price", "promo_share", "xmas", "easter", "valentine", "sin_1", "cos_1", "sin_2", "cos_2", "t"]
+X = sm.add_constant(de[cols])
+vif = pd.Series([variance_inflation_factor(X.values, i) for i in range(X.shape[1])], index=X.columns).drop("const")
+vif.round(2).to_frame("VIF").T
+```
+
+**Interpretation.** The VIF of a variable is $1 / (1 - R^2_j)$ where $R^2_j$ comes from regressing that variable on all the others. A VIF of 10.5 for `log_price` means 90 % of its variation is predictable from the other regressors, mostly from `promo_share` (7.1) and the trend (4.7). The usual thresholds are 5 (look) and 10 (worry). Collinearity does not bias the coefficients; it inflates their standard errors, which is exactly why the price intervals in 4.5 are wide and the promotion intervals less so. The wrong response is to drop promotion: Section 4.4 showed that this produces a biased elasticity. The right response is either to accept the wider interval or to create independent price variation, for example with a regional price test (Session 4).
+
+**Check yourself**
+
+- Add `revenue_eur_k` to `cols` and recompute. Why does it get a VIF above 15, and why would it be wrong to include it anyway?
+- Compute the VIF of `log_price` by hand: regress `log_price` on the other columns and apply the formula.
+
+::: {.callout-tip title="Prompt pattern: diagnostics"}
+*"Compute variance inflation factors for the regressors in the formula `FULL` on the German subset `de`, using `statsmodels.stats.outliers_influence.variance_inflation_factor`, with a constant included in the design matrix but excluded from the reported table."*
+
+**What to verify:** a constant is in the matrix (without it the VIFs are meaningless); the table has exactly ten rows; `log_price` is the largest.
+:::
+
+### 4.8 In-sample fit versus holdout fit
+
+A model that fits the past is not necessarily a model that predicts. We fit on 2023 and 2024 and predict 2025, which the model has never seen, and compare the mean absolute percentage error (MAPE) in and out of sample. For contrast, an over-flexible model with twelve Fourier pairs and 52 week-of-year dummies.
+
+```{python}
+train = df[df.year < 2025]; test = df[df.year == 2025]
+df12 = add_fourier(df, order=12)
+train12 = df12[df12.year < 2025]; test12 = df12[df12.year == 2025]
+fourier12 = " + ".join(f"sin_{k} + cos_{k}" for k in range(1, 13))
+OVERFIT = f"log_sales ~ log_price + promo_share + xmas + easter + valentine + t + {fourier12} + C(week_of_year)"
+
+rows = []
+for c in COUNTRIES:
+    for name, f, tr, te in [("price only", steps["1 price only"], train, test),
+                            ("full (FULL)", FULL, train, test),
+                            ("over-flexible", OVERFIT, train12, test12)]:
+        m = smf.ols(f, data=tr[tr.country == c]).fit()
+        rows.append({"country": c, "model": name, "R² (train)": m.rsquared,
+                     "MAPE in-sample %": mape(np.exp(m.fittedvalues), tr[tr.country == c].sales_units_k),
+                     "MAPE 2025 holdout %": mape(np.exp(m.predict(te[te.country == c])), te[te.country == c].sales_units_k)})
+holdout = pd.DataFrame(rows).set_index(["country", "model"]).round(2)
+holdout
+```
+
+```{python}
+m_tr = smf.ols(FULL, data=train[train.country == "PL"]).fit()
+pl_test = test[test.country == "PL"]; pl_train = train[train.country == "PL"]
+fig, ax = plt.subplots()
+ax.plot(pl.week, pl.sales_units_k, color="tab:gray", lw=1.2, label="Actual")
+ax.plot(pl_train.week, np.exp(m_tr.fittedvalues), color="tab:blue", lw=1.2, label="Fitted 2023 to 2024")
+ax.plot(pl_test.week, np.exp(m_tr.predict(pl_test)), color="tab:red", lw=1.5, label="Predicted 2025")
+ax.axvline(pd.Timestamp("2025-01-01"), color="black", ls=":", lw=1)
+ax.set_ylabel("Units (k)"); ax.set_title("Poland: fit and holdout prediction"); ax.legend(frameon=False)
+plt.tight_layout(); plt.show()
+```
+
+**Interpretation.** The full model's error rises only mildly out of sample: in Poland from 4.2 % to 5.1 %, in Germany from 4.1 % to 5.6 %. The price-only model is bad everywhere (holdout MAPE 16 to 39 %). The over-flexible model is the cautionary tale: its training R² is 0.99 and in-sample MAPE below 2.5 %, but its 2025 error is 12 to 15 %, three times that of the full model. Each of the 52 week dummies is estimated from only two observations and memorises noise. Note also that the elasticity estimated on 2023 to 2024 alone (-1.52 for Poland) differs from the full-sample estimate (-1.18) by about one standard error: a reminder that these coefficients are not precise.
+
+**Check yourself**
+
+- For which country is the gap between in-sample and holdout MAPE largest in the full model? Any idea why?
+- `np.exp(m.predict(...))` converts log predictions back to units. What small bias does this introduce, and does it matter for a MAPE comparison?
+- Would a rolling holdout (train to 2024 Q2, predict Q3; train to Q3, predict Q4; ...) be a stricter test? Session 4 does this.
+
+::: {.callout-tip title="Prompt pattern: validation"}
+*"Split `df` into training rows with `year < 2025` and test rows with `year == 2025`. For each country fit `FULL` on the training rows, predict the test rows, and report R², in-sample MAPE and holdout MAPE in units (not logs) using the `mape` helper from `mma`. Return one tidy DataFrame."*
+
+**What to verify:** the test set has 52 rows per country; predictions are exponentiated before MAPE; holdout MAPE is larger than in-sample MAPE for most countries (if it is much smaller, something leaked).
+:::
+
+### 4.9 Elasticities and country characteristics
+
+```{python}
+mm = elast.join(meta.set_index("country"))
+mm[["price_elasticity", "ci_low", "ci_high", "promo_coef", "gdp_per_capita_eur_k", "hofstede_uai", "hofstede_idv", "years_in_market", "retail_concentration"]].round(2)
+```
+
+```{python}
+fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+for ax, var, lab in zip(axes, ["gdp_per_capita_eur_k", "hofstede_uai"],
+                        ["GDP per capita (thousand EUR)", "Hofstede uncertainty avoidance"]):
+    ax.errorbar(mm[var], mm.price_elasticity, yerr=[mm.price_elasticity - mm.ci_low, mm.ci_high - mm.price_elasticity],
+                fmt="o", capsize=4, color="tab:blue", ecolor="tab:gray")
+    for c, r in mm.iterrows():
+        ax.annotate(c, (r[var], r.price_elasticity), textcoords="offset points", xytext=(6, 4), fontsize=9)
+    ax.set_xlabel(lab)
+axes[0].set_ylabel("Price elasticity (95 % CI)")
+plt.tight_layout(); plt.show()
+print(mm[["price_elasticity", "promo_coef", "gdp_per_capita_eur_k", "hofstede_uai", "years_in_market"]].corr().round(2))
+```
+
+**Interpretation.** Economic theory predicts that demand is more elastic where the product takes a larger share of income, so Poland (GDP per capita 20.5 thousand EUR, less than half of Austria's) should be the most price-sensitive market. Cultural theory predicts the opposite for high uncertainty avoidance (Poland 93, France 86): consumers who dislike ambiguity stick with trusted brands and react less to price. The data do not settle it: Poland is in the middle on price elasticity but highest on promotion response, and the correlation of elasticity with GDP per capita across six points (0.39) is nowhere near significant. With six countries and intervals this wide, this chart is a prompt for discussion, not a test. What it does say is that nothing in the data supports the view that Polish demand is dramatically more price-sensitive than German or Italian demand.
+
+**Check yourself**
+
+- GDP per capita and uncertainty avoidance correlate at -0.88 across these six countries. What does that imply for separating "income" from "culture" effects?
+- Which single country would you need to add to the sample to break that correlation?
+- How many countries would you need before a regression of elasticity on two moderators became informative?
+
+::: {.callout-tip title="Prompt pattern: merging"}
+*"Merge the DataFrame `elast` (index `country`) with `meta` (column `country`) so that each country's elasticity sits beside `gdp_per_capita_eur_k` and `hofstede_uai`. Then make a scatter of elasticity against GDP per capita with error bars from `ci_low`/`ci_high` and country codes as labels."*
+
+**What to verify:** still six rows after the merge (an inner merge on a mismatched key silently drops rows); labels match the points.
+:::
+
+### 4.10 The answer for Poland
+
+Put the numbers together. The Polish price elasticity is about -1.2 with a 95 % interval from -1.8 to -0.6. A 10 % price cut would raise units by about 13 % (interval: 6 to 20 %) and revenue by about 2 % (0.9 × 1.13). Alpenglow's gross margin is about 40 % of the shelf price; after a 10 % cut the margin per unit falls from 0.40 to 0.30 of the old price, so profit changes by roughly 1.13 × 0.30 / 0.40 - 1 = -15 %. For the cut to break even on profit the elasticity would have to be about -2.7, far outside the interval.
+
+```{python}
+e, lo, hi = elast.loc["PL", ["price_elasticity", "ci_low", "ci_high"]]
+cut = -0.10; margin = 0.40
+def profit_change(el):
+    units = (1 + cut) ** el          # log-log: units multiply by (1 + %Δp)^elasticity
+    return units * (1 + cut - (1 - margin)) / margin - 1
+pd.DataFrame({"elasticity": [e, lo, hi, -3.0],
+              "units change %": [100 * ((1 + cut) ** x - 1) for x in (e, lo, hi, -3.0)],
+              "revenue change %": [100 * ((1 + cut) ** (x + 1) - 1) for x in (e, lo, hi, -3.0)],
+              "profit change % (40 % margin)": [100 * profit_change(x) for x in (e, lo, hi, -3.0)]},
+             index=["point estimate", "CI low", "CI high", "elasticity -3"]).round(1)
+```
+
+**Interpretation.** Even at the most elastic end of the interval the price cut loses money. Poland's distinguishing feature in the data is not price sensitivity but promotion response, the highest of the six markets. The model also omits media spend, competitor activity and distribution; Session 2 adds media, and the instructor will show that leaving it out tends to pull elasticities towards zero. So the recommendation has to carry its uncertainty: do not cut the list price now, keep promotion as the main volume lever, and run a regional price test to get the elasticity the model cannot deliver precisely.
+
+## 5. Checks before you report anything
+
+- The sign of every coefficient is plausible (price negative, promotion positive, Christmas positive).
+- You report confidence intervals, not only point estimates.
+- The model was tested on data it has not seen (2025 holdout) and the error did not explode.
+- You looked at VIFs and know which coefficients are imprecise because of collinearity.
+- The number of observations matches what you expect (156 per country, 936 pooled).
+- Every number in your text was computed in a cell above it, not typed from memory.
+- Your prompt log (Section 7) lists the prompts that produced non-trivial code.
+
+## 6. Your turn
+
+Team exercise (60 minutes). Work in your group repository; one notebook per person, one commit each.
+
+1. **Promotion elasticity by country.** Convert the promotion coefficients from Section 4.5 into "percent units per 10 points of promo share" and chart them with 95 % intervals. Which two countries differ significantly?
+2. **Add distribution.** Add `np.log(distribution)` to `FULL` and re-estimate the six elasticities. Which country's price elasticity moves most, and why would you expect that country?
+3. **Germany versus Poland.** Using the pooled model, make Germany the reference category and test whether Poland's elasticity differs from Germany's. Do you get the same p-value as in Section 4.6?
+4. **Chocolate brand 1.** Load `../../data/legacy/chocolate_dataset.xlsx` (68 weeks, four brands) and estimate brand 1's own-price elasticity and its cross-price elasticities with respect to brands 2 to 4. Which brand is the closest substitute?
+5. **The one-slide answer.** Write five sentences answering "Is our price too high in Poland?" with numbers, an interval, a recommendation and one caveat. Commit it as `poland_answer.md`.
+
+Details and hints are in `exercises.qmd`.
+
+## 7. Prompt patterns and your prompt log
+
+Patterns that worked for this lab, in the order you would use them:
+
+| Situation | Prompt |
+|---|---|
+| Orientation | "Read `../../assets/mma.py` and summarise its functions." |
+| Loading | "Load `../../data/mmm/alpenglow_weekly.csv` with `mma.load_panel` and show shape, dtypes and the first rows." |
+| Describing | "Group `df` by `country` and give mean price, units and promo share, rounded to 2 decimals." |
+| Specifying | "Fit `log_sales ~ log_price + promo_share + ... + t` with statsmodels on subset X. Do not alter the specification; show errors instead of fixing them." |
+| Explaining | "Explain this coefficient table for a manager, one sentence per row." |
+| Looping | "Loop over countries, fit the same formula, collect coefficient, se and CI into a DataFrame." |
+| Testing | "Use `t_test` on `pooled` with the constraint string ... and report the p-value." |
+| Validating | "Fit on `year < 2025`, predict `year == 2025`, report MAPE in units." |
+| Checking the assistant | "List three ways the code you just wrote could be silently wrong, and how I would detect each." |
+
+Keep a **prompt log** at the end of every notebook you submit: a bullet list of the prompts that produced non-trivial code, with one line on what you changed or verified. It is required by the syllabus and it is the fastest way to find the step where an analysis went wrong.
+
+::: {.callout-warning title="What can go wrong"}
+- The assistant drops `promo_share` to "fix" a collinearity warning: the elasticity becomes biased. Check the formula.
+- The assistant uses `np.log(df.sales_units_k)` before filtering zeros: not a problem here, but check `df.sales_units_k.min()` in any new dataset.
+- Paths break when rendering because the working directory is the file's folder: always use `../../data/...`.
+- `C(country)` reference categories: the first alphabetically unless you say otherwise.
+- `predict` on new data requires the same columns, including the Fourier terms: run `add_fourier` on the full frame before splitting.
+:::

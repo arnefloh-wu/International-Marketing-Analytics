@@ -1,0 +1,776 @@
+---
+title: "Lab 4: Forecasting, experiments and attribution"
+subtitle: "International Marketing Analytics · WU Vienna · Session 4"
+author: "Dr. Arne Floh"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: false
+    code-tools: true
+    embed-resources: true
+execute:
+  warning: false
+  message: false
+---
+
+## Setup
+
+::: {.callout-note title="How to work through this lab"}
+Open this file in Positron and run the chunks one by one (Ctrl/Cmd + Shift + Enter). Every section follows the same rhythm: **the decision** a manager has to make, **the code** that answers it, **the interpretation** with the actual numbers, a **check yourself** list, and a **prompt pattern** you can give your AI assistant. You do not need to type the code; you need to understand what it does and whether its output can be trusted.
+:::
+
+The decision of the day is **"Can we trust the model?"**. In Sessions 2 and 3 we built marketing mix models that claim, for example, that paid social in Germany returns about 1.5 to 2 euros of revenue per euro spent. Before the 2027 budget goes to the board we test the model from three sides:
+
+- **Part A, forecasting.** A model that cannot predict next quarter's sales has no business explaining last year's. The forecast is also the planning baseline that every budget scenario is measured against.
+- **Part B, experiments.** The MMM is observational. Alpenglow ran a geo-lift test of paid social in Germany in autumn 2025. Does the experiment confirm the model?
+- **Part C, attribution.** The digital team has its own numbers from user-level attribution. Why do they disagree with the MMM, and which number goes in the budget deck?
+
+```{python}
+#| label: setup
+import sys, json, itertools, warnings
+from math import factorial
+sys.path.append("../../assets")
+from mma import *                      # load_panel, geometric_adstock, add_fourier, mape, rmse, CHANNELS, COUNTRIES
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+from sklearn.linear_model import Ridge
+
+warnings.filterwarnings("ignore")
+pd.set_option("display.width", 120)
+plt.rcParams["figure.figsize"] = (8, 4)
+plt.rcParams["axes.spines.top"] = False
+plt.rcParams["axes.spines.right"] = False
+
+panel = load_panel("../../data/mmm/alpenglow_weekly.csv")
+panel.head(3)
+```
+
+The helper module `mma.py` is the same one you used in Sessions 2 and 3. `load_panel` adds a time index `t` (0, 1, 2, ... per country), `year` and `week_of_year`.
+
+# Part A: Forecasting the 2026 baseline
+
+## A1. The decision
+
+::: {.callout-important title="Decision"}
+Finance needs a **baseline sales forecast for Q1 2026 per country**, assuming media spend continues at the 2025 level. The 2027 budget scenarios from Session 3 are expressed as changes *relative to this baseline*, so a biased baseline biases every scenario. Which forecasting method should we use, and how accurate is it?
+:::
+
+Three candidate methods, from naive to rich:
+
+1. **Seasonal naive:** next week's sales equal the sales of the same week last year. Zero parameters. Any serious method has to beat it.
+2. **ETS (exponential smoothing):** a classic time-series method that learns level, trend and a 52-week seasonal pattern from the sales history alone (`statsmodels.tsa.holtwinters.ExponentialSmoothing`).
+3. **Regression forecaster:** sales as a function of a linear trend, Fourier seasonality (order 2), holiday dummies, lagged sales (lag 1 and lag 52), and *known future inputs*: the planned media (adstocked) and the commercial calendar (price and promotion share). This is the MMM logic turned towards the future.
+
+## A2. Feature engineering
+
+Forecasting as regression means building a design matrix in which every column is **known at the time the forecast is made**. Media plans, price lists and the promotion calendar are known in advance; last week's sales are known only one week ahead, which is why lag 1 has to be fed with our own predictions when we forecast further out (recursive forecasting).
+
+```{python}
+#| label: features
+ADSTOCK = {"tv": 0.7, "online_video": 0.5, "paid_search": 0.1, "paid_social": 0.3, "ooh": 0.6}  # decay rates from Session 2
+
+def build_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Add trend, Fourier terms, adstocked media, lags and log price to one country's data."""
+    df = add_fourier(df, t_col="t", period=52.18, order=2)
+    for ch in CHANNELS:
+        df[f"ad_{ch}"] = geometric_adstock(df[f"spend_{ch}_k"].values, ADSTOCK[ch])
+    df["lag1"] = df["sales_units_k"].shift(1)
+    df["lag52"] = df["sales_units_k"].shift(52)
+    df["log_price"] = np.log(df["price_eur"])
+    return df
+
+TREND_SEASON = ["t", "sin_1", "cos_1", "sin_2", "cos_2"]
+HOLIDAYS = ["xmas", "easter", "valentine"]
+LAGS = ["lag1", "lag52"]
+MEDIA = [f"ad_{ch}" for ch in CHANNELS]
+COMMERCIAL = ["log_price", "promo_share"]
+XCOLS = TREND_SEASON + HOLIDAYS + LAGS + MEDIA + COMMERCIAL
+
+def design(df: pd.DataFrame) -> pd.DataFrame:
+    return sm.add_constant(df[XCOLS], has_constant="add")
+
+country_data = {c: build_features(panel[panel.country == c].reset_index(drop=True)) for c in COUNTRIES}
+country_data["DE"][["week", "sales_units_k"] + XCOLS].tail(3).round(3)
+```
+
+Note the first 52 rows of each country have a missing `lag52`: 2023 can only serve as the "last year" for 2024. The regression is therefore estimated on 2024 onwards, with 2023 supplying the lagged values.
+
+## A3. Rolling-origin evaluation over 2025
+
+A forecast is only credible if it was tested the way it will be used: fit on the past, forecast 13 weeks ahead, compare with what actually happened, move the origin forward, repeat. We use four origins in 2025 (the first week of each quarter), a horizon of 13 weeks, and an expanding training window.
+
+```{python}
+#| label: rolling-origin
+H = 13
+ORIGINS = [104, 117, 130, 143]   # row index of the first week of 2025 Q1, Q2, Q3, Q4
+TRAIN_START = 52                 # first row with a valid lag52
+
+def forecast_path(model, history: pd.DataFrame, future: pd.DataFrame, alpha: float = 0.20) -> pd.DataFrame:
+    """Recursive h-step forecast. lag1 is fed with the model's own predictions, lag52 with actual sales."""
+    sales = list(history["sales_units_k"].values)
+    rows = []
+    for i in range(len(future)):
+        row = future.iloc[[i]].copy()
+        row["lag1"] = sales[-1]
+        row["lag52"] = sales[-52]
+        pred = model.get_prediction(design(row)).summary_frame(alpha=alpha).iloc[0]
+        rows.append({"week": row["week"].iloc[0], "mean": pred["mean"],
+                     "lo": pred["obs_ci_lower"], "hi": pred["obs_ci_upper"]})
+        sales.append(pred["mean"])
+    return pd.DataFrame(rows)
+
+def seasonal_naive(d: pd.DataFrame, origin: int, h: int) -> np.ndarray:
+    return d["sales_units_k"].iloc[origin - 52: origin - 52 + h].values
+
+def ets_forecast(d: pd.DataFrame, origin: int, h: int) -> np.ndarray:
+    y = d["sales_units_k"].iloc[:origin].values
+    fit = ExponentialSmoothing(y, trend="add", damped_trend=True, seasonal="add", seasonal_periods=52).fit()
+    return fit.forecast(h)
+
+results, paths = [], {}
+for c in COUNTRIES:
+    d = country_data[c]
+    for o in ORIGINS:
+        train, test = d.iloc[TRAIN_START:o], d.iloc[o:o + H]
+        ols = sm.OLS(train["sales_units_k"], design(train)).fit()
+        reg = forecast_path(ols, d.iloc[:o], test)
+        paths[(c, o)] = reg.assign(actual=test["sales_units_k"].values)
+        for method, f in [("regression", reg["mean"].values),
+                          ("seasonal_naive", seasonal_naive(d, o, H)),
+                          ("ets", ets_forecast(d, o, H))]:
+            results.append({"country": c, "origin": d["week"].iloc[o].date(), "method": method,
+                            "mape": mape(test["sales_units_k"], f), "rmse": rmse(test["sales_units_k"], f)})
+
+results = pd.DataFrame(results)
+mape_table = results.pivot_table(index="country", columns="method", values="mape", aggfunc="mean")[["seasonal_naive", "ets", "regression"]]
+mape_table.round(1)
+```
+
+```{python}
+#| label: mape-by-origin
+results[results.method == "regression"].pivot(index="country", columns="origin", values="mape").round(1)
+```
+
+### Interpretation
+
+The table reports the **mean absolute percentage error (MAPE)** over four 13-week forecasts per country. Three things to read off it:
+
+- The regression forecaster is the most accurate method in every country, with a MAPE between roughly 5 % (Austria) and 8.5 % (France). Seasonal naive sits at 11 to 17 %, ETS in between. Beating seasonal naive by a factor of two is a strong result for weekly data.
+- The gain comes from the **known inputs**. In a version without price and promotion share (try it in Exercise 1) the regression is no better than seasonal naive: the promotion calendar explains a large share of week-to-week variation and no pure time-series method can know it.
+- Errors are not constant across origins. The first origin (end of 2024) is the hardest for Germany, France and Italy (15 to 21 % MAPE): the model is fitted on 52 weeks of 2024 only, with 19 parameters, and over-fits. Accuracy improves as the training window grows. Poland is hard at every origin because its distribution has been growing, which shifts the level (a mild structural break that a linear trend only partly absorbs).
+
+**How to read MAPE:** a MAPE of 7 % means that on a typical week the forecast is off by 7 % of actual sales, in either direction. For a planning baseline, single-digit MAPE at a 13-week horizon is good. RMSE is in units (thousand units) and penalises large misses more; use it when a few bad weeks matter more than the average.
+
+## A4. Forecast vs actual with 80 % intervals: Germany and Poland
+
+```{python}
+#| label: fig-forecast-de-pl
+#| fig-cap: "Regression forecast (line) with 80 % prediction interval (band) vs actual sales (dots), Q4 2025 origin."
+#| fig-width: 10
+#| fig-height: 4
+fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharex=True)
+for ax, c in zip(axes, ["DE", "PL"]):
+    p = paths[(c, 143)]
+    hist = country_data[c].iloc[130:143]
+    ax.plot(hist["week"], hist["sales_units_k"], color="grey", lw=1, label="history")
+    ax.fill_between(p["week"], p["lo"], p["hi"], color="tab:blue", alpha=0.2, label="80 % interval")
+    ax.plot(p["week"], p["mean"], color="tab:blue", lw=2, label="regression forecast")
+    ax.scatter(p["week"], p["actual"], color="black", s=18, zorder=3, label="actual")
+    ax.set_title(f"{COUNTRY_NAMES[c]}: Q4 2025, MAPE {mape(p['actual'], p['mean']):.1f} %")
+    ax.set_ylabel("sales (thousand units)")
+    ax.tick_params(axis="x", rotation=45)
+axes[0].legend(fontsize=8, loc="upper left")
+plt.tight_layout()
+```
+
+```{python}
+#| label: coverage
+cover = {c: np.mean((paths[(c, 143)]["actual"] >= paths[(c, 143)]["lo"]) & (paths[(c, 143)]["actual"] <= paths[(c, 143)]["hi"])) for c in COUNTRIES}
+pd.Series(cover, name="share of Q4 2025 weeks inside the 80 % interval").round(2)
+```
+
+### Interpretation
+
+The band is the **80 % prediction interval** from `get_prediction(...).summary_frame(alpha=0.20)`: the model's statement that 8 out of 10 actual weeks should fall inside it. Note two things:
+
+- The interval widens towards Christmas because the Christmas dummy and the media inputs are large there, and OLS is less certain far from the centre of the data.
+- The intervals are **too narrow for horizons beyond one week**, because the recursive forecast plugs the predicted lag-1 value in as if it were known. The coverage check above shows how serious this is: only 38 % (NL) to 85 % (IT) of the Q4 2025 weeks fall inside the "80 %" band, about 60 % on average. For the deck, either widen the band (a simple fix: multiply the half-width by 1.5) or label it honestly as the one-week-ahead interval.
+
+::: {.callout-tip title="Check yourself"}
+- Which method wins for each country, and by how much (percentage points of MAPE)?
+- Why can the first regression be estimated only from 2024 onwards? What would happen to `lag52` if you started in 2023?
+- Look at the Q4 2025 plot for Poland. Is the forecast biased (systematically above or below the dots) or just noisy?
+- What share of weeks fall inside the 80 % band? Is that what the label promises?
+:::
+
+::: {.callout-note title="Prompt pattern"}
+*"Using statsmodels OLS, build a 13-week-ahead rolling-origin forecast of weekly sales for one country with trend, Fourier seasonality (order 2), holiday dummies, lag-1 and lag-52 sales, and adstocked media as known inputs. Evaluate with MAPE against a seasonal naive benchmark at four origins in 2025."*
+
+**What to verify:** (1) the training window ends strictly before the origin (no future rows leak in); (2) lag-1 inside the horizon uses predicted, not actual, sales; (3) the benchmark is evaluated on exactly the same weeks; (4) the MAPE is computed on the original scale, not on logs.
+:::
+
+## A5. The 2026 Q1 baseline forecast
+
+Now the real job: fit on all available data (2024 to 2025, with 2023 as the lag year) and forecast the 13 weeks of 2026 Q1, assuming **media spend at the 2025 weekly average**, 2025 average price and promotion share, and the 2026 holiday calendar.
+
+```{python}
+#| label: q1-2026
+future_weeks = pd.date_range("2026-01-05", periods=H, freq="7D")
+
+def future_frame(c: str) -> pd.DataFrame:
+    """Build the 13 future rows for one country with 2025-average inputs and 2026 holidays."""
+    d = country_data[c]
+    avg25 = d[d.year == 2025]
+    f = pd.DataFrame({"week": future_weeks})
+    f["t"] = np.arange(len(d), len(d) + H)
+    f["country"] = c
+    for ch in CHANNELS:
+        f[f"spend_{ch}_k"] = avg25[f"spend_{ch}_k"].mean()
+    f["price_eur"] = avg25["price_eur"].mean()
+    f["promo_share"] = avg25["promo_share"].mean()
+    # 2026 holiday calendar in the convention of the panel: xmas = selling weeks from 4 Dec,
+    # valentine = week containing 5-14 Feb, easter = three weeks before Easter Sunday (5 April 2026)
+    f["xmas"] = 0
+    f["valentine"] = ((f.week.dt.month == 2) & (f.week.dt.day >= 5) & (f.week.dt.day <= 14)).astype(int)
+    easter_2026 = pd.Timestamp("2026-04-05")
+    f["easter"] = ((f.week >= easter_2026 - pd.Timedelta(days=20)) & (f.week <= easter_2026)).astype(int)
+    f["sales_units_k"] = np.nan
+    # adstock must carry over from the real 2025 spend, so build it on the concatenated series
+    full = pd.concat([d[f.columns.intersection(d.columns)], f], ignore_index=True)
+    full = build_features(full)
+    return full.iloc[len(d):].reset_index(drop=True)
+
+baseline = []
+for c in COUNTRIES:
+    d = country_data[c]
+    ols = sm.OLS(d["sales_units_k"].iloc[TRAIN_START:], design(d.iloc[TRAIN_START:])).fit()
+    fc = forecast_path(ols, d, future_frame(c))
+    fc["country"] = c
+    fc["seasonal_naive"] = seasonal_naive(d, 156, H)   # Q1 2025 actuals as the naive reference
+    baseline.append(fc)
+baseline = pd.concat(baseline, ignore_index=True)
+
+q1 = baseline.groupby("country").agg(regression_q1_k=("mean", "sum"), lo80_k=("lo", "sum"), hi80_k=("hi", "sum"),
+                                     seasonal_naive_q1_k=("seasonal_naive", "sum")).round(0)
+q1["vs_q1_2025_pct"] = ((q1.regression_q1_k / q1.seasonal_naive_q1_k - 1) * 100).round(1)
+q1
+```
+
+```{python}
+#| label: fig-q1-2026
+#| fig-cap: "2026 Q1 baseline forecast per country (thousand units per week), 2025-average media and commercial inputs."
+fig, ax = plt.subplots()
+for c in COUNTRIES:
+    b = baseline[baseline.country == c]
+    ax.plot(b.week, b["mean"], marker="o", ms=3, label=c)
+ax.set_ylabel("forecast sales (thousand units)")
+ax.set_yscale("log")
+ax.legend(ncol=6, fontsize=8)
+ax.set_title("Baseline forecast 2026 Q1 (log scale)")
+plt.tight_layout()
+```
+
+### Interpretation
+
+`regression_q1_k` is the baseline each country's 2027 budget scenario will be compared against; `lo80_k` and `hi80_k` are the summed interval bounds (a conservative range, because weekly errors are not perfectly correlated). `vs_q1_2025_pct` compares the forecast with the actual Q1 2025 volume: a positive number means the model expects growth from trend, distribution and the slightly higher 2025 media level. The seasonal pattern is the same in all six countries (post-Christmas dip in January, Valentine's week, Easter build-up at the end of March) because it is driven by the same Fourier terms and holiday dummies; the *levels* differ by a factor of six between Germany and Austria, hence the log scale.
+
+::: {.callout-warning title="Pitfalls that break forecasts"}
+- **Leakage:** any column computed from the full series (a centred moving average, a full-sample mean, the adstock of future spend you do not actually know) makes the backtest look better than reality.
+- **Structural breaks:** Poland's distribution rose steadily through 2024 and 2025. A trend term absorbs a smooth change; a sudden listing gain or loss does not extrapolate. Check the residuals of the last 26 weeks.
+- **Known inputs that are not known:** price and promotion share are "known" only if the commercial plan is fixed. If it is not, forecast with scenarios, not with one number.
+:::
+
+::: {.callout-note title="Prompt pattern"}
+*"Create the 13 future rows for Q1 2026 for each country with media, price and promo share at their 2025 averages, the 2026 holiday dummies, and adstock carried over from actual 2025 spend. Forecast with the fitted OLS and sum to a quarterly baseline with 80 % bounds."*
+
+**What to verify:** the adstock in the first future weeks is not zero (it must carry 2025 spend forward); the Easter dummy is placed relative to Easter 2026 (5 April), not copied from 2025; the trend index `t` continues from 156, it does not restart at 0.
+:::
+
+# Part B: The German geo-lift test
+
+## B1. The decision
+
+::: {.callout-important title="Decision"}
+In autumn 2025 Alpenglow raised paid social spend by 150 % (×2.5) for eight weeks in 12 German regions, leaving 28 regions as controls. **What was the causal lift in sales, what is the experimental ROAS of paid social, and does it confirm the MMM?** If the two disagree, which one should calibrate the 2027 budget?
+:::
+
+The MMM from Session 2 estimated paid social's effect from *observed* spend variation. Observed variation is planned: spend goes up when demand is expected to be high (Q4, promotions). The model controls for seasonality and promotions, but any planning information we did not model biases the coefficient upwards. The experiment breaks this link: which regions got the extra spend was decided by the analytics team, not by expected demand.
+
+## B2. Data and design
+
+```{python}
+#| label: geo-load
+geo = pd.read_csv("../../data/experiments/geolift_germany.csv", parse_dates=["week"])
+geo["period"] = np.select([geo.test_period == 1, geo.post_period == 1], ["test", "post"], default="pre")
+print(geo.shape, "| regions:", geo.region.nunique(), "| treated:", geo[geo.treated == 1].region.nunique())
+print(geo.groupby("period").week.agg(["min", "max", "nunique"]))
+test_start, test_end = geo.loc[geo.test_period == 1, "week"].agg(["min", "max"])
+geo.head(3)
+```
+
+```{python}
+#| label: fig-geo-raw
+#| fig-cap: "Average weekly sales per region, treated vs control, with the eight test weeks shaded."
+avg = geo.groupby(["week", "treated"]).sales_units_k.mean().unstack()
+fig, ax = plt.subplots()
+ax.plot(avg.index, avg[0], label="control (28 regions)", color="tab:grey")
+ax.plot(avg.index, avg[1], label="treated (12 regions)", color="tab:orange")
+ax.axvspan(test_start, test_end + pd.Timedelta(days=6), color="tab:orange", alpha=0.15, label="test window")
+ax.set_ylabel("avg sales per region (thousand units)")
+ax.legend()
+plt.tight_layout()
+```
+
+### Pre-period balance
+
+Treated regions are smaller on average than control regions (the assignment stratified on size but took every third region, so the two groups are not identical). Difference-in-differences does not need the levels to be equal; it needs the **trends** to be parallel before the test. We check both.
+
+```{python}
+#| label: balance
+pre = geo[geo.period == "pre"]
+balance = pre.groupby("treated")[["sales_units_k", "paid_social_spend_k", "population_k"]].mean().T
+balance.columns = ["control", "treated"]
+balance["ratio"] = balance.treated / balance.control
+print(balance.round(2))
+
+# pre-trend test: does the treated-control gap in log sales change over the pre-period?
+pre = pre.assign(log_sales=np.log(pre.sales_units_k), t=(pre.week - pre.week.min()).dt.days / 7)
+pretrend = smf.ols("log_sales ~ treated * t + C(region)", data=pre).fit(cov_type="cluster", cov_kwds={"groups": pre.region})
+print(f"\nPre-trend: treated x t = {pretrend.params['treated:t']:.4f} log points per week "
+      f"(SE {pretrend.bse['treated:t']:.4f}, p = {pretrend.pvalues['treated:t']:.2f})")
+```
+
+Treated regions sell about 80 % of what control regions sell, spend proportionally on paid social, and the gap did not drift in the 48 pre-test weeks (the `treated:t` slope is tiny and not significant). Parallel pre-trends are plausible, so DiD is a reasonable design.
+
+## B3. Difference-in-differences regression
+
+The DiD estimator is a regression with region fixed effects (each region's own level), week fixed effects (anything that hit all of Germany in a given week: weather, national promotions, the common seasonal pattern) and one interaction: `treated × test_period`. In logs, its coefficient is the proportional lift. We add a second interaction for the eight post-test weeks to measure carryover, and cluster standard errors by region because the 64 weekly observations of one region are not independent.
+
+```{python}
+#| label: did
+geo["log_sales"] = np.log(geo.sales_units_k)
+did = smf.ols("log_sales ~ treated:test_period + treated:post_period + C(region) + C(week)", data=geo).fit(
+    cov_type="cluster", cov_kwds={"groups": geo.region})
+
+coef = did.params["treated:test_period"]
+ci = did.conf_int().loc["treated:test_period"]
+lift_pct, ci_low, ci_high = (np.exp(coef) - 1) * 100, (np.exp(ci[0]) - 1) * 100, (np.exp(ci[1]) - 1) * 100
+carry = did.params["treated:post_period"]
+print(did.summary2().tables[1].filter(like="treated", axis=0).round(4))   # only the two interactions; 103 fixed effects hidden
+print(f"\nLift during test: {lift_pct:.2f} %  (95 % CI {ci_low:.2f} % to {ci_high:.2f} %), cluster-robust SE, {geo.region.nunique()} clusters")
+print(f"Carryover in 8 post weeks: {(np.exp(carry) - 1) * 100:.2f} %  (p = {did.pvalues['treated:post_period']:.3f})")
+```
+
+### Reading the regression output
+
+- `treated:test_period` is the number you came for: the extra log sales in treated regions during the test weeks, after removing each region's level and each week's national shock. `exp(0.056) - 1 = 5.7 %` lift.
+- Its **standard error** is cluster-robust by region: it allows the 64 observations of one region to be correlated. With 40 clusters the t-distribution approximation is acceptable; with fewer than 20 you would want a wild cluster bootstrap.
+- The **95 % confidence interval** runs from about 4.7 % to 6.8 %. A lift of zero is far outside: the campaign worked. Whether it *paid* is a separate question (B6).
+- `treated:post_period` is about 1 %, marginally significant: a small carryover into the two weeks after the test, consistent with the adstock half-life for paid social we assumed in the MMM.
+- The region and week dummies are nuisance parameters. Do not interpret them, but do not drop them either: without week effects the national Christmas build-up would be attributed to the treatment.
+
+## B4. Event study: the gap week by week
+
+A single coefficient hides the dynamics. The event-study plot shows the treated-minus-control gap in log sales for every week, centred on its pre-period mean.
+
+```{python}
+#| label: fig-event-study
+#| fig-cap: "Weekly treated minus control gap in average log sales, relative to the pre-period mean. Shaded: test weeks. Dashed: DiD estimate."
+gap = geo.groupby(["week", "treated"]).log_sales.mean().unstack()
+gap = (gap[1] - gap[0])
+gap = gap - gap[gap.index < test_start].mean()
+fig, ax = plt.subplots()
+ax.axhline(0, color="black", lw=0.8)
+ax.plot(gap.index, gap.values * 100, marker="o", ms=3, color="tab:blue")
+ax.axvspan(test_start, test_end + pd.Timedelta(days=6), color="tab:orange", alpha=0.15)
+ax.axhline(coef * 100, color="tab:orange", ls="--", label=f"DiD estimate {lift_pct:.1f} %")
+ax.set_ylabel("treated minus control gap (%)")
+ax.legend()
+plt.tight_layout()
+```
+
+The pre-period gap hovers around zero with noise of about plus or minus 2 percentage points: this is what "parallel trends" looks like in practice. The gap jumps to about 5 to 7 points in the eight test weeks, then decays over roughly two weeks after the campaign stops. The post-test weeks are the carryover. A geo test that is analysed only on the test window underestimates the total effect slightly; a test read only until "the week the gap returns to zero" overestimates it. Report both.
+
+## B5. Synthetic control for one treated region
+
+Difference-in-differences gives one average effect. A **synthetic control** builds a tailor-made counterfactual for a single treated region: a weighted combination of control regions that tracks the treated region as closely as possible in the pre-period. We use ridge regression with non-negative weights on the 28 control regions' sales (the `sklearn` way to write it; CausalPy does the Bayesian version in the appendix).
+
+```{python}
+#| label: fig-synth
+#| fig-cap: "Synthetic control for Frankfurt: actual vs weighted combination of control regions fitted on the pre-period."
+region = "Frankfurt"
+wide = geo.pivot(index="week", columns="region", values="sales_units_k")
+controls = geo.loc[geo.treated == 0, "region"].unique()
+pre_mask = wide.index < test_start
+test_mask = (wide.index >= test_start) & (wide.index <= test_end)
+
+sc = Ridge(alpha=1.0, positive=True, fit_intercept=False).fit(wide.loc[pre_mask, controls], wide.loc[pre_mask, region])
+synthetic = pd.Series(sc.predict(wide[controls]), index=wide.index)
+weights = pd.Series(sc.coef_, index=controls).sort_values(ascending=False)
+
+sc_lift = (wide.loc[test_mask, region].sum() / synthetic[test_mask].sum() - 1) * 100
+pre_fit = mape(wide.loc[pre_mask, region], synthetic[pre_mask])
+print(f"Top donor weights (sum of all 28 weights = {weights.sum():.2f}):\n{weights.head(5).round(3)}\n")
+print(f"Pre-period fit MAPE {pre_fit:.1f} %  |  synthetic-control lift for {region} during test: {sc_lift:.1f} %")
+
+fig, ax = plt.subplots()
+ax.plot(wide.index, wide[region], label=f"{region} actual", color="tab:orange")
+ax.plot(synthetic.index, synthetic, label="synthetic control", color="tab:grey", ls="--")
+ax.axvspan(test_start, test_end + pd.Timedelta(days=6), color="tab:orange", alpha=0.15)
+ax.set_ylabel("sales (thousand units)")
+ax.legend()
+plt.tight_layout()
+```
+
+The synthetic Frankfurt tracks the real Frankfurt within a few percent before the test and falls below it during the test weeks. The implied lift for one region is noisier than the DiD average over 12 regions, which is why synthetic control is mostly used when there are only one or two treated units (one country, one city), while DiD with many treated regions is the workhorse of geo tests.
+
+## B6. From lift to ROAS, and comparison with the MMM
+
+The experiment delivers a percentage lift. The budget decision needs **incremental units, incremental spend and ROAS**.
+
+```{python}
+#| label: exp-roas
+treated_test = geo[(geo.treated == 1) & (geo.test_period == 1)]
+treated_pre = geo[(geo.treated == 1) & (geo.period == "pre")]
+
+actual_units = treated_test.sales_units_k.sum()                   # thousand units in 12 regions x 8 weeks
+counterfactual_units = actual_units / (1 + lift_pct / 100)
+incremental_units = actual_units - counterfactual_units
+inc_units_low = actual_units - actual_units / (1 + ci_low / 100)
+inc_units_high = actual_units - actual_units / (1 + ci_high / 100)
+
+test_spend = treated_test.paid_social_spend_k.sum()
+usual_spend = treated_pre.paid_social_spend_k.mean() * len(treated_test)   # what the 12 regions would have spent in 8 weeks
+incremental_spend = test_spend - usual_spend
+
+price_de_2025 = panel[(panel.country == "DE") & (panel.year == 2025)].price_eur.mean()
+exp_roas = incremental_units * price_de_2025 / incremental_spend
+exp_roas_low, exp_roas_high = inc_units_low * price_de_2025 / incremental_spend, inc_units_high * price_de_2025 / incremental_spend
+
+print(f"Actual sales in test (treated):      {actual_units:9.1f} k units")
+print(f"Counterfactual (no uplift):          {counterfactual_units:9.1f} k units")
+print(f"Incremental units:                   {incremental_units:9.1f} k  (95 % CI {inc_units_low:.1f} to {inc_units_high:.1f})")
+print(f"Paid social spend in test:           {test_spend:9.1f} k EUR, usual level {usual_spend:.1f} k EUR")
+print(f"Incremental spend:                   {incremental_spend:9.1f} k EUR")
+print(f"Average DE price 2025:               {price_de_2025:9.2f} EUR")
+print(f"Experimental ROAS (incremental):     {exp_roas:9.2f}  (95 % CI {exp_roas_low:.2f} to {exp_roas_high:.2f})")
+```
+
+Now the comparison with your MMM. Open your Session 2 lab output and read the ROAS of paid social in Germany from your contribution table (the row `paid_social`, column `roas`). Type it below; the value shown is a placeholder.
+
+```{python}
+#| label: compare-mmm
+mmm_roas_paid_social_de = 1.7   # <-- replace with YOUR Session 2 number
+
+compare = pd.DataFrame({
+    "source": ["MMM (Session 2, average ROAS 2023-2025)", "Geo test (incremental ROAS of +150 % spend, 8 weeks)"],
+    "roas": [mmm_roas_paid_social_de, exp_roas],
+    "measures": ["average return on all paid social spend", "marginal return on the extra spend"],
+    "spend per week per k units sold": [
+        panel[(panel.country == "DE") & (panel.year == 2025)].eval("spend_paid_social_k / sales_units_k").mean(),
+        geo[geo.period == "pre"].eval("paid_social_spend_k / sales_units_k").mean()],
+}).set_index("source").round(2)
+compare
+```
+
+### Interpretation
+
+The experiment says the extra 1.75 million euros of paid social generated about 75 000 incremental units, roughly 240 000 euros of revenue: an **incremental ROAS of about 0.14**, far below the MMM's average ROAS of about 1.5 to 2. Three reasons, in decreasing order of importance, and all three belong in the board deck:
+
+1. **Average vs marginal.** The MMM ROAS is the average return over *all* paid social spend. The test measures the return on the *last* 150 % of spend, in a channel with a saturating response. Under saturation marginal ROAS is always below average ROAS; the MMM's own response curve (Session 2) predicts a marginal ROAS well below its average for a 2.5× spend jump. Compare the test with the MMM's **mROAS at 2.5× spend**, not with its average ROAS.
+2. **Scale mismatch in the data.** The last column shows that the geo dataset records more than ten times as much paid social spend per unit sold as the national panel (0.96 vs 0.07 thousand EUR per thousand units). This is typical when experiment data come from the ad platform's reporting and the MMM from finance. Before you trust either ROAS, reconcile the spend definitions (gross vs net, agency fees, test-only line items). Flag it; do not hide it.
+3. **Short window.** Eight weeks capture the immediate effect plus two weeks of carryover; the MMM accumulates carryover over the full adstock window. This closes a small part of the gap, not most of it.
+
+What should calibrate the budget? The **lift in units per extra euro** from the test, fed into the MMM as a lift-test measurement (PyMC-Marketing's `add_lift_test_measurements`), so the model's saturation curve for paid social in Germany is pulled towards the experimental slope while the model keeps estimating the other channels and countries. The concept is shown in the appendix; the mechanics belong in the group project.
+
+::: {.callout-tip title="Check yourself"}
+- Reproduce the lift from the event-study plot by eye: is the average test-week gap close to 5.7 %?
+- Why do we cluster by region and not by week? What would happen to the standard error if we used plain OLS SEs?
+- What is the difference between the 5.7 % lift and the experimental ROAS of 0.14? Which number is causal, which depends on prices and spend definitions?
+- If the MMM's mROAS at 2.5× spend is, say, 0.4, is the experiment still in conflict with the model?
+:::
+
+::: {.callout-note title="Prompt pattern"}
+*"Estimate a difference-in-differences regression of log sales on treated × test_period with region and week fixed effects and standard errors clustered by region. Report the lift in percent with a 95 % confidence interval, test for parallel pre-trends, and draw an event-study plot of the weekly treated-control gap."*
+
+**What to verify:** the interaction is `treated:test_period` and not `treated + test_period` without the product; the week fixed effects are categorical (`C(week)`), not a linear trend; the number of clusters equals the number of regions; the lift is `exp(coef) - 1`, not the raw coefficient.
+:::
+
+# Part C: Attribution across six markets
+
+## C1. The decision
+
+::: {.callout-important title="Decision"}
+The digital team reports last-touch attribution from the web analytics tool: paid search "drives" 29 % of conversions, display 19 %, paid social 18 %. The MMM says paid social is the second most productive channel in Italy and Poland. **Which attribution method should the country teams use to split their digital budgets, and why do the methods disagree?**
+:::
+
+Attribution works on **user-level** data (journeys: sequences of touchpoints ending in a conversion or not), the MMM on **aggregate** weekly data. Attribution sees the digital journey in detail but cannot see TV, out-of-home, or anything that happens outside tracked devices. It also cannot see the counterfactual: would the customer have bought anyway?
+
+## C2. Data and conversion rates
+
+```{python}
+#| label: journeys-load
+journeys = pd.read_csv("../../data/attribution/journeys.csv", parse_dates=["start_date"])
+ATT_CH = ["display", "paid_search", "paid_social", "email", "affiliate", "organic"]
+print(journeys.shape)
+conv_rate = journeys.groupby("country").agg(journeys=("journey_id", "size"), conversions=("converted", "sum"),
+                                             conversion_rate=("converted", "mean"), mobile_share=("mobile", "mean"),
+                                             avg_path_length=("path_length", "mean")).round(3)
+conv_rate
+```
+
+Conversion rates range from 15 % (Poland, Italy) to 23 % (Netherlands, Germany). Mobile share is highest in Poland and Italy. Keep these in mind: a method that rewards "the channel that was there when the customer converted" will favour whichever channel dominates the last step in each market.
+
+## C3. Rule-based attribution: last touch and first touch
+
+```{python}
+#| label: rule-based
+converters = journeys[journeys.converted == 1]
+last_touch = converters.last_touch.value_counts(normalize=True).reindex(ATT_CH)
+first_touch = converters.first_touch.value_counts(normalize=True).reindex(ATT_CH)
+linear = converters[[f"n_{c}" for c in ATT_CH]].div(converters.path_length, axis=0).mean()
+linear.index = ATT_CH
+rules = pd.DataFrame({"last_touch": last_touch, "first_touch": first_touch, "linear": linear})
+rules.round(3)
+```
+
+Each column sums to one and distributes the 11 679 conversions across channels by a rule: the last channel gets the credit (last touch), the first channel (first touch), or every touch in the path an equal share (linear). The rules differ only mildly here because journeys are short (average path length under three). Paid search is the big winner under last touch (29 %) because customers who are about to buy search for the brand: the rule rewards intent, not influence.
+
+## C4. Logistic regression attribution
+
+The regression view: model the probability of conversion as a function of **how many times each channel touched the customer**, controlling for device and customer status, with country fixed effects. The coefficients are the channels' marginal effects on the log odds of conversion. Attribution then follows by **removal**: how many conversions would the model predict if a channel had not touched anyone?
+
+```{python}
+#| label: logit
+formula = "converted ~ " + " + ".join(f"n_{c}" for c in ATT_CH) + " + mobile + new_customer + C(country)"
+logit = smf.logit(formula, data=journeys).fit(disp=0)
+print(logit.summary().tables[1])
+```
+
+### Reading the logistic regression output
+
+- Coefficients are on the **log-odds scale**. `n_paid_search = 0.68` means one additional paid search touch multiplies the odds of conversion by `exp(0.68) = 1.98`, holding the other touches, device and country constant. `n_display = 0.12` means a display touch changes the odds by only 13 %.
+- The country dummies are relative to Austria (the omitted category, alphabetically first): Germany and the Netherlands convert better, Italy and Poland worse, for the same journey.
+- `mobile` is positive and `new_customer` negative: returning customers on mobile convert most.
+- `P>|z|` is the p-value; all channels are clearly significant with 60 000 journeys. Significance is cheap here; the size of the coefficient is what matters.
+
+```{python}
+#| label: removal
+def removal_shares(model, df: pd.DataFrame) -> pd.Series:
+    """Removal-effect attribution: predicted conversions with vs without each channel, normalised to shares."""
+    base = np.asarray(model.predict(df)).sum()
+    effects = {}
+    for c in ATT_CH:
+        without = df.copy()
+        without[f"n_{c}"] = 0
+        effects[c] = base - np.asarray(model.predict(without)).sum()
+    effects = pd.Series(effects)
+    return effects / effects.sum()
+
+rules["logit_removal"] = removal_shares(logit, journeys)
+rules.round(3)
+```
+
+The removal effects promote paid search further (37 %) and demote display sharply (19 % to 7 %): display is often present in a journey but barely raises the conversion probability. Paid social (16 %), email (14 %) and organic (18 %) land in between. The regression is the first method that asks "did this touch *change* the outcome?" rather than "was this touch *there*?".
+
+## C5. Country × channel interactions
+
+Does paid social work the same everywhere? Add interactions between the touch counts and country, and compare paid social's attributed share in Italy and Poland with Austria.
+
+```{python}
+#| label: interactions
+formula_int = "converted ~ (" + " + ".join(f"n_{c}" for c in ATT_CH) + ") * C(country) + mobile + new_customer"
+logit_int = smf.logit(formula_int, data=journeys).fit(disp=0, maxiter=200)
+print(f"Log-likelihood: pooled {logit.llf:.0f}, with interactions {logit_int.llf:.0f}; "
+      f"LR statistic {2 * (logit_int.llf - logit.llf):.1f} on {logit_int.df_model - logit.df_model:.0f} df")
+
+by_country = pd.DataFrame({c: removal_shares(logit_int, journeys[journeys.country == c]) for c in COUNTRIES})
+by_country.round(3)
+```
+
+```{python}
+#| label: fig-social-by-country
+#| fig-cap: "Paid social's attributed share of conversions by country, logistic regression with country × channel interactions."
+fig, ax = plt.subplots(figsize=(8, 3.5))
+social = by_country.loc["paid_social"].sort_values()
+ax.barh(social.index, social.values * 100, color=["tab:orange" if c in ("IT", "PL") else "tab:blue" for c in social.index])
+ax.set_xlabel("attributed share of conversions (%)")
+ax.set_title("Paid social: removal-effect attribution by country")
+plt.tight_layout()
+```
+
+The interaction model fits clearly better (the LR statistic is far above any critical value for 30 extra parameters). Paid social is attributed about 26 % of conversions in Italy and 20 % in Poland, against roughly 15 % in Austria and 14 % in Germany. In the pooled model all four would get the same 16 %. This is the attribution-side echo of what the hierarchical MMM found in Session 3: the same channel has a different response in different markets, and a pooled number is wrong for every country.
+
+## C6. Shapley-value attribution
+
+The Shapley value asks: averaged over every order in which channels could have "joined" the journey, how much does each channel add to the predicted number of conversions? We use the fitted logistic regression as the value function (predicted conversions when only the channels in a subset are allowed to touch) and compute it exactly over all 64 subsets of six channels for a sample of 2 000 German journeys.
+
+```{python}
+#| label: shapley
+sample = journeys[journeys.country == "DE"].sample(2000, random_state=42)
+
+def value(subset: frozenset) -> float:
+    """Predicted conversions when only channels in `subset` keep their touches."""
+    d = sample.copy()
+    for c in ATT_CH:
+        if c not in subset:
+            d[f"n_{c}"] = 0
+    return float(np.asarray(logit.predict(d)).sum())
+
+values = {frozenset(S): value(frozenset(S)) for r in range(len(ATT_CH) + 1) for S in itertools.combinations(ATT_CH, r)}
+
+n = len(ATT_CH)
+shapley = {}
+for c in ATT_CH:
+    total = 0.0
+    for S, v in values.items():
+        if c in S:
+            continue
+        weight = factorial(len(S)) * factorial(n - len(S) - 1) / factorial(n)
+        total += weight * (values[S | {c}] - v)
+    shapley[c] = total
+shapley = pd.Series(shapley)
+print(f"Sum of Shapley values {shapley.sum():.1f} = v(all) - v(none) = {values[frozenset(ATT_CH)] - values[frozenset()]:.1f}  (efficiency check)")
+shapley_share = shapley / shapley.sum()
+shapley_share.round(3)
+```
+
+The efficiency check confirms the Shapley values add up exactly to the total media-driven conversions in the sample. The shares are close to the removal effects because the logit is nearly additive in the touch counts; they would diverge if channels interacted strongly (for example if display only worked when followed by search). Shapley is the fair-division answer; its cost is 2^k model evaluations, which is why vendors approximate it for more than about ten channels.
+
+## C7. Three attribution tables in one chart
+
+```{python}
+#| label: fig-attribution-compare
+#| fig-cap: "Share of conversions attributed to each channel under four methods (Shapley computed on 2 000 German journeys, other methods on all journeys)."
+compare_att = rules[["last_touch", "first_touch", "logit_removal"]].copy()
+compare_att["shapley_DE"] = shapley_share
+ax = (compare_att * 100).plot.bar(figsize=(8, 4), width=0.8, color=["tab:blue", "tab:cyan", "tab:orange", "tab:green"])
+ax.set_ylabel("share of conversions (%)")
+ax.set_xlabel("")
+ax.legend(title="method", fontsize=8)
+ax.tick_params(axis="x", rotation=0)
+plt.tight_layout()
+compare_att.round(3)
+```
+
+### Interpretation: why attribution and MMM disagree, and how to triangulate
+
+- **Rule-based methods measure presence, regression methods measure influence.** Display loses two thirds of its credit when we move from last touch to removal effects; paid search gains. Budget split on last touch would over-fund display.
+- **Attribution differs by market** because channel mix, device and consumer habits differ: paid social is twice as productive in Italy and Poland as in Austria. One global attribution rule hides this.
+- **Attribution cannot see offline media or the counterfactual.** It allocates the conversions it observes among the channels it tracks. If TV made the customer search for the brand, the search click gets the credit. The MMM sees TV but not the individual journey. Neither is "right"; they answer different questions.
+- **Triangulation ("unified measurement"):** use the experiment as the anchor (causal, but for one channel in one country), the MMM for the cross-channel, cross-country picture (calibrated to the experiment), and attribution for the *within-digital* split and for weekly optimisation. When the three disagree, the disagreement itself is information about saturation, scale definitions or unmeasured channels.
+
+::: {.callout-tip title="Check yourself"}
+- Which channel changes most between last touch and removal effects? Explain in one sentence why.
+- The coefficient on `n_paid_search` is 0.68. By how much does one extra search touch multiply the odds of conversion?
+- Why does the pooled logit give paid social the same share in every country? What does the interaction model add?
+- The Shapley shares sum to one by construction. What does the efficiency check (sum of Shapley values = v(all) - v(none)) protect you against?
+:::
+
+::: {.callout-note title="Prompt pattern"}
+*"Fit a logistic regression of conversion on the touch counts of six channels, mobile, new_customer and country fixed effects with statsmodels. Convert it to removal-effect attribution: predicted conversions with each channel's touches set to zero vs the baseline, normalised to shares. Then add country × channel interactions and compare paid social's share in IT, PL and AT."*
+
+**What to verify:** predicted conversions with all channels present equal the observed conversions (a logit with intercepts reproduces the mean); removal effects are non-negative for every channel; shares sum to one; the interaction model's log-likelihood is higher than the pooled model's.
+:::
+
+# Lab check-in 2
+
+Lab check-in 2 is individual and auto-checked. Save one JSON file with the numbers below from **your** run of this lab, using your own choice of countries. The checker compares your numbers with tolerance bands, so use the code exactly as written and replace only the two country choices and your GitHub username.
+
+| Key | Meaning |
+|---|---|
+| `forecast_country` | the country you report forecasting accuracy for |
+| `forecast_mape_regression` | mean MAPE of the regression forecaster over the four 2025 origins for that country |
+| `forecast_mape_seasonal_naive` | the same for seasonal naive |
+| `geolift_lift_pct`, `geolift_ci_low`, `geolift_ci_high` | DiD lift in % with its 95 % CI |
+| `geolift_roas` | experimental ROAS of paid social in Germany |
+| `attribution_country` | the country you report attribution for |
+| `attribution_last_touch` | dict channel → share of conversions, last touch, that country |
+| `attribution_logit` | dict channel → share, removal effects from the interaction logit, that country |
+
+```{python}
+#| label: check-in
+GITHUB_USERNAME = "your_github_username"     # <-- replace
+FORECAST_COUNTRY = "DE"                      # <-- your choice
+ATTRIBUTION_COUNTRY = "PL"                   # <-- your choice
+
+lt_country = journeys[(journeys.converted == 1) & (journeys.country == ATTRIBUTION_COUNTRY)].last_touch.value_counts(normalize=True).reindex(ATT_CH).fillna(0)
+
+check = {
+    "forecast_country": FORECAST_COUNTRY,
+    "forecast_mape_regression": round(float(mape_table.loc[FORECAST_COUNTRY, "regression"]), 3),
+    "forecast_mape_seasonal_naive": round(float(mape_table.loc[FORECAST_COUNTRY, "seasonal_naive"]), 3),
+    "geolift_lift_pct": round(float(lift_pct), 3),
+    "geolift_ci_low": round(float(ci_low), 3),
+    "geolift_ci_high": round(float(ci_high), 3),
+    "geolift_roas": round(float(exp_roas), 4),
+    "attribution_country": ATTRIBUTION_COUNTRY,
+    "attribution_last_touch": {c: round(float(lt_country[c]), 4) for c in ATT_CH},
+    "attribution_logit": {c: round(float(by_country.loc[c, ATTRIBUTION_COUNTRY]), 4) for c in ATT_CH},
+}
+
+from pathlib import Path
+out_dir = Path("../../assignments/checks/submissions") / GITHUB_USERNAME
+out_dir.mkdir(parents=True, exist_ok=True)
+(out_dir / "check_session4.json").write_text(json.dumps(check, indent=2))
+print(json.dumps(check, indent=2))
+```
+
+Commit the file `assignments/checks/submissions/<your_github_username>/check_session4.json` to your fork and open a pull request to the course repository before the deadline in the syllabus. The auto-check runs `pytest assignments/checks` on your file.
+
+# Your turn
+
+1. Change `FORECAST_COUNTRY` and `ATTRIBUTION_COUNTRY`, re-run the check-in chunk and read the two tables again: do the conclusions change?
+2. In B3, drop `C(week)` from the DiD formula. What happens to the lift estimate and why?
+3. In C4, remove `C(country)` from the logit. Which channel's share moves most? Connect this to the conversion-rate table in C2.
+4. Exercises 1 to 5 in `exercises.qmd` go deeper: a 26-week horizon, a placebo DiD, lift in levels instead of logs, attribution for new vs returning customers, and a memo on a geo test in Poland.
+
+# Appendix: optional Bayesian tools
+
+The chunks below are not executed when the lab renders (`eval: false`). They show how the two Bayesian libraries installed in the course environment formalise what we did by hand.
+
+**CausalPy synthetic control** (Bayesian weights with a proper posterior for the gap):
+
+```{python}
+#| label: causalpy
+#| eval: false
+import causalpy as cp
+wide_sc = wide.copy()
+wide_sc.index = pd.RangeIndex(len(wide_sc))          # CausalPy wants a numeric or datetime index
+result = cp.SyntheticControl(
+    data=wide_sc,
+    treatment_time=int(pre_mask.sum()),             # first test week as an integer index
+    control_units=list(controls),
+    treated_units=["Frankfurt"],
+    model=cp.pymc_models.WeightedSumFitter(sample_kwargs={"draws": 500, "tune": 500, "chains": 2,
+                                                          "random_seed": 42, "progressbar": False}),
+)
+result.summary()
+result.plot()
+```
+
+**PyMC-Marketing: calibrating the MMM with the lift test.** The model's saturation curve for paid social is conditioned on the experimental change in sales for the experimental change in spend. `x` is the usual weekly spend, `delta_x` the extra spend per week, `delta_y` the extra units per week, `sigma` its standard error.
+
+```{python}
+#| label: lift-calibration
+#| eval: false
+weeks_in_test = 8
+df_lift = pd.DataFrame({
+    "channel": ["spend_paid_social_k"],
+    "x": [usual_spend / weeks_in_test],                        # weekly spend without the test (thousand EUR)
+    "delta_x": [incremental_spend / weeks_in_test],            # extra weekly spend (thousand EUR)
+    "delta_y": [incremental_units / weeks_in_test],            # extra weekly units (thousand)
+    "sigma": [(inc_units_high - inc_units_low) / 3.92 / weeks_in_test],   # SE from the 95 % CI
+})
+mmm_de.build_model(X_de, y_de)                    # the Germany MMM object from Session 3
+mmm_de.add_lift_test_measurements(df_lift)
+mmm_de.fit(X_de, y_de, draws=500, tune=500, chains=2, random_seed=42, progressbar=False)
+```
+
+Note that the geo test covered 12 of about 40 regions; before feeding `delta_x` and `delta_y` into a national model, scale both to the national level (or run the calibration on a per-region model). The scale mismatch discussed in B6 has to be resolved first.

@@ -1,0 +1,75 @@
+---
+title: "Exercises 1: Price and promotion elasticities"
+subtitle: "International Marketing Analytics · Session 1 · WU Vienna"
+date: 2026-10-06
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+---
+
+Work through these after the lab, in your group repository, one notebook per person. Exercises 1 to 4 take 15 to 20 minutes each with an AI assistant; Exercise 5 is the team deliverable. Solutions are discussed in Session 2. Keep a prompt log at the end of your notebook.
+
+```{python}
+import sys; sys.path.append("../../assets")
+from mma import *
+import matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+import warnings; warnings.filterwarnings("ignore")
+
+df = load_panel("../../data/mmm/alpenglow_weekly.csv")
+df = add_fourier(df, order=2)
+df["log_sales"] = np.log(df.sales_units_k)
+df["log_price"] = np.log(df.price_eur)
+meta = pd.read_csv("../../data/mmm/country_meta.csv")
+FULL = ("log_sales ~ log_price + promo_share + xmas + easter + valentine "
+        "+ sin_1 + cos_1 + sin_2 + cos_2 + t")
+```
+
+## Exercise 1: Promotion response by country
+
+The lab estimated a `promo_share` coefficient for every country. In a log model, a coefficient $\beta$ on a share means that 10 percentage points more volume on promotion change units by $100 \times (e^{0.1\beta} - 1)$ %.
+
+a. Fit `FULL` for each country and collect the promotion coefficient with its 95 % confidence interval.
+b. Convert coefficient and interval into "% units per 10 points of promo share" and chart them with error bars.
+c. Which pairs of countries differ significantly? Use the pooled model from the lab (`C(country):promo_share`) and `t_test` for the pair you think differs most.
+d. One sentence: why is the promotion coefficient estimated so much more precisely than the price elasticity?
+
+## Exercise 2: Add distribution
+
+Distribution (share of outlets stocking the brand) grew from about 0.35 to 0.9 in Poland and stayed near 0.78 elsewhere.
+
+a. Add `np.log(distribution)` to `FULL` (call the new formula `FULL_D`) and re-estimate the six price elasticities and the six distribution elasticities.
+b. Which country's price elasticity moves most compared with the lab? Explain why that country, using the correlation between `log(distribution)` and `t` in that country.
+c. Is the distribution elasticity similar across countries? Should it be?
+d. Does adding distribution change the 2025 holdout MAPE for Poland?
+
+## Exercise 3: Does Poland differ from Germany?
+
+a. Re-estimate the pooled interaction model from the lab with Germany as the reference category: `C(country, Treatment('DE'))`.
+b. Read Poland's elasticity and the DE versus PL difference directly from the coefficient table. Compare the p-value with the `t_test` result in the lab (Section 4.6).
+c. Write two sentences for the Polish country manager: what the test says and what it does not say.
+d. Bonus: how large would the DE versus PL difference have to be for this test to reject at 5 %, given its standard error?
+
+## Exercise 4: Own- and cross-price elasticities (chocolate brands)
+
+`../../data/legacy/chocolate_dataset.xlsx` holds 68 weeks of a retailer's data for four chocolate brands: `sales` (brand 1 units), `price1` to `price4`, `feature1` to `feature4` (share of stores with a feature ad), `display1` to `display4` (share of stores with an in-store display), `fand1`, `fand3`, `fand4` (feature and display together), `temp`, `december`, `easter`.
+
+a. Load the file with `pd.read_excel` and describe it. Which brand is the cheapest, which the most expensive?
+b. Regress `log(sales)` on the four log prices. Report brand 1's own-price elasticity and the three cross-price elasticities with intervals. Which brand is the closest substitute? Are the cross effects significant?
+c. Add `feature1`, `display1` and `fand1`. Does the own-price elasticity change? Why is `feature1` so strongly correlated with `price1` (check the correlation), and what does that mean for separating the two effects?
+d. Plot `sales` over time and find the outlier week. Re-estimate without it. Does the own elasticity change much?
+
+## Exercise 5: Is our price too high in Poland?
+
+Write exactly five sentences for the management meeting, in `poland_answer.md` in your group repository. Each sentence has one job:
+
+1. The estimate: Poland's price elasticity with its 95 % interval.
+2. The arithmetic: what a 10 % cut does to units, revenue and profit at a 40 % margin.
+3. The comparison: how Poland compares with the other five markets on price and on promotion response.
+4. The recommendation: cut, hold or test, and why.
+5. The caveat: the most important thing this model leaves out.
+
+Commit the file; every group member should have at least one commit in the repository by Friday.

@@ -1,0 +1,173 @@
+---
+title: "Session 1 solutions: Price and promotion elasticities"
+subtitle: "Instructor copy. Do not distribute."
+date: 2026-10-06
+format:
+  html:
+    toc: true
+execute:
+  warning: false
+---
+
+::: {.callout-warning}
+This file reads from `instructor/ground_truth/`. Student-facing files never do.
+:::
+
+```{python}
+import sys, json; sys.path.append("../../assets")
+from mma import *
+import matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
+import statsmodels.api as sm
+import warnings; warnings.filterwarnings("ignore")
+plt.rcParams.update({"figure.figsize": (8, 4), "axes.spines.top": False, "axes.spines.right": False})
+
+df = load_panel("../../data/mmm/alpenglow_weekly.csv")
+df = add_fourier(df, order=2)
+df["log_sales"] = np.log(df.sales_units_k)
+df["log_price"] = np.log(df.price_eur)
+df["log_dist"] = np.log(df.distribution)
+meta = pd.read_csv("../../data/mmm/country_meta.csv").set_index("country")
+FULL = ("log_sales ~ log_price + promo_share + xmas + easter + valentine "
+        "+ sin_1 + cos_1 + sin_2 + cos_2 + t")
+gt = json.load(open("../ground_truth/mmm_ground_truth_summary.json"))
+truth = pd.DataFrame({"true_price_elasticity": gt["price_elasticity"], "true_promo_effect": gt["promo_effect"]})
+```
+
+## Lab results against the ground truth
+
+```{python}
+rows = []
+for c in COUNTRIES:
+    m = smf.ols(FULL, data=df[df.country == c]).fit(); ci = m.conf_int()
+    rows.append({"country": c, "price_elasticity": m.params.log_price, "ci_low": ci.loc["log_price", 0],
+                 "ci_high": ci.loc["log_price", 1], "promo_coef": m.params.promo_share, "R2": m.rsquared})
+lab = pd.DataFrame(rows).set_index("country").join(truth)
+lab["truth_in_ci"] = (lab.true_price_elasticity >= lab.ci_low) & (lab.true_price_elasticity <= lab.ci_high)
+lab.round(3)
+```
+
+**Why the lab estimates are attenuated.** The data-generating process is `sales = baseline × (price/ref)^e × (1 + promo_eff × promo) × ... + media contributions`, with media adding about 18 to 25 % of units. The Session 1 model omits media and fits logs of total sales, so the elasticity of the *baseline* is diluted by a media component that does not respond to price. The point estimates are 0.3 to 1.1 less negative than the truth (-1.4 to -2.3) and the truth lies inside the 95 % interval for Austria, Germany, France and the Netherlands but not for Italy and Poland. The promotion coefficients are also smaller than the generator's `promo_eff` (0.5 to 0.95) because `log(1 + promo_eff × promo)` is concave and the model is linear in `promo_share`; the mapping is roughly `promo_eff × promo / (1 + promo_eff × mean promo)` plus the dilution. The check below removes the true media contribution from sales and re-estimates: the elasticities move to -1.3 to -2.1 and the ordering (Poland and Italy most elastic) appears. This is the hook for Session 2: the price story needs the media story.
+
+```{python}
+contrib = pd.read_csv("../ground_truth/mmm_true_contributions.csv", parse_dates=["week"])
+contrib["media"] = contrib.filter(like="contrib_").sum(axis=1)
+chk = df.merge(contrib[["week", "country", "media"]], on=["week", "country"])
+chk["log_base_obs"] = np.log(chk.sales_units_k - chk.media)
+rows = []
+for c in COUNTRIES:
+    m = smf.ols(FULL.replace("log_sales", "log_base_obs"), data=chk[chk.country == c]).fit()
+    rows.append({"country": c, "elasticity_without_media": m.params.log_price})
+lab.join(pd.DataFrame(rows).set_index("country"))[["price_elasticity", "elasticity_without_media", "true_price_elasticity"]].round(2)
+```
+
+## Exercise 1: Promotion response by country
+
+```{python}
+rows = []
+for c in COUNTRIES:
+    m = smf.ols(FULL, data=df[df.country == c]).fit(); ci = m.conf_int().loc["promo_share"]
+    b, lo, hi = m.params.promo_share, ci[0], ci[1]
+    rows.append({"country": c, "promo_coef": b, "se": m.bse.promo_share,
+                 "pct_per_10pts": 100 * (np.exp(0.1 * b) - 1),
+                 "lo": 100 * (np.exp(0.1 * lo) - 1), "hi": 100 * (np.exp(0.1 * hi) - 1)})
+promo = pd.DataFrame(rows).set_index("country")
+promo.round(2)
+```
+
+```{python}
+fig, ax = plt.subplots()
+ax.errorbar(promo.index, promo.pct_per_10pts, yerr=[promo.pct_per_10pts - promo.lo, promo.hi - promo.pct_per_10pts],
+            fmt="o", capsize=5, color="tab:blue", ecolor="tab:gray")
+ax.set_ylabel("% units per 10 points of promo share (95 % CI)"); ax.set_title("Promotion response by country")
+plt.tight_layout(); plt.show()
+```
+
+```{python}
+pooled = smf.ols("log_sales ~ C(country) * log_price + C(country):promo_share + C(country):t "
+                 "+ xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2", data=df).fit()
+for pair in [("PL", "FR"), ("PL", "NL"), ("IT", "FR"), ("PL", "DE"), ("DE", "FR")]:
+    t = pooled.t_test(f"C(country)[{pair[0]}]:promo_share - C(country)[{pair[1]}]:promo_share = 0")
+    print(pair, "diff =", round(float(t.effect[0]), 3), "p =", round(float(t.pvalue), 4))
+```
+
+**Answer.** Ten percentage points more volume on promotion lift units by 4.2 % in Austria, 4.6 % in Germany, 3.8 % in France, 6.0 % in Italy, 4.1 % in the Netherlands and 6.6 % in Poland (intervals about ±1.4 points). Poland versus France, Poland versus the Netherlands, Poland versus Germany and Italy versus France differ at the 5 % level; Germany versus France does not. Promotion is estimated precisely because `promo_share` varies a lot from week to week (0 to 0.95) and most of that variation is independent of the other regressors; after promotion and trend are controlled, `log_price` varies by only about 1.5 % (its residual standard deviation), so its coefficient is imprecise.
+
+## Exercise 2: Add distribution
+
+```{python}
+FULL_D = FULL + " + log_dist"
+rows = []
+for c in COUNTRIES:
+    m0 = smf.ols(FULL, data=df[df.country == c]).fit()
+    m1 = smf.ols(FULL_D, data=df[df.country == c]).fit()
+    d = df[df.country == c]
+    rows.append({"country": c, "price_lab": m0.params.log_price, "price_with_dist": m1.params.log_price,
+                 "dist_elasticity": m1.params.log_dist, "dist_se": m1.bse.log_dist,
+                 "corr_logdist_t": d.log_dist.corr(d.t), "trend_pct_yr_with_dist": 100 * (np.exp(52 * m1.params.t) - 1)})
+ex2 = pd.DataFrame(rows).set_index("country"); ex2.round(3)
+```
+
+```{python}
+train = df[df.year < 2025]; test = df[df.year == 2025]
+for name, f in [("FULL", FULL), ("FULL_D", FULL_D)]:
+    m = smf.ols(f, data=train[train.country == "PL"]).fit()
+    print(name, "Poland holdout MAPE", round(mape(np.exp(m.predict(test[test.country == "PL"])), test[test.country == "PL"].sales_units_k), 2))
+```
+
+**Answer.** Poland moves most (-1.18 to -0.92) and France second (-1.09 to -1.33); the other four barely change. In Poland distribution rose from 0.35 to 0.9 and correlates at 0.98 with `t`, so `log_dist` and the trend compete for the same growth: the trend coefficient drops from 28 % to about 10 % per year and the price coefficient, which is also trending through inflation, shifts. The distribution elasticity is about 0.8 in Poland (true value 0.8) and noisy elsewhere because distribution hardly varies outside Poland (standard deviation 0.05 against 0.16): a coefficient can only be estimated where the variable moves. The Polish holdout MAPE improves slightly. Lesson: a control that is essentially a second trend is not harmless; include it when the business case for it is clear (roll-out), and expect the price interval to widen.
+
+## Exercise 3: Germany versus Poland
+
+```{python}
+pooled_de = smf.ols("log_sales ~ C(country, Treatment('DE')) * log_price + C(country, Treatment('DE')):promo_share "
+                    "+ C(country, Treatment('DE')):t + xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2", data=df).fit()
+tab = pooled_de.summary2().tables[1]
+tab.loc[[i for i in tab.index if "log_price" in i]].round(3)
+```
+
+**Answer.** With Germany as reference, `log_price` is Germany's elasticity (-1.55 in the pooled model) and `C(country, Treatment('DE'))[T.PL]:log_price` is Poland minus Germany, +0.24 with a standard error of 0.47 and p = 0.61: exactly the `t_test` result from the lab with the sign reversed, because changing the reference category reparameterises the same model. For the country manager: the data cannot distinguish Polish from German price sensitivity; the test does not say the two are equal, only that a difference of up to about 0.9 in either direction is compatible with the data. Bonus: rejecting at 5 % needs |difference| > 1.96 × 0.47 ≈ 0.92, which would be a very large gap in elasticities.
+
+## Exercise 4: Chocolate brand 1
+
+```{python}
+ch = pd.read_excel("../../data/legacy/chocolate_dataset.xlsx")
+ch["log_sales"] = np.log(ch.sales)
+for k in range(1, 5):
+    ch[f"log_price{k}"] = np.log(ch[f"price{k}"])
+ch[["sales", "price1", "price2", "price3", "price4"]].describe().round(2)
+```
+
+```{python}
+m_a = smf.ols("log_sales ~ log_price1 + log_price2 + log_price3 + log_price4", data=ch).fit()
+print(m_a.summary().tables[1]); print("R2", round(m_a.rsquared, 3))
+```
+
+```{python}
+m_b = smf.ols("log_sales ~ log_price1 + log_price2 + log_price3 + log_price4 + feature1 + display1 + fand1", data=ch).fit()
+print(m_b.summary().tables[1]); print("R2", round(m_b.rsquared, 3))
+print(ch[["log_price1", "feature1", "display1", "fand1"]].corr().round(2))
+```
+
+```{python}
+fig, ax = plt.subplots()
+ax.plot(ch.index, ch.sales, marker="o", ms=3); ax.set_xlabel("Week"); ax.set_ylabel("Brand 1 units")
+ax.set_title("Brand 1 weekly sales: one extreme promotion week"); plt.tight_layout(); plt.show()
+outlier = ch.sales.idxmax()
+m_c = smf.ols("log_sales ~ log_price1 + log_price2 + log_price3 + log_price4 + feature1 + display1 + fand1",
+              data=ch.drop(index=outlier)).fit()
+print("outlier week:", outlier, "sales:", round(ch.sales[outlier], 1), "price1:", round(ch.price1[outlier], 2))
+print(m_c.params.filter(like="log_price").round(2).to_dict(), "R2", round(m_c.rsquared, 3))
+```
+
+**Answer.** Brand 1 is the cheapest (mean 1.47) and brand 4 the most expensive (1.85). Brand 1's own-price elasticity is about -3.8 (interval -4.3 to -3.4): very elastic, typical for a retailer-level brand with deep promotional dips. The cross-price elasticities are +0.32 for brand 3, +0.17 for brand 4 and -0.74 for brand 2; none is significant at 5 %, and brand 2's negative sign is a warning rather than a finding (a complement relation between two chocolate brands is implausible; 68 weeks with little independent price variation cannot identify cross effects). By point estimate brand 3 is the closest substitute. Adding feature, display and feature-and-display leaves the own elasticity at about -3.7; `feature1` correlates at -0.73 with `log_price1` because feature ads accompany price cuts, so the two effects are hard to separate, which the insignificant `feature1` coefficient reflects. Week 6 is the outlier (531 units at a price of 1.03); dropping it moves the own elasticity to about -3.4. The teaching point: in weekly retailer data the "own-price elasticity" is really a promotion elasticity, and cross effects need more data than 68 weeks.
+
+## Exercise 5: A model answer for Poland
+
+Poland's own-price elasticity is about -1.2 with a 95 % interval from -1.8 to -0.6, so demand is roughly unit elastic and the data cannot tell Poland apart from Germany or Italy. A 10 % list-price cut would raise units by about 13 %, revenue by about 2 % and, at a gross margin of 40 %, reduce profit by about 15 %, because break-even would require an elasticity of about -2.7, outside the interval. Poland already has the lowest shelf price of the six markets but the highest price relative to income, and its promotion response (about +6.6 % units per 10 points of promo share) is the strongest in the group. We therefore recommend holding the list price, using promotion depth and frequency as the volume lever, and running a regional price test in the first half of 2027 to measure the elasticity directly. The main caveat is that this model omits media, competitor activity and the distribution roll-out, all of which will enter in the next sessions and may shift the elasticity; the estimate is an association under the model's assumptions, not a causal effect.
+
+## Notes for the debrief
+
+- The sign flip in Section 4.4 of the lab is the moment to anchor omitted-variable bias; every group should be able to narrate it.
+- Ground truth: Poland is in fact the most price-sensitive market (-2.3). Do not reveal before Session 5, but note that Session 2's media controls move the estimate in that direction.
+- Common student errors: dropping `promo_share` to fix the VIF; pooling with a common trend; reporting R² as model quality; forgetting to exponentiate before computing MAPE.

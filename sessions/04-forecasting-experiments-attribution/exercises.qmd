@@ -1,0 +1,99 @@
+---
+title: "Exercises 4: Forecasting, experiments and attribution"
+subtitle: "International Marketing Analytics · WU Vienna · Session 4"
+author: "Dr. Arne Floh"
+format:
+  html:
+    toc: true
+    embed-resources: true
+execute:
+  eval: false
+  echo: true
+---
+
+These exercises build on `lab.qmd`. Run the lab first so that the objects it creates (`country_data`, `design`, `forecast_path`, `geo`, `did`, `journeys`, `logit`, `removal_shares`, ...) exist in your session. Code chunks in this file are not executed when the file renders; copy them into your own notebook. Solutions are discussed in the team debrief; the instructor's worked solutions are released after Session 5.
+
+Work in your group repository. For each exercise, write the code, the numbers and **two to four sentences of interpretation** addressed to a manager, not to a statistician.
+
+## Exercise 1: A longer horizon and the value of the commercial calendar
+
+Finance has asked whether the forecasting model can be used for the **first half of 2026**, a horizon of 26 weeks.
+
+a. Re-run the rolling-origin evaluation of Part A with `H = 26` and two origins (`[104, 130]`, the first weeks of 2025 Q1 and Q3). Report MAPE by country for the regression and seasonal naive.
+b. Does the regression's advantage over seasonal naive shrink at 26 weeks? Explain why a longer horizon hurts a recursive forecast with a lag-1 term more than it hurts the seasonal naive.
+c. Refit the 13-week evaluation **without** `log_price` and `promo_share` in `XCOLS`. Report the MAPE again. What does the difference tell you about where the forecast accuracy comes from, and what should the finance team be told about the promotion calendar?
+
+```{python}
+H = 26
+ORIGINS = [104, 130]
+# ... reuse the loop from lab section A3 ...
+XCOLS_NO_COMMERCIAL = TREND_SEASON + HOLIDAYS + LAGS + MEDIA
+```
+
+## Exercise 2: Placebo difference-in-differences
+
+A DiD estimate is only credible if the method finds **nothing** when there is nothing to find.
+
+a. Restrict the geo data to the 48 pre-period weeks. Define a fake test window of eight weeks ending four weeks before the real test started (`placebo_test = 1` for weeks 37 to 44 of the pre-period, counting from 1) and estimate the same DiD regression as in lab section B3 with `treated:placebo_test` instead of `treated:test_period`.
+b. Report the placebo "lift" in percent with its 95 % confidence interval. Does the interval contain zero?
+c. Repeat for three other placebo windows of your choice (all inside the pre-period). Plot the four placebo estimates and the real estimate on one chart with their confidence intervals. What does the chart say about the credibility of the real 5.7 %?
+
+```{python}
+pre = geo[geo.period == "pre"].copy()
+pre["week_no"] = pre.groupby("region").cumcount() + 1
+pre["placebo_test"] = pre.week_no.between(37, 44).astype(int)
+placebo = smf.ols("log_sales ~ treated:placebo_test + C(region) + C(week)", data=pre).fit(
+    cov_type="cluster", cov_kwds={"groups": pre.region})
+```
+
+## Exercise 3: Lift in levels instead of logs
+
+The country manager prefers to hear the lift in **units**, not in percent.
+
+a. Estimate the DiD regression with `sales_units_k` as the dependent variable instead of `log_sales` (same fixed effects, same clustering). Report the coefficient on `treated:test_period` with its 95 % confidence interval. Units: thousand units per region per week.
+b. Convert this coefficient into a percentage lift by dividing by the average weekly sales of a treated region in the pre-period. Compare with the 5.7 % from the log model. Why can the two differ even though they describe the same experiment? (Hint: in levels every region counts equally in units; in logs every region counts equally in percent. Treated regions differ in size.)
+c. Multiply the level coefficient by 12 regions and 8 weeks to obtain total incremental units and compare with `incremental_units` from lab section B6. Which of the two numbers would you put in the budget deck, and how would you describe its uncertainty?
+
+```{python}
+did_levels = smf.ols("sales_units_k ~ treated:test_period + treated:post_period + C(region) + C(week)", data=geo).fit(
+    cov_type="cluster", cov_kwds={"groups": geo.region})
+did_levels.params["treated:test_period"], did_levels.conf_int().loc["treated:test_period"]
+```
+
+## Exercise 4: Attribution for new vs returning customers
+
+The CRM team argues that email "only reaches people who were going to buy anyway" and that its attributed share is inflated by returning customers.
+
+a. Fit the pooled logistic regression from lab section C4 separately for `new_customer == 1` and `new_customer == 0` (drop `new_customer` from the formula). Report the two coefficient tables side by side.
+b. Compute removal-effect shares for each group and plot them in one bar chart. Which channels gain share among new customers, which among returning customers?
+c. Is the CRM team right about email? Answer with the numbers and with one caveat about what a logistic regression on observational journeys can and cannot establish.
+
+```{python}
+f_sub = "converted ~ " + " + ".join(f"n_{c}" for c in ATT_CH) + " + mobile + C(country)"
+logit_new = smf.logit(f_sub, data=journeys[journeys.new_customer == 1]).fit(disp=0)
+logit_ret = smf.logit(f_sub, data=journeys[journeys.new_customer == 0]).fit(disp=0)
+shares = pd.DataFrame({"new": removal_shares(logit_new, journeys[journeys.new_customer == 1]),
+                       "returning": removal_shares(logit_ret, journeys[journeys.new_customer == 0])})
+```
+
+## Exercise 5: Memo on a geo test in Poland
+
+The Session 3 allocation moves budget into Poland, mainly paid social, on the strength of a hierarchical MMM estimate with a wide credible interval. The country manager asks whether Alpenglow should run a geo-lift test in Poland before committing.
+
+Write a one-page memo (max. 400 words) to the CMO that covers:
+
+a. **Why**: what the MMM cannot tell us about paid social in Poland and what a test would add. Use the planning-confound argument and the width of the Session 3 interval.
+b. **Design**: regions (Poland has 16 voivodeships; how many treated, how many control, how assigned), duration of pre-, test- and post-period, the spend change, and the primary metric. State the minimum lift the test could detect and show the rule-of-thumb calculation you used (pre-period noise of the treated-minus-control gap divided by the square root of the number of test weeks, times 2.8).
+c. **Cost and risk**: the cost of extra spend, the lost sales in control regions if the effect is real, retail partner communication, and what happens if the test is inconclusive.
+d. **Recommendation**: run it, do not run it, or run a smaller version. One sentence of justification.
+
+You may use the German data to calibrate the noise estimate (`gap` from lab section B4), scaled to the smaller number of Polish regions. Attach the calculation as a code chunk.
+
+```{python}
+pre_gap = gap[gap.index < test_start]
+noise_de = pre_gap.std() * 100                       # percentage points, 12 treated vs 28 control regions
+# Scale to Poland: noise grows roughly with sqrt(1/n_treated + 1/n_control)
+scale = np.sqrt(1 / 5 + 1 / 11) / np.sqrt(1 / 12 + 1 / 28)
+noise_pl = noise_de * scale
+mde = 2.8 * noise_pl / np.sqrt(8)                    # minimum detectable lift for an 8-week test
+```

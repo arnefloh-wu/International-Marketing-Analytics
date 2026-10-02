@@ -1,0 +1,608 @@
+---
+title: "Marketing mix modelling I: one country"
+subtitle: "Session 2 · What did TV do for us in Germany?"
+author: "International Marketing Analytics · WU Vienna · CEMS"
+date: 2026-10-13
+format:
+  revealjs:
+    theme: [default, ../../assets/wu.scss]
+    slide-number: true
+    footer: "International Marketing Analytics · WU Vienna"
+    width: 1280
+    height: 720
+    fig-width: 8
+    fig-height: 4
+  pptx:
+    fig-width: 8
+    fig-height: 4
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{python}
+#| label: setup
+import sys
+sys.path.append("../../assets")
+from mma import *
+import numpy as np, pandas as pd, matplotlib.pyplot as plt, statsmodels.api as sm
+from statsmodels.stats.stattools import durbin_watson
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+plt.rcParams.update({"figure.figsize": (8, 4), "axes.spines.top": False, "axes.spines.right": False, "font.size": 11})
+COLOURS = dict(zip(CHANNELS, plt.cm.tab10.colors[:5]))
+
+panel = load_panel("../../data/mmm/alpenglow_weekly.csv")
+de = add_fourier(panel[panel.country == "DE"].copy().reset_index(drop=True), order=2)
+de["log_price"] = np.log(de.price_eur)
+spend = de[[f"spend_{c}_k" for c in CHANNELS]].copy(); spend.columns = CHANNELS
+train = (de.week < "2025-01-01").values
+y, price = de.sales_units_k, de.price_eur
+CONTROLS = ["log_price", "promo_share", "distribution", "xmas", "easter", "valentine", "sin_1", "cos_1", "sin_2", "cos_2", "t"]
+
+def fit_ols(X, mask=train):
+    Xc = sm.add_constant(X, has_constant="add"); m = sm.OLS(y[mask], Xc[mask]).fit(); return m, m.predict(Xc)
+
+def design(alphas, sat=None):
+    X = de[CONTROLS].copy()
+    for ch in CHANNELS:
+        x = geometric_adstock(spend[ch].values, alphas[ch])
+        if sat is None: X[f"x_{ch}"] = x
+        else:
+            q, s = sat; X[f"x_{ch}"] = hill(x, np.quantile(x[train], q), s)
+    return X
+
+GRID = np.round(np.arange(0, 0.91, 0.1), 1)
+alphas = {ch: 0.3 for ch in CHANNELS}; profiles = {}
+for _ in range(2):
+    for ch in CHANNELS:
+        aics = []
+        for a in GRID:
+            tr = dict(alphas); tr[ch] = a; aics.append(fit_ols(design(tr))[0].aic)
+        profiles[ch] = pd.Series(aics, index=GRID); alphas[ch] = float(GRID[int(np.argmin(aics))])
+SAT = (0.5, 2.0)
+X_final = design(alphas, SAT)
+m_tr, pred_tr = fit_ols(X_final)
+m_full = sm.OLS(y, sm.add_constant(X_final, has_constant="add")).fit()
+contrib = pd.DataFrame({ch: m_full.params[f"x_{ch}"] * X_final[f"x_{ch}"] for ch in CHANNELS}); contrib.index = de.week
+baseline = pd.Series(m_full.fittedvalues.values - contrib.sum(axis=1).values, index=de.week)
+roas = contribution_table(contrib.reset_index(drop=True), price, spend)
+mroas = {}
+for ch in CHANNELS:
+    x = geometric_adstock(spend[ch].values, alphas[ch]); k = np.quantile(x[train], SAT[0]); b = m_full.params[f"x_{ch}"]
+    x0 = spend[ch].mean(); h = 1e-3
+    mroas[ch] = b * (hill(x0 + h, k, SAT[1]) - hill(x0 - h, k, SAT[1])) / (2 * h) * price.mean()
+```
+
+## Decision of the day {.decision}
+
+::: {.decision}
+**"What did TV do for us in Germany, and would the next euro be better spent elsewhere?"**
+
+The German country manager must defend EUR 5.5 million of annual TV spend to the CFO. TV is the largest line in the plan. We have 156 weeks of sales, prices, promotions and spend in five channels.
+:::
+
+- By the end of today you can answer with a number, a range and a chart
+- The tool: a regression with two transformations (carryover and saturation) and good controls
+- The trap: a regression that credits TV with Christmas
+
+::: {.notes}
+Open with the manager's problem, not the method. Ask the room: how would you answer this with a spreadsheet? Most will say "correlate TV spend with sales". Hold that thought; by slide 17 we show why it fails. Mention that Session 1 gave us the price elasticity for Germany, which becomes a control today.
+:::
+
+## Where we are
+
+| Session | Question | Method |
+|---|---|---|
+| 1 | Is our price too high in Poland? | Log-log regression, elasticities |
+| **2** | **What did TV do for us in Germany?** | **MMM for one country (OLS)** |
+| 3 | Where should the next euro go? | Panel and Bayesian MMM, budget optimiser |
+| 4 | Can we trust the model? | Forecasts, geo-lift test, attribution |
+| 5 | Board meeting | Project pitches |
+
+::: {.notes}
+Session 2 is the core of the course. Everything in Sessions 3 and 4 builds on the three ideas introduced today: baseline vs incremental, adstock, saturation.
+:::
+
+# Part 1: What is marketing mix modelling?
+
+## MMM in one sentence
+
+> Marketing mix modelling explains weekly (or daily) sales with a regression on media spend and on everything else that moves sales, so that each channel's **incremental** contribution and its **return** can be read off the coefficients.
+
+- Aggregate data: a market, a week, a channel. No cookies, no user IDs
+- Born in the 1960s in consumer goods (Nielsen, Unilever, P&G econometrics teams)
+- Renaissance since 2020: privacy changes broke user-level tracking, MMM does not need it
+- Output: contribution per channel, ROAS, response curves, a budget recommendation
+
+::: {.notes}
+Stress "aggregate". MMM never sees an individual customer. This is its weakness (no path data) and its strength (no privacy dependence, works for TV and out-of-home). The renaissance is driven by Apple's App Tracking Transparency and the slow death of third-party cookies.
+:::
+
+## Who uses MMM, and with what
+
+::: {.columns}
+::: {.column width="50%"}
+**Brands**
+
+- P&G, Unilever, Nestlé, Coca-Cola: in-house econometrics teams
+- Mid-sized brands: through agencies or software
+
+**Agencies and vendors**
+
+- Nielsen, Analytic Partners, Ekimetrics, Kantar, GroupM
+:::
+::: {.column width="50%"}
+**Open-source tools (2020s)**
+
+- **Robyn** (Meta): R, ridge regression, evolutionary hyperparameter search
+- **Meridian** (Google): Python, Bayesian, geo-level, successor of LightweightMMM
+- **PyMC-Marketing** (PyMC Labs): Python, Bayesian, budget optimiser; we use it in Session 3
+:::
+:::
+
+::: {.notes}
+All three open-source tools implement the same ingredients as today's lab: geometric or Weibull adstock, Hill or logistic saturation, seasonality controls, and a decomposition. The difference is the estimation engine (ridge vs Bayesian) and how priors or calibration from experiments enter. Today we build the simplest version by hand in statsmodels so that the students see each part.
+:::
+
+## The MMM equation
+
+$$
+\text{Sales}_t = \underbrace{\beta_0 + \sum_j \gamma_j\, \text{Control}_{jt}}_{\text{baseline}}
++ \underbrace{\sum_c \beta_c\, f_c\big(\text{adstock}_c(\text{Spend}_{ct})\big)}_{\text{media contributions}}
++ \varepsilon_t
+$$
+
+- **Controls**: price, promotion, distribution, holidays, seasonality, trend, competitors, weather
+- **adstock**: carryover of spend into later weeks
+- **$f_c$**: saturation (diminishing returns)
+- **$\beta_c$**: the channel's effectiveness; $\beta_c \cdot f_c(\cdot)$ is its weekly contribution in units
+- **$\varepsilon_t$**: what the model cannot explain
+
+::: {.notes}
+Read the equation left to right. It is an OLS once the transformations are fixed: the only non-linear parameters are inside adstock and f, and we choose those by grid search. Additive in levels means every term is in units and the terms add up to fitted sales exactly, which makes the decomposition chart on slide 23 possible. The log-log version is mentioned in the lab.
+:::
+
+## Baseline vs incremental
+
+```{python}
+#| label: fig-baseline
+fig, ax = plt.subplots()
+ax.fill_between(de.week, 0, baseline, color="#d9d9d9", label="Baseline (price, promo, season, trend...)")
+ax.fill_between(de.week, baseline, baseline + contrib.sum(axis=1), color=COLOURS["tv"], alpha=0.7, label="Incremental (all media)")
+ax.plot(de.week, y, color="black", linewidth=1, label="Actual sales")
+ax.set_ylabel("k units per week"); ax.set_ylim(0, None); ax.legend(loc="upper left", fontsize=9)
+ax.set_title("Germany: what sales would be without media, and what media adds")
+plt.tight_layout()
+```
+
+::: {.notes}
+The grey area is what Alpenglow would sell in Germany with zero advertising: the brand, its shelf, its price, Christmas. Media adds the blue layer on top. In the fitted model media is roughly a quarter of German sales; for FMCG brands 15 to 35 percent is typical. If a model says 60 percent, something has gone wrong, usually the saturation choice (slide 32).
+:::
+
+# Part 2: Carryover
+
+## Why a TV week keeps working
+
+- A spot seen on Monday leads to a purchase on Saturday, or two weeks later at the next shop visit
+- Awareness and memory decay gradually, not at midnight on Sunday
+- If we regress sales on this week's spend only, the weeks after a burst look like "unexplained" sales
+- **Adstock** (Broadbent, 1979): transform spend into a weighted sum of current and past spend
+
+$$
+\text{adstock}_t = \sum_{l=0}^{L} w_l\, \text{Spend}_{t-l}, \qquad w_l = \frac{\alpha^l}{\sum_k \alpha^k}
+$$
+
+::: {.notes}
+Simon Broadbent at Leo Burnett coined the term adstock. Geometric decay is the simplest form: each week the remaining effect shrinks by the factor alpha. Normalising the weights to sum to one preserves total spend, so the regression coefficient keeps the unit "sales per thousand euro". Robyn and PyMC-Marketing also offer Weibull adstock with a delayed peak, useful for channels like OOH.
+:::
+
+## Geometric adstock weights
+
+```{python}
+#| label: fig-adstock-weights
+lags = np.arange(0, 13)
+fig, ax = plt.subplots()
+for a, c in zip([0.1, 0.5, 0.8], ["tab:green", "tab:orange", "tab:blue"]):
+    w = a ** lags; w = w / w.sum()
+    ax.plot(lags, w, marker="o", color=c, label=f"alpha = {a}  (mean lag {a/(1-a):.1f} wk)")
+ax.set_xlabel("weeks after the spend"); ax.set_ylabel("share of the total effect"); ax.legend()
+ax.set_title("How much of a week's spend acts l weeks later")
+plt.tight_layout()
+```
+
+::: {.notes}
+Alpha 0.1: almost everything happens in the week of the spend, typical of paid search (someone searches, clicks, buys). Alpha 0.5: half the effect remains after one week. Alpha 0.8: a long tail, typical of brand-building TV or sponsorship. The mean lag is alpha over one minus alpha; the half-life is log(0.5)/log(alpha) weeks.
+:::
+
+## A spend pulse and its adstocked response
+
+```{python}
+#| label: fig-pulse
+t = np.arange(0, 20); pulse = np.zeros(20); pulse[3:6] = 100
+fig, ax = plt.subplots()
+ax.bar(t, pulse, color="lightgrey", label="spend (k EUR)")
+for a, c in zip([0.1, 0.5, 0.8], ["tab:green", "tab:orange", "tab:blue"]):
+    ax.plot(t, geometric_adstock(pulse, a), marker="o", color=c, label=f"adstocked spend, alpha = {a}")
+ax.set_xlabel("week"); ax.set_ylabel("k EUR"); ax.legend(fontsize=9)
+ax.set_title("A 3-week burst of 100k per week")
+plt.tight_layout()
+```
+
+::: {.notes}
+Same total: the area under each adstocked curve equals the area of the bars. The high-alpha curve is lower and longer. The regression sees the adstocked series, not the bars. A model with alpha 0 would have to explain the sales in weeks 6 to 12 with something else, usually with noise or with another channel that happened to be on air.
+:::
+
+## Choosing alpha
+
+- Alpha is **not** estimated by OLS; it sits inside a non-linear transformation
+- Practical approach: try a grid (0, 0.1, ..., 0.9) per channel, keep the best fit (AIC, or error on a holdout year)
+- One channel at a time with the others fixed, repeated twice: 100 regressions, a few seconds
+- Expect: search and social short (0.0 to 0.3), online video medium, TV and OOH long (0.5 to 0.8)
+- A flat profile means the data cannot tell: then alpha is an assumption, report the sensitivity
+
+```{python}
+#| label: alpha-table
+pd.DataFrame({"selected alpha (AIC)": alphas, "mean lag (weeks)": {c: round(a/(1-a), 1) for c, a in alphas.items()}}).T.rename(columns=CHANNEL_LABELS)
+```
+
+::: {.notes}
+These are the values the lab will select for Germany. TV at 0.7 is well identified; the OOH profile is flat, which the lab shows as a chart. Point out that a "selected" alpha of 0 for OOH does not mean OOH has no carryover; it means low, bursty spend cannot reveal it. Bayesian MMMs put a prior on alpha for exactly this reason (Session 3).
+:::
+
+# Part 3: Saturation
+
+## Diminishing returns
+
+- The first GRPs reach people who had not seen the ad; the hundredth reaches people for the tenth time
+- Search: once you win every relevant query, more budget buys nothing
+- Linear spend terms assume the opposite: every euro equal, no upper limit
+- Consequence for planning: a linear model always says "spend more on the channel with the highest coefficient"
+- Saturation curves bound the response: **Hill** and **logistic** are the two standard forms
+
+::: {.notes}
+Diminishing returns is the reason budget allocation is a non-trivial problem. If responses were linear, the optimal budget would put everything into one channel. With concave curves, the optimum equalises marginal returns across channels (Session 3).
+:::
+
+## The Hill curve
+
+```{python}
+#| label: fig-hill
+x = np.linspace(0, 300, 300)
+fig, ax = plt.subplots()
+for k, s, c, lab in [(80, 1.0, "tab:blue", "k = 80, s = 1 (concave)"), (80, 2.5, "tab:orange", "k = 80, s = 2.5 (S-shaped)"), (160, 1.0, "tab:green", "k = 160, s = 1 (slower)")]:
+    ax.plot(x, hill(x, k, s), color=c, label=lab)
+ax.axhline(0.5, color="grey", linestyle=":", linewidth=1); ax.axvline(80, color="grey", linestyle=":", linewidth=1)
+ax.annotate("half-saturation point k", xy=(80, 0.5), xytext=(120, 0.3), arrowprops=dict(arrowstyle="->", color="grey"))
+ax.set_xlabel("adstocked weekly spend (k EUR)"); ax.set_ylabel("share of maximum effect"); ax.legend(fontsize=9)
+ax.set_title(r"Hill: $x^s / (x^s + k^s)$")
+plt.tight_layout()
+```
+
+::: {.notes}
+k is the spend at which the channel delivers half of its maximum effect; it has the unit of spend, which makes it easy to discuss with planners. s controls the shape: s = 1 is concave everywhere, s above 1 gives an S-curve with a threshold region where small spend does little. The coefficient beta in the regression is the maximum weekly effect in units. In the lab we set k as a quantile of adstocked spend and try a small grid for s.
+:::
+
+## The logistic curve
+
+```{python}
+#| label: fig-logistic
+fig, ax = plt.subplots()
+for lam, c in zip([0.005, 0.01, 0.02], ["tab:green", "tab:orange", "tab:blue"]):
+    ax.plot(x, logistic_saturation(x, lam), color=c, label=f"lambda = {lam}")
+ax.set_xlabel("adstocked weekly spend (k EUR)"); ax.set_ylabel("share of maximum effect"); ax.legend()
+ax.set_title(r"Logistic: $1 - e^{-\lambda x}$ (one parameter, always concave)")
+plt.tight_layout()
+```
+
+::: {.notes}
+The logistic (negative exponential) form has one parameter and is PyMC-Marketing's default. It cannot produce a threshold. log1p(x), which many analysts use as a quick fix, is an even simpler concave transform without an upper bound. All these forms look similar in the range where the data sit; the lab shows that the data rarely distinguish them, which has consequences for ROAS.
+:::
+
+## Why the shape matters for the money
+
+- **Average ROAS** = total incremental revenue / total spend. Looks backwards: what the budget did
+- **Marginal ROAS** = revenue from one more euro at the current spend level. Looks forwards: what the next euro would do
+- On a concave curve, marginal < average; past the half-saturation point the gap widens
+- Budget decisions use the **marginal** number; ROAS league tables use the average
+- Two channels with the same average ROAS can have very different marginal ROAS
+
+::: {.notes}
+Draw this on the board: a concave curve, a chord from the origin (average) and a tangent (marginal). The CFO's question "would the next euro be better spent elsewhere" is a marginal question. A classic mistake in budget meetings is to cut the channel with the lowest average ROAS, which can be the one with the highest marginal ROAS if it is small and unsaturated.
+:::
+
+# Part 4: Controls and confounding
+
+## The planning confound
+
+```{python}
+#| label: fig-confound
+fig, ax = plt.subplots()
+wk = de.groupby("week_of_year").agg(sales=("sales_units_k", "mean"), spend=("spend_online_video_k", "mean"))
+ax.plot(wk.index, wk.sales / wk.sales.mean(), color="black", label="sales (index, avg = 1)")
+ax.plot(wk.index, wk.spend / wk.spend.mean(), color=COLOURS["online_video"], label="online video spend (index, avg = 1)")
+ax.set_xlabel("week of year"); ax.set_ylabel("index"); ax.legend()
+ax.set_title("Germany: average seasonal profile of sales and online video spend, 2023-2025")
+plt.tight_layout()
+```
+
+::: {.notes}
+Media plans follow expected demand: budgets are heavier before Christmas and Easter because that is when chocolate sells. So spend and sales rise together even if advertising did nothing. A regression without seasonal controls attributes the seasonal peak to media. This is not a data problem; it is how marketing is planned, and the model must control for it.
+:::
+
+## Why controls matter
+
+- **Price** (log): the Session 1 elasticity, usually the biggest single driver
+- **Promotion share** and **distribution**: trade activity that moves with media plans
+- **Holidays**: Christmas, Easter, Valentine's Day as dummies for the selling weeks
+- **Seasonality**: Fourier terms (sine and cosine of the annual cycle) are smoother than 52 week dummies
+- **Trend**: a linear term for market growth and inflation
+- **Competitors, weather, consumer confidence**: add when available and plausible
+
+Omitting price and promotion is the most common MMM error: promotions coincide with campaigns, so media gets credit for the discount.
+
+::: {.notes}
+Fourier terms: with two harmonics you spend four parameters on seasonality instead of 51 for week dummies; important with 156 weeks. Each control is "a thing that moves sales and is correlated with spend". If it is not correlated with spend, omitting it costs precision but does not bias the media coefficients.
+:::
+
+## Flighting
+
+```{python}
+#| label: fig-flighting
+fig, ax = plt.subplots()
+ax.bar(de.week, spend.tv, width=6, color=COLOURS["tv"], label="TV")
+ax.plot(de.week, spend.paid_search, color=COLOURS["paid_search"], label="Paid search")
+ax.set_ylabel("weekly spend (k EUR)"); ax.legend()
+ax.set_title("Germany: TV is flighted (bursts), paid search is always on")
+plt.tight_layout()
+```
+
+::: {.notes}
+Flighting is the practice of concentrating TV in bursts of three to six weeks with dark periods in between. It is good for measurement: on-off patterns create the variation a regression needs. An always-on channel at a constant level is almost impossible to measure with MMM, because its effect is indistinguishable from the intercept. This is why the lab treats "channels with little variation" as a risk.
+:::
+
+# Part 5: Building and reading the model
+
+## The model building sequence
+
+1. **Controls only.** Price, promo, distribution, holidays, seasonality, trend. Note R² and holdout error: this is the bar media must clear
+2. **Add raw spend.** Observe unstable, implausible coefficients. Diagnose, do not report
+3. **Adstock grid.** Choose alpha per channel by AIC or holdout error. Check the profile is not flat
+4. **Saturation.** log1p or Hill with k at a quantile of adstocked spend. Compare fit **and** implied ROAS
+5. **Diagnostics.** Residual plot, Durbin-Watson, VIF, holdout MAPE
+6. **Decompose and report.** Contributions, ROAS, marginal ROAS, response curves, sensitivity
+
+::: {.notes}
+This is the lab's structure. Insist on step 1 before step 2: students who start with media never learn how much of the fit was there anyway. Step 2 is deliberately a failure: the point is to see the problem before fixing it.
+:::
+
+## Step 3 in practice: is alpha identified?
+
+```{python}
+#| label: fig-profile
+fig, ax = plt.subplots()
+for ch in ["tv", "ooh"]:
+    ax.plot(GRID, profiles[ch] - profiles[ch].min(), marker="o", color=COLOURS[ch], label=CHANNEL_LABELS[ch])
+ax.set_xlabel("adstock alpha"); ax.set_ylabel("AIC minus best AIC"); ax.legend()
+ax.set_title("Germany: AIC along the alpha grid")
+plt.tight_layout()
+```
+
+::: {.notes}
+TV: clear minimum at 0.7 and a steep rise beyond; the data want a long carryover. OOH: the curve is almost flat over the whole grid; any alpha fits about as well. The lab will show how the TV ROAS changes with alpha; for OOH the ROAS range would be even wider relative to its size.
+:::
+
+## Step 4 in practice: fit does not identify the shape
+
+```{python}
+#| label: sat-table
+rows = []
+for name, sat in [("linear", None), ("Hill k=median, s=1", (0.5, 1.0)), ("Hill k=median, s=2", (0.5, 2.0)), ("Hill k=max, s=1", (1.0, 1.0))]:
+    X = design(alphas, sat); m, p = fit_ols(X)
+    ctv = m.params["x_tv"] * X["x_tv"][train]
+    rows.append({"specification": name, "R2 train": round(m.rsquared, 3), "holdout MAPE %": round(mape(y[~train], p[~train]), 2), "AIC": round(m.aic, 1), "TV ROAS (train)": round((ctv * price[train]).sum() / spend.tv[train].sum(), 2)})
+pd.DataFrame(rows).set_index("specification")
+```
+
+- Fit statistics agree to the third decimal; the TV ROAS differs by a factor of two
+- A very concave curve is nearly flat over the observed spend and acts as a second intercept: it moves baseline sales into media
+- Saturation is an **assumption**. Justify it with business logic, priors (Session 3) or an experiment (Session 4)
+
+::: {.notes}
+This is the most important slide for a future manager commissioning an MMM. Ask the vendor: which saturation form, how was k chosen, and how does the ROAS move if you change it? If they cannot answer, the ROAS is an artefact.
+:::
+
+## Contribution decomposition
+
+```{python}
+#| label: fig-decomp
+fig, ax = plt.subplots()
+stack = pd.concat([baseline.rename("baseline"), contrib], axis=1)
+ax.stackplot(stack.index, stack.T.values, labels=["Baseline"] + [CHANNEL_LABELS[c] for c in CHANNELS], colors=["#d9d9d9"] + [COLOURS[c] for c in CHANNELS], alpha=0.9)
+ax.plot(de.week, y, color="black", linewidth=1, label="Actual")
+ax.set_ylabel("k units per week"); ax.set_ylim(0, None); ax.legend(ncol=4, fontsize=8, loc="upper left")
+ax.set_title("Germany: fitted sales decomposed into baseline and channels")
+plt.tight_layout()
+```
+
+::: {.notes}
+The stacked area is the standard first chart of any MMM report. Each layer is coefficient times transformed variable, week by week; the layers add up to the fitted line because the model is additive. The humps in the TV layer after each burst are the carryover. The gap between the black line and the top of the stack is the residual.
+:::
+
+## Waterfall: where 2025 sales came from
+
+```{python}
+#| label: fig-waterfall
+yr = de.week.dt.year == 2025
+parts = pd.concat([pd.Series({"Baseline": baseline[yr.values].sum()}), contrib[yr.values].sum().rename(CHANNEL_LABELS)])
+fig, ax = plt.subplots()
+cum = 0
+for i, (lab, v) in enumerate(parts.items()):
+    col = "#9e9e9e" if lab == "Baseline" else COLOURS[CHANNELS[i - 1]]
+    ax.bar(i, v, bottom=cum, color=col); ax.text(i, cum + v + 300, f"{v/1000:.1f}M", ha="center", fontsize=9); cum += v
+ax.bar(len(parts), cum, color="black", alpha=0.6); ax.text(len(parts), cum + 300, f"{cum/1000:.1f}M", ha="center", fontsize=9)
+ax.set_xticks(range(len(parts) + 1)); ax.set_xticklabels(list(parts.index) + ["Fitted total"], rotation=20)
+ax.set_ylabel("k units, 2025"); ax.set_title("Germany 2025: contribution waterfall")
+plt.tight_layout()
+```
+
+::: {.notes}
+The waterfall is the same information as the stacked area, summed over a year. It is the chart managers remember: "of 40 million units, 30 came from the base, 2.4 from TV". Note that the baseline includes the effect of price and promotions, which are also marketing decisions; some reports split them out as separate bars.
+:::
+
+## ROAS vs marginal ROAS
+
+```{python}
+#| label: fig-roas
+fig, ax = plt.subplots()
+idx = np.arange(5); w = 0.38
+ax.bar(idx - w/2, roas.roas.values, w, color=[COLOURS[c] for c in CHANNELS], label="average ROAS 2023-2025")
+ax.bar(idx + w/2, [mroas[c] for c in CHANNELS], w, color=[COLOURS[c] for c in CHANNELS], alpha=0.45, hatch="//", label="marginal ROAS at current spend")
+ax.axhline(1, color="grey", linestyle="--", linewidth=1)
+ax.set_xticks(idx); ax.set_xticklabels([CHANNEL_LABELS[c] for c in CHANNELS]); ax.set_ylabel("EUR revenue per EUR spend"); ax.legend(fontsize=9)
+ax.set_title("Germany: what each euro did (solid) and what the next euro would do (hatched)")
+plt.tight_layout()
+```
+
+::: {.notes}
+Solid bars: average ROAS, revenue per euro over three years. Hatched: marginal ROAS at the current average weekly spend. TV: average about 1.3, marginal about 1.2: past its half-saturation point. Out-of-home: the gap is largest because its spend is bursty and the fitted curve is flat at the mean. The dashed line is break-even on revenue, not on margin: at a 40 percent gross margin break-even ROAS is 2.5.
+:::
+
+## Response curves
+
+```{python}
+#| label: fig-response
+fig, ax = plt.subplots()
+for ch in CHANNELS:
+    xa = geometric_adstock(spend[ch].values, alphas[ch]); k = np.quantile(xa[train], SAT[0]); b = m_full.params[f"x_{ch}"]
+    g = np.linspace(0, 300, 200); r = b * hill(g, k, SAT[1]) * price.mean()
+    ax.plot(g, r, color=COLOURS[ch], label=CHANNEL_LABELS[ch]); x0 = spend[ch].mean(); ax.plot(x0, b * hill(x0, k, SAT[1]) * price.mean(), "o", color=COLOURS[ch])
+ax.plot([0, 300], [0, 300], "--", color="grey", linewidth=1, label="revenue = spend")
+ax.set_xlabel("weekly spend (k EUR)"); ax.set_ylabel("weekly incremental revenue (k EUR)"); ax.set_ylim(0, None); ax.legend(fontsize=8)
+ax.set_title("Germany: fitted response curves, dots = current average weekly spend")
+plt.tight_layout()
+```
+
+::: {.notes}
+Response curves are the bridge to budget allocation. The slope at the dot is the marginal ROAS. Where the curve is below the dashed line, an extra euro returns less than a euro of revenue. In Session 3 the optimiser moves spend from flat parts of curves to steep parts, across channels and countries.
+:::
+
+# Part 6: Diagnostics and typical mistakes
+
+## Residual autocorrelation: Durbin-Watson
+
+- Residuals should look like noise: no trend, no seasonal pattern, no long runs above or below zero
+- **Durbin-Watson** statistic: 2 means no autocorrelation; below 1.5 positive autocorrelation; above 2.5 negative
+- Positive autocorrelation in MMM means a slow driver is missing (trend, distribution, a mis-specified carryover)
+- Consequence: standard errors too small, p-values too optimistic
+- German final model today: DW = `{python} f"{durbin_watson(m_full.resid):.2f}"`
+
+::: {.notes}
+Durbin-Watson is roughly 2 times (1 minus the first-order autocorrelation of the residuals). If the problem is only inference, Newey-West standard errors help. If it is a missing driver, fix the model. In the lab the residual plot and DW come together.
+:::
+
+## Multicollinearity: VIF
+
+- Variance inflation factor: how much a coefficient's variance is inflated by correlation with other regressors
+- Rule of thumb: VIF above 5 deserves a look, above 10 is a problem
+- Typical MMM culprits: trend, price and distribution moving together; channels planned in lockstep
+- A high VIF on trend is a nuisance; a high VIF on two media channels means the model cannot separate them
+- Remedies: drop or combine variables, longer data, geo-level data, Bayesian priors (Session 3)
+
+::: {.notes}
+In the German model the media variables have VIF below 3 and the controls carry the high values. Robyn uses ridge regression precisely to tame collinearity among channels; Bayesian priors do the same job more transparently.
+:::
+
+## Out-of-sample accuracy: holdout MAPE
+
+```{python}
+#| label: fig-holdout
+fig, ax = plt.subplots()
+ax.plot(de.week[~train], y[~train], color="black", label="actual 2025")
+ax.plot(de.week[~train], pred_tr[~train], color="tab:orange", label="predicted (model trained on 2023-2024)")
+ax.set_ylabel("k units per week"); ax.legend()
+ax.set_title(f"Germany: holdout MAPE = {mape(y[~train], pred_tr[~train]):.1f} %")
+plt.tight_layout()
+```
+
+::: {.notes}
+Train on 2023 and 2024, predict 2025 without peeking. MAPE is the mean absolute percentage error per week. Under 10 percent is good for weekly FMCG data. A model that fits the training years beautifully and misses the holdout year by 20 percent has overfitted: too many parameters, or hyperparameters tuned to noise.
+:::
+
+## Four mistakes you will see in practice
+
+1. **Spend without adstock.** The weeks after a TV burst are credited to the baseline or to whichever channel is still on. TV looks weak and short-lived
+2. **Omitting price and promotion.** Promotions coincide with campaigns; media gets credit for the discount. The classic reason MMM ROAS are "too good"
+3. **Overfitting 156 weeks.** 17 coefficients plus 5 alphas plus 10 saturation parameters on 105 training weeks. Every extra knob fits noise; validate on a holdout year
+4. **Trusting the ROAS of a channel with little variation.** Always-on at a constant level, or tiny budgets: the effect is confounded with the intercept, and the alpha profile is flat
+
+::: {.notes}
+Mistake 3 is why the lab chooses alpha and saturation on a small grid, one channel at a time, and shares a saturation setting across channels. Mistake 4 is out-of-home in the German data. A good MMM report flags such channels as "not measurable with this data" rather than printing a ROAS to two decimals.
+:::
+
+## A fifth: reporting a point when you have a range
+
+- The German TV ROAS moves between about 0.8 and 1.4 as alpha varies, and by a factor of two across saturation settings
+- Managers need: the best estimate, the range, and what would narrow it
+- What narrows it: more variation in spend (flighting, holdouts), geo-level data, a lift test, informed priors
+- Say "TV returned about 1.3 euros per euro, between 0.8 and 1.4 depending on carryover assumptions", not "1.30"
+
+::: {.notes}
+This connects to Session 4 (geo-lift test) and the project rubric, which rewards uncertainty statements. The next slide bridges to the lab.
+:::
+
+## Today's lab: the German MMM step by step
+
+- `sessions/02-mmm-one-country/lab.qmd`, Germany only, `statsmodels` OLS
+- (a) controls → (b) raw spend → (c) adstock grid → (d) saturation → (e) decomposition, ROAS, response curves → (f) diagnostics → (g) sensitivity
+- Helper functions in `assets/mma.py`: `geometric_adstock`, `hill`, `add_fourier`, `mape`, `contribution_table`
+- Every section: the decision, the code, the interpretation, a check list, a prompt pattern for your AI assistant
+- Then **your turn**: replicate for France and compare the TV ROAS
+
+::: {.notes}
+Students work in pairs in Positron. The lab runs end to end in under a minute. Encourage them to ask their assistant for explanations of each output and to verify with the check lists. Common issue: running from the wrong working directory, which breaks the relative paths.
+:::
+
+## Prompting your assistant well
+
+::: {.prompt}
+"Apply geometric adstock with a channel-specific alpha to the five spend columns, then search alpha on a grid from 0 to 0.9 for one channel at a time with the others fixed, selecting by AIC on 2023-2024. Print the alphas and plot the AIC profile for TV."
+:::
+
+**What to verify**
+
+- The grid includes 0; the minimum is inside the grid
+- The transformed columns actually changed (print a few rows)
+- The AIC values are compared on the same observations
+- The ROAS is computed from weekly contributions, not coefficient times mean price
+
+::: {.notes}
+The pattern: say what to transform, how to choose, on which data, and what to print. Then verify the intermediate objects. Students who skip the verification step are the ones who report a ROAS of 9.
+:::
+
+## What you should take away
+
+1. MMM = regression of sales on media and controls; three ideas make it work: **baseline vs incremental**, **adstock**, **saturation**
+2. Adstock spreads spend over later weeks; alpha is chosen by grid search, not estimated by OLS
+3. Saturation bounds the response; the data rarely identify its shape, so the ROAS depends on an assumption
+4. Controls (price, promo, season, trend) protect against the planning confound
+5. Report **average ROAS** for the past and **marginal ROAS** for the next euro
+6. Diagnostics: Durbin-Watson, VIF, holdout MAPE, sensitivity to alpha
+
+::: {.notes}
+Ask students to write the one-sentence answer to the decision of the day before they leave: "In Germany TV returned about X per euro, with a range of Y to Z; the next euro is worth more in paid search and online video, pending a test."
+:::
+
+## Quiz 2 and lab check-in 1
+
+- **Quiz 2** opens tonight, closed-book, 10 questions, 20 minutes, due before Session 3
+- **Lab check-in 1** (graded, individual): run the lab for one country other than Germany and submit
+  - `assignments/checks/submissions/<github_username>/check_session2.csv` (5 rows: country, channel, adstock_alpha, coefficient, total_spend_k, incremental_units_k, roas)
+  - `assignments/checks/submissions/<github_username>/check_session2.json` (country, r2_train, r2_holdout, mape_holdout, price_elasticity, n_weeks_train)
+  - The lab's last section writes both files; change the country and your username
+  - Due before Session 3, via pull request. Auto-checked with `pytest assignments/checks`
+- **Reading for Session 3**: Jin et al. (2017) on Bayesian MMM with carryover and shape effects; PyMC-Marketing MMM example notebook
+
+::: {.notes}
+Remind groups to pick different countries for the check-in so that the team sees all markets before Session 3, where the cross-country allocation starts.
+:::
