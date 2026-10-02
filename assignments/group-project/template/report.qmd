@@ -16,7 +16,7 @@ format:
     code-fold: true
     fig-width: 8
     fig-height: 4
-  pdf:
+  docx:
     toc: false
     fig-width: 8
     fig-height: 4
