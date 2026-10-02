@@ -1,0 +1,32 @@
+/*-- scss:defaults --*/
+$font-family-sans-serif: "Source Sans 3", "Segoe UI", Helvetica, Arial, sans-serif;
+$presentation-heading-font: "Source Sans 3", "Segoe UI", Helvetica, Arial, sans-serif;
+$body-bg: #ffffff;
+$body-color: #1f2a37;
+$link-color: #0b5fa5;
+$presentation-heading-color: #0b2e4f;
+$presentation-font-size-root: 30px;
+$presentation-h1-font-size: 1.9em;
+$presentation-h2-font-size: 1.35em;
+$code-block-font-size: 0.7em;
+
+/*-- scss:rules --*/
+.reveal .slide-logo { max-height: 2.2rem; }
+.reveal .footer { font-size: 0.5em; color: #6b7280; }
+.reveal .decision {
+  border-left: 6px solid #e4a11b;
+  background: #fff8e8;
+  padding: 0.5em 0.9em;
+  margin: 0.6em 0;
+}
+.reveal .callout-note { font-size: 0.8em; }
+.reveal table { font-size: 0.75em; }
+.reveal .small { font-size: 0.7em; }
+.reveal .prompt {
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  background: #eef4fb;
+  border: 1px solid #c5d6ea;
+  border-radius: 6px;
+  padding: 0.5em 0.8em;
+  font-size: 0.65em;
+}

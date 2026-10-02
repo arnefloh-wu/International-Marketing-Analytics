@@ -4,3 +4,14 @@
 .Ruserdata
 .desktop.ini
 *.ini
+.venv/
+_site/
+_freeze/
+.quarto/
+*_files/
+.ipynb_checkpoints/
+__pycache__/
+.pytest_cache/
+*.html
+*.pptx
+!assets/**

@@ -1,0 +1,98 @@
+---
+title: "Setup guide: Python, Positron, Quarto and GitHub"
+subtitle: "International Marketing Analytics · WU Vienna"
+format:
+  html:
+    toc: true
+---
+
+Complete this guide before Session 1. Budget 45 minutes. If you get stuck, bring your laptop to the setup clinic at the start of Session 1.
+
+## 1. Install Python with `uv`
+
+`uv` is a fast Python installer and environment manager. It installs Python for you.
+
+**Windows (PowerShell):**
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**macOS / Linux (Terminal):**
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Close and reopen the terminal, then check:
+
+```bash
+uv --version
+```
+
+## 2. Install Positron
+
+Positron is a data-science IDE from Posit that supports Python and Quarto natively. Download the installer for your operating system from <https://positron.posit.co> and install it. On first start, choose Python as your language.
+
+## 3. Install Quarto
+
+Download and install Quarto from <https://quarto.org/docs/get-started/>. Positron detects it automatically.
+
+## 4. Install Git and GitHub Desktop
+
+1. Create a free GitHub account at <https://github.com> (use your WU email so you get the student benefits).
+2. Install GitHub Desktop from <https://desktop.github.com>. It installs Git for you and gives you a point-and-click interface for clone, commit, pull and push.
+3. Sign in to GitHub Desktop with your GitHub account.
+
+## 5. Clone the course repository
+
+In GitHub Desktop: *File → Clone repository → URL* and paste the repository address given in class. Choose a folder without spaces or special characters, for example `C:\Users\you\wu\ima` or `~/wu/ima`.
+
+## 6. Create the course environment
+
+Open the cloned folder in Positron (*File → Open Folder*). Open a terminal inside Positron (*Terminal → New Terminal*) and run:
+
+```bash
+uv venv
+uv pip install -r requirements.txt
+```
+
+Then select the interpreter: in Positron's top-right interpreter selector choose the Python inside `.venv`. Test it by opening `sessions/01-foundations/lab.qmd` and running the first code cell with *Ctrl+Enter* (*Cmd+Enter* on macOS).
+
+## 7. Set up an AI coding assistant
+
+Pick one. All three work inside Positron.
+
+| Assistant | How to enable | Cost |
+|---|---|---|
+| Positron Assistant | *Positron Assistant* in the sidebar; sign in with Anthropic or GitHub Copilot | Pay as you go or Copilot subscription |
+| GitHub Copilot | Install the Copilot extension; students get it free through the GitHub Student Developer Pack | Free for students |
+| Claude Code | Install from <https://claude.ai/code> and run `claude` in the Positron terminal | Subscription |
+
+The course does not assume a specific assistant. What matters is that you can ask it to write and explain Python code in your notebook, and that you know how to check its output.
+
+## 8. The GitHub workflow you will use
+
+1. **Pull** before you start working (GitHub Desktop: *Fetch origin* then *Pull*).
+2. Work in your group's repository, one notebook per person where possible to avoid conflicts.
+3. **Commit** small, often, with a message that says what changed ("add TV adstock to German model").
+4. **Push** at the end of every working session.
+5. If GitHub Desktop reports a conflict, do not panic: ask your AI assistant to explain the conflict markers, keep the version you want, commit, push.
+
+## 9. Check your installation
+
+Run in the Positron terminal:
+
+```bash
+uv run python -c "import pandas, statsmodels, pymc_marketing; print('ready')"
+quarto --version
+```
+
+Both commands should print without errors. You are ready for Session 1.
+
+## Troubleshooting
+
+- **`uv` not found after installation:** reopen the terminal or restart Positron.
+- **PyMC compiles slowly on first run:** this is normal (a C compiler is used once). On Windows, install the Microsoft C++ Build Tools if prompted, or run PyMC labs on the course JupyterHub fallback given in class.
+- **Quarto cannot find Python:** in Positron, check that the `.venv` interpreter is selected; in the terminal run `quarto check jupyter`.
+- **Apple Silicon:** everything is supported natively; use the macOS ARM installers.

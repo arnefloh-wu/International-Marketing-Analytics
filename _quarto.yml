@@ -1,0 +1,22 @@
+project:
+  type: default
+  render:
+    - "syllabus/*.qmd"
+    - "setup/*.qmd"
+    - "sessions/**/*.qmd"
+    - "assignments/**/*.qmd"
+    - "!instructor/"
+  output-dir: _site
+
+jupyter: python3
+execute:
+  freeze: auto
+  warning: false
+  error: false
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    code-copy: true
+    embed-resources: true

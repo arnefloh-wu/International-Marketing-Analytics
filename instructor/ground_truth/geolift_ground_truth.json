@@ -1,0 +1,22 @@
+{
+  "true_lift_pct": 6.0,
+  "treated_regions": [
+    "Frankfurt",
+    "Hannover",
+    "Oberhausen",
+    "Stuttgart",
+    "Wuppertal",
+    "Augsburg",
+    "Rostock",
+    "Karlsruhe",
+    "Dresden",
+    "K\u00f6ln",
+    "Leipzig",
+    "D\u00fcsseldorf"
+  ],
+  "test_weeks": [
+    "2025-09-08",
+    "2025-10-27"
+  ],
+  "carryover_weeks_after_test": 2
+}

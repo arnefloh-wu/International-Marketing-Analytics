@@ -1,0 +1,43 @@
+{
+  "beta": {
+    "display": 0.15,
+    "paid_search": 0.55,
+    "paid_social": 0.35,
+    "email": 0.6,
+    "affiliate": 0.45,
+    "organic": 0.5
+  },
+  "country_intercept": {
+    "AT": -2.6,
+    "DE": -2.4,
+    "FR": -2.7,
+    "IT": -2.9,
+    "NL": -2.3,
+    "PL": -3.1
+  },
+  "country_modifier": {
+    "AT": {
+      "paid_social": 0.9
+    },
+    "DE": {
+      "paid_search": 1.3
+    },
+    "FR": {
+      "display": 1.4,
+      "email": 0.8
+    },
+    "IT": {
+      "paid_social": 1.5
+    },
+    "NL": {
+      "email": 1.3
+    },
+    "PL": {
+      "paid_social": 1.6,
+      "affiliate": 1.4
+    }
+  },
+  "mobile_effect": 0.25,
+  "new_customer_effect": -0.5,
+  "last_touch_search_bonus": 0.3
+}

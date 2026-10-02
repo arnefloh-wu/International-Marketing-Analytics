@@ -1,0 +1,122 @@
+---
+title: "International Marketing Analytics"
+subtitle: "MSc International Management / CEMS · WU Vienna · Winter 2026/27"
+author: "Dr. Arne Floh, Department of Global Business and Trade"
+date: 2026-10-06
+format:
+  html:
+    toc: true
+    toc-depth: 2
+  docx:
+    toc: true
+---
+
+::: {.callout-important}
+Items marked **[to align]** are working assumptions. They must be aligned with the official course entry in the WU course catalogue (course 1243, winter term 2026) before publication.
+:::
+
+## Course at a glance
+
+| | |
+|---|---|
+| Course type | CEMS Hard Skills / Exclusive / Data Analytics, in person **[to align: ECTS and contact hours]** |
+| Dates | Tuesdays, 6, 13, 20, 27 October and 3 November 2026 **[to align: times and rooms]** |
+| Cohort | ca. 30 CEMS students |
+| Language | English |
+| Tools | Python, Positron, Quarto, GitHub, AI coding assistants |
+| Running case | Alpenglow, a Vienna-based premium chocolate brand active in six European markets |
+
+## Why this course
+
+Marketing budgets are the largest discretionary spend in most consumer companies, and they are increasingly allocated across countries and media channels by models rather than by negotiation. Marketing mix modelling (MMM) has returned to the centre of this debate since privacy changes made user-level tracking unreliable. Managers who can read, challenge and commission these models hold the budget conversation.
+
+This course trains you to do exactly that. You will build marketing mix models in Python for a company operating in six markets, forecast its sales, test what an experiment can add, compare attribution methods, and finally defend a cross-country budget allocation in front of a "board". You will write little code by hand: the course assumes that an AI coding assistant writes most of it and teaches you to specify, check and communicate analyses instead.
+
+## Learning outcomes
+
+After the course, you can:
+
+1. Explain the logic of marketing mix modelling: carryover (adstock), saturation, baseline versus incremental sales, ROAS versus marginal ROAS.
+2. Specify, estimate and diagnose regression models for marketing response data in Python: OLS, log-log elasticity models, panel fixed effects, hierarchical Bayesian MMM.
+3. Translate model output into a cross-country, cross-channel budget allocation and defend it under uncertainty.
+4. Produce and evaluate short-term sales forecasts as a planning baseline.
+5. Design and analyse a geo-lift experiment and use it to calibrate an MMM.
+6. Compare attribution approaches and explain why they disagree across markets.
+7. Work reproducibly with Python, Positron, Quarto and GitHub, and use AI assistants responsibly.
+
+## Prerequisites
+
+None beyond bachelor-level statistics. No programming experience is expected. You need your own laptop with administrator rights to install software (see the setup guide in `setup/`).
+
+## Schedule
+
+| Session | Date | Topic | Decision of the day |
+|---|---|---|---|
+| 1 | Tue 6 Oct | Toolkit and regression foundations | Is our price too high in Poland? |
+| 2 | Tue 13 Oct | Marketing mix modelling I: one country | What did TV do for us in Germany? |
+| 3 | Tue 20 Oct | Marketing mix modelling II: many countries, one budget | Where should the next euro go? |
+| 4 | Tue 27 Oct | Forecasting, experiments and attribution | Can we trust the model? |
+| 5 | Tue 3 Nov | Group project pitches and wrap-up | Board meeting: the 2027 budget |
+
+Each session combines a concept lecture (60 min), a guided lab in Positron (90 min) and a team exercise on the project data (60 min), followed by a debrief. A short online quiz opens after each of Sessions 1 to 4.
+
+## Assessment **[to align]**
+
+| Component | Weight | Format |
+|---|---|---|
+| Weekly quizzes (best 3 of 4) | 30 % | individual, online, auto-graded |
+| Lab check-ins (after Sessions 2 and 4) | 20 % | individual Quarto notebook, auto-checked |
+| Group project: Alpenglow 2027 budget allocation | 40 % | group of 5: GitHub repository, Quarto report, 10-minute pitch |
+| Peer evaluation and contribution | 10 % | GitHub history and peer form |
+
+Grades follow the WU scale: 1 (≥ 90 %), 2 (80–89 %), 3 (70–79 %), 4 (60–69 %), 5 (< 60 %). Attendance of at least 80 % of sessions is required **[to align]**.
+
+### Group project
+
+Groups act as the analytics team of Alpenglow. Using the weekly panel for six countries, the German geo-lift test and the multi-market journey data, each group builds an MMM, forecasts the 2026 baseline, proposes how a fixed 2027 media budget should be split across countries and channels, and quantifies the expected gain and its uncertainty. Deliverables: a GitHub repository with a reproducible Quarto report (max. 12 pages) and a 10-minute pitch in Session 5. The brief and rubric are in `assignments/group-project/`.
+
+## Use of AI tools
+
+AI coding assistants (Positron Assistant, GitHub Copilot, Claude Code or similar) are expected and encouraged for all coding work. Rules:
+
+1. You are responsible for every number you report. Verify outputs with the checks taught in class.
+2. Document the prompts that produced non-trivial code in your Quarto notebooks (a short "prompt log" section).
+3. Quizzes are closed-book and test understanding, not code.
+4. Fabricated references or results are academic misconduct under WU rules.
+
+## Reading
+
+Core:
+
+- Yildirim, G. and Kübler, R. V. (2025). *Applied Marketing Analytics Using Python*. SAGE. Chapters on regression, market response and marketing mix modelling.
+- Schwarz, J. S., Chapman, C. and Feit, E. M. (2020). *Python for Marketing Research and Analytics*. Springer. Chapters 1 to 7 as Python and regression reference.
+
+Marketing mix modelling:
+
+- Chan, D. and Perry, M. (2017). Challenges and opportunities in media mix modeling. Google Research.
+- Jin, Y., Wang, Y., Sun, Y., Chan, D. and Koehler, J. (2017). Bayesian methods for media mix modeling with carryover and shape effects. Google Research.
+- Sun, Y., Wang, Y., Jin, Y., Chan, D. and Koehler, J. (2017). A hierarchical Bayesian approach to improve media mix models using category data. Google Research.
+- Hanssens, D. M., Parsons, L. J. and Schultz, R. L. (2001). *Market Response Models: Econometric and Time Series Analysis*. Kluwer. Chapters 1 to 3 as background.
+- PyMC Labs. *PyMC-Marketing documentation*: MMM example, budget allocation, multidimensional MMM.
+
+Experiments and attribution:
+
+- Gordon, B. R., Zettelmeyer, F., Bhargava, N. and Chapsky, D. (2019). A comparison of approaches to advertising measurement: Evidence from big field experiments at Facebook. *Marketing Science*, 38(2), 193–225.
+- Meta Open Source (2022). *GeoLift* documentation and methodology.
+- Li, H. and Kannan, P. K. (2014). Attributing conversions in a multichannel online marketing environment: An empirical model and a field experiment. *Journal of Marketing Research*, 51(1), 40–56.
+
+Supplementary:
+
+- Diaz-Bérrio, G. (2024). *Data Analytics for Marketing*. Packt.
+- Open-source MMM overviews and tool comparisons published by the PyMC Labs, Meta Robyn and Google Meridian teams.
+
+## Course policies
+
+- Bring your laptop to every session with the environment installed (Session 1 includes a setup clinic).
+- Group work is submitted through GitHub; the commit history is part of the assessment.
+- Late submissions lose 10 percentage points per day unless agreed in advance.
+- WU rules on academic integrity apply.
+
+## Contact
+
+Dr. Arne Floh, Department of Global Business and Trade, WU Vienna. Office hours by appointment; questions during the course go to the GitHub Discussions board of the course repository.

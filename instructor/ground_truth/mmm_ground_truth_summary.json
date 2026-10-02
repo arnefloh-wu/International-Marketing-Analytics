@@ -1,0 +1,106 @@
+{
+  "seed": 2026,
+  "adstock_alpha": {
+    "tv": 0.7,
+    "online_video": 0.5,
+    "paid_search": 0.1,
+    "paid_social": 0.3,
+    "ooh": 0.6
+  },
+  "hill_s": {
+    "tv": 1.6,
+    "online_video": 1.3,
+    "paid_search": 1.1,
+    "paid_social": 1.4,
+    "ooh": 1.8
+  },
+  "hill_k_base": {
+    "tv": 180.0,
+    "online_video": 60.0,
+    "paid_search": 45.0,
+    "paid_social": 50.0,
+    "ooh": 70.0
+  },
+  "market_scale": {
+    "AT": 0.18,
+    "DE": 1.0,
+    "FR": 0.55,
+    "IT": 0.45,
+    "NL": 0.22,
+    "PL": 0.2
+  },
+  "price_elasticity": {
+    "AT": -1.4,
+    "DE": -1.7,
+    "FR": -1.5,
+    "IT": -1.9,
+    "NL": -1.6,
+    "PL": -2.3
+  },
+  "promo_effect": {
+    "AT": 0.55,
+    "DE": 0.7,
+    "FR": 0.6,
+    "IT": 0.8,
+    "NL": 0.5,
+    "PL": 0.95
+  },
+  "base_sales_k": {
+    "AT": 95.0,
+    "DE": 520.0,
+    "FR": 260.0,
+    "IT": 210.0,
+    "NL": 120.0,
+    "PL": 90.0
+  },
+  "beta_max_units_k": {
+    "AT": {
+      "tv": 28,
+      "online_video": 14,
+      "paid_search": 10,
+      "paid_social": 12,
+      "ooh": 9
+    },
+    "DE": {
+      "tv": 150,
+      "online_video": 70,
+      "paid_search": 75,
+      "paid_social": 55,
+      "ooh": 40
+    },
+    "FR": {
+      "tv": 80,
+      "online_video": 32,
+      "paid_search": 28,
+      "paid_social": 30,
+      "ooh": 36
+    },
+    "IT": {
+      "tv": 75,
+      "online_video": 26,
+      "paid_search": 20,
+      "paid_social": 34,
+      "ooh": 30
+    },
+    "NL": {
+      "tv": 18,
+      "online_video": 26,
+      "paid_search": 20,
+      "paid_social": 24,
+      "ooh": 8
+    },
+    "PL": {
+      "tv": 30,
+      "online_video": 20,
+      "paid_search": 9,
+      "paid_social": 32,
+      "ooh": 7
+    }
+  },
+  "optimisation": {
+    "weekly_budget_k": 709.67,
+    "weekly_incremental_revenue_current_k": 1224.35,
+    "weekly_incremental_revenue_optimal_k": 1292.88,
+    "improvement_pct": 5.6
+  }
+}
