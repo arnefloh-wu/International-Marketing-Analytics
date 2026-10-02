@@ -16,3 +16,7 @@ __pycache__/
 *.pptx
 
 /.quarto/
+
+# placeholder check-in folders written by the labs when GITHUB_USERNAME is left at its default
+assignments/checks/submissions/your-github-username/
+assignments/checks/submissions/your_github_username/

@@ -1,0 +1,114 @@
+---
+title: "Group project rubric, peer evaluation and contribution statement"
+subtitle: "Alpenglow 2027 media budget · International Marketing Analytics · WU Vienna"
+author: "Dr. Arne Floh"
+date: 2026-10-06
+format:
+  html:
+    toc: true
+    toc-depth: 2
+---
+
+The project is scored on **100 points** and counts for **40 % of the course grade**. Each criterion is scored on one of four performance levels; the table gives the point range for each level. The group receives one score; the peer evaluation (separate 10 % component) adjusts individual grades.
+
+| Level | Meaning | Share of criterion points |
+|---|---|---|
+| **Excellent** | Would be accepted by a critical CMO and a careful statistician | 90 to 100 % |
+| **Good** | Sound work with gaps that do not change the decision | 75 to 89 % |
+| **Adequate** | Meets the brief but with errors or omissions that a board would challenge | 60 to 74 % |
+| **Insufficient** | Missing, wrong or not reproducible | 0 to 59 % |
+
+## 1. Analysis quality (35 points): Tasks 1 to 3
+
+| Level | Points | Descriptor |
+|---|---|---|
+| Excellent | 32 to 35 | Per-country and pooled or hierarchical MMMs are specified with adstock, saturation and sensible controls; the choice between them is argued with holdout fit *and* plausibility. ROAS table for all 30 cells with uncertainty. Forecast evaluated against seasonal naive with the right holdout and read as a planning baseline. Geo-lift analysed with a defensible identification strategy and confidence interval; the comparison with the MMM is quantified and the calibration or sanity-check decision is justified. Diagnostics (residuals, VIF or posterior checks) are reported and acted on. |
+| Good | 26 to 31 | Both model families are present and compared; estimates are plausible for most cells; a holdout exists. Forecast and geo-lift done correctly, but the link to the MMM (what changed because of the test) is thin, or uncertainty is reported for only part of the analysis. |
+| Adequate | 21 to 25 | Models run and produce a table, but one of the required comparisons is missing, the holdout is wrong or absent, controls omit obvious confounders (seasonality, price), or the geo-lift is a before-after comparison without a control group. |
+| Insufficient | 0 to 20 | Model table absent or not produced by the code; ROAS values implausible without comment; forecast or geo-lift task missing. |
+
+## 2. Decision quality and uncertainty (25 points): Task 4
+
+| Level | Points | Descriptor |
+|---|---|---|
+| Excellent | 23 to 25 | At least two scenarios built from the fitted response curves; the budget constraint holds; expected incremental revenue per scenario with intervals (bootstrap, posterior or scenario ranges); the recommended scenario is argued against the alternatives with explicit trade-offs (gain versus feasibility, small-market risk). Reallocations are large where the evidence is strong and cautious where it is weak. `allocation_2027.csv` passes the auto-check and matches the report. |
+| Good | 20 to 22 | Two scenarios and a recommendation with an expected gain; uncertainty is reported but not used in the decision, or the link between model uncertainty and allocation caution is asserted rather than shown. |
+| Adequate | 15 to 19 | One scenario, or scenarios not derived from the response curves (for example proportional reallocation by ROAS rank), or an expected gain with no uncertainty, or an allocation that ignores saturation (all money to the top-ROAS cell). |
+| Insufficient | 0 to 14 | Allocation file missing, fails the auto-check, or contradicts the report; no expected gain stated. |
+
+## 3. International insight (10 points): Task 5
+
+| Level | Points | Descriptor |
+|---|---|---|
+| Excellent | 9 to 10 | One cross-country pattern in channel effectiveness is shown with a clear figure and linked to a specific market characteristic from `country_meta.csv` through a mechanism (for example, distribution build-up in young markets makes awareness media less productive). The limits of six observations are stated honestly, and the insight changes something in the recommendation. |
+| Good | 8 | A pattern and a plausible explanation, but the mechanism is loose or the insight has no consequence for the allocation. |
+| Adequate | 6 to 7 | Descriptive comparison of countries without an explanation, or an explanation without evidence from the metadata. |
+| Insufficient | 0 to 5 | Missing, or a correlation between two variables across six countries presented as proof. |
+
+## 4. Communication and pitch (15 points)
+
+| Level | Points | Descriptor |
+|---|---|---|
+| Excellent | 14 to 15 | Report: within 12 pages, decision first, every figure has a message, numbers have units and intervals, the executive summary could be sent to the board alone. Pitch: within 10 minutes and 8 slides, every member speaks, the recommendation and its uncertainty are clear, board questions are answered with evidence from the analysis. |
+| Good | 11 to 13 | Clear report and pitch with minor issues: a figure without a message, a slide with too much text, a question answered vaguely. |
+| Adequate | 9 to 10 | Method-first structure, page or time limit exceeded, numbers without units or uncertainty, or a pitch in which the recommendation is hard to find. |
+| Insufficient | 0 to 8 | Report or pitch missing, far over limits, or unreadable. |
+
+## 5. Reproducibility and GitHub practice (15 points)
+
+| Level | Points | Descriptor |
+|---|---|---|
+| Excellent | 14 to 15 | `report.qmd` renders from a clean clone next to the course repository in under ten minutes; every table and figure is produced by code in `code/`; no data copied; README explains how to reproduce; commit history shows regular, small, meaningful commits from all five accounts; the prompt log documents non-trivial prompts and how outputs were verified; seeds fixed. |
+| Good | 11 to 13 | Renders with minor manual steps; most results reproducible; commits from all members but uneven; prompt log present but generic. |
+| Adequate | 9 to 10 | Rendering requires fixes; some figures pasted rather than produced; data duplicated; one or two members with almost no commits; prompt log thin. |
+| Insufficient | 0 to 8 | Does not render; code missing; single-commit repository; prompt log absent. |
+
+## 6. Automated checks
+
+The following are checked by `pytest assignments/checks/test_project.py` and by the grader before reading:
+
+- `allocation_2027.csv` has 30 rows, all 6 x 5 cells, non-negative values, sum equal to the weekly budget within 0.5 %;
+- the repository has tag `v1.0` at or before the deadline;
+- `report.pdf` is at most 12 pages excluding appendices; `pitch.pdf` has at most 8 slides;
+- the course data are not duplicated in the repository.
+
+Failing an automated check does not fail the project; it is scored in the relevant criterion.
+
+## 7. Peer evaluation form
+
+Each student completes one form per team-mate (four forms) by **Friday 6 November 2026**, through the course survey link. The form feeds the 10 % peer evaluation and contribution component together with the commit history. Scale: 1 = strongly disagree, 5 = strongly agree.
+
+| Statement about my team-mate | 1 | 2 | 3 | 4 | 5 |
+|---|---|---|---|---|---|
+| Delivered their share of the work on time | | | | | |
+| Work delivered was of good quality and could be used without rework | | | | | |
+| Contributed to the analysis (modelling, checking, interpreting), not only to formatting | | | | | |
+| Verified AI-generated output rather than pasting it | | | | | |
+| Communicated clearly and responded to the group | | | | | |
+| Contributed to the pitch and to answering board questions | | | | | |
+| **Overall**: I would want to work with this person again | | | | | |
+
+**Share of total group effort you attribute to this person** (the five shares across the group, including yourself, should sum to 100 %): ______ %
+
+**One thing this person did particularly well**:
+
+**One thing this person could do better**:
+
+Scoring: the mean score across the four forms received is combined with the share of effort attributed by team-mates and the commit record. A mean below 2.5 or an attributed share below 10 % triggers a conversation with the instructor before grades are finalised.
+
+## 8. Contribution statement template
+
+Copy this table into Appendix B of `report.qmd`. All members sign (initials in the last column) and the statement is committed from each member's own GitHub account at least once.
+
+| Member | GitHub username | Contribution (tasks, sections, code files) | Share of work (%) | Initials |
+|---|---|---|---|---|
+| Name 1 | | e.g. per-country MMMs (code/02), Section 2.1, pitch slides 2 to 3 | 20 | |
+| Name 2 | | e.g. hierarchical model (code/03), Section 2.2 and 2.3 | 20 | |
+| Name 3 | | e.g. forecast and geo-lift (code/04, 05), Sections 3 and 4 | 20 | |
+| Name 4 | | e.g. allocation scenarios (code/06), Section 5, allocation_2027.csv | 20 | |
+| Name 5 | | e.g. international insight, executive summary, report editing, prompt log | 20 | |
+| **Total** | | | **100** | |
+
+> We confirm that this statement is accurate, that every number in the report is produced by the code in this repository, and that all non-trivial AI-assisted code is documented in Appendix A.
+>
+> Date: ______  Signatures (initials): ______ ______ ______ ______ ______

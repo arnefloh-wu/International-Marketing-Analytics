@@ -1,0 +1,291 @@
+---
+title: "Board meeting: the 2027 budget"
+subtitle: "Session 5 · Project pitches and wrap-up"
+author: "International Marketing Analytics · WU Vienna · CEMS"
+date: 2026-11-03
+format:
+  revealjs:
+    theme: [default, ../../assets/wu.scss]
+    slide-number: true
+    footer: "International Marketing Analytics · WU Vienna"
+    width: 1280
+    height: 720
+    fig-width: 8
+    fig-height: 4
+  pptx:
+    fig-width: 8
+    fig-height: 4
+execute:
+  echo: false
+  warning: false
+---
+
+## Welcome to the board meeting
+
+::: {.callout-important}
+## Instructor-only deck
+Slides 8 to 12 (the reveal) read the ground truth from `instructor/ground_truth/`. Render and show this deck **after** all six pitches. Student-facing files never read from `instructor/`.
+:::
+
+- Six groups, one fixed budget, one board
+- 10 minutes to pitch, 5 minutes to defend
+- The board: you, in role
+- Then the reveal: what the data were really made of
+- Then: what this course was about, and where it leads
+
+::: {.notes}
+Set the tone: this is the meeting the whole course has been working towards. Remind students that the board roles are serious: the questions they ask are the questions they will be asked in their first analytics job. Hand out role cards and question cards now if not done before the session.
+:::
+
+## Decision of the day
+
+::: {.decision}
+**How should Alpenglow split a fixed 2027 media budget across six countries and five channels, and how sure are we?**
+:::
+
+- Total budget frozen at the 2025 media spend
+- Six country managers, five channels, thirty cells
+- Thirty-six months of data, one experiment, one board decision
+
+::: {.notes}
+The same decision opened Session 3; now it gets answered six times. Ask the board to listen for three things in every pitch: the recommendation, the expected gain with its interval, and the one assumption that would break it.
+:::
+
+## Rules of the meeting
+
+- 10 minutes, hard stop, timer visible; then 5 minutes of questions
+- Slides as submitted at tag `v1.0`: max 8, opened from the repository
+- Every group member speaks; the board may address a named member
+- Numbers on slides are numbers in the report
+- The chair calls at least three different board roles per Q&A
+- Board members complete the peer feedback form after each pitch
+
+::: {.notes}
+Be strict on time: ten minutes is what a real board gives. If a group runs over, stop them and move to questions. Peer feedback forms are in peer_feedback_form.md; collect them in the deliberation block.
+:::
+
+## Running order
+
+| Slot | Time | Group | Chair's note |
+|---|---|---|---|
+| 1 | 13:10 | Group __ | |
+| 2 | 13:27 | Group __ | |
+| 3 | 13:44 | Group __ | |
+| | 14:00 | Break | |
+| 4 | 14:10 | Group __ | |
+| 5 | 14:27 | Group __ | |
+| 6 | 14:44 | Group __ | |
+
+::: {.notes}
+Fill in the order drawn by lot at the end of Session 4. Seventeen minutes per slot: ten pitch, five questions, two changeover. Open the next group's pitch.pdf during the Q&A of the previous group.
+:::
+
+## The board: roles and question cards
+
+- **CFO**: euro per year, interval, downside
+- **CEO**: the one approval needed today, the risk
+- **Country managers** (PL, NL, DE): "You cut my TV. What do I tell my retailers?"
+- **Media agency**: is the difference the market or the model?
+- **Sceptical statistician**: weeks of data, interval width, pooling
+- **Competitor's analytics lead**: which experiment proves you wrong?
+
+::: {.notes}
+Every student who is not presenting holds one role for the whole afternoon and three question cards. Ask them to stay in role: the CFO never asks about Hofstede, the statistician never asks about retailers. The question cards in peer_feedback_form.md may be read verbatim.
+:::
+
+## How the pitch is scored
+
+| Criterion | Points | What the board listens for |
+|---|---|---|
+| Analysis quality | 35 | Two model families compared, forecast, geo-lift reconciled |
+| Decision and uncertainty | 25 | Scenarios, expected gain with interval, feasibility |
+| International insight | 10 | A mechanism, not a description |
+| Communication and pitch | 15 | Decision first, one message per chart, Q&A with numbers |
+| Reproducibility and GitHub | 15 | Renders from a clean clone, commits from all five |
+
+- Peer feedback informs the communication score; it does not determine it
+- Peer evaluation (10 % of the course grade) is separate: forms due Fri 6 Nov
+
+::: {.notes}
+The rubric is in assignments/group-project/rubric.qmd. Most points are decided by the report, which the board has not read; the pitch is where communication and Q&A are scored. Make clear that the board vote is advisory.
+:::
+
+## How the data were made
+
+::: {.callout-warning}
+## Instructor only
+From here on, ground truth. Do not share these slides before all project grades are final.
+:::
+
+- Weekly sales = baseline x (price, promo, distribution, season, trend, competitor, confidence) + sum of channel effects + 3.5 % noise
+- Channel effect = beta(country, channel) x Hill(adstocked spend)
+- Adstock decay by channel: TV 0.7, OOH 0.6, online video 0.5, paid social 0.3, paid search 0.1
+- Half-saturation scaled by market size; TV and OOH flighted; search and social with dark weeks
+- Budgets follow seasonality: the confound every model had to survive
+- Geo-lift: true lift 6 % in 12 of 40 regions for 8 weeks, with two weeks of carryover
+
+::: {.notes}
+Walk through data/generate_data.py on screen if time allows. The teaching points: the adstock decays students should have found by grid search; the Hill saturation that makes average ROAS and marginal ROAS differ; and the deliberate confound between budget timing and Q4 demand. Ask: who found the dark weeks in search and social?
+:::
+
+## True ROAS by country and channel
+
+```{python}
+#| label: fig-true-roas
+#| fig-cap: "True average ROAS 2023 to 2025 (incremental revenue / spend) from the data-generating process"
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+GT = Path("../../instructor/ground_truth")
+CHANNELS = ["tv", "online_video", "paid_search", "paid_social", "ooh"]
+LABELS = {"tv": "TV", "online_video": "Online\nvideo", "paid_search": "Paid\nsearch", "paid_social": "Paid\nsocial", "ooh": "OOH"}
+COUNTRIES = ["AT", "DE", "FR", "IT", "NL", "PL"]
+
+if (GT / "mmm_true_parameters.csv").exists():
+    truth = pd.read_csv(GT / "mmm_true_parameters.csv")
+    roas = truth.pivot(index="country", columns="channel", values="true_roas").loc[COUNTRIES, CHANNELS]
+    fig, ax = plt.subplots(figsize=(8, 4))
+    im = ax.imshow(roas.values, cmap="Blues", vmin=0, vmax=roas.values.max(), aspect="auto")
+    ax.set_xticks(range(len(CHANNELS)), [LABELS[c] for c in CHANNELS])
+    ax.set_yticks(range(len(COUNTRIES)), COUNTRIES)
+    for i in range(len(COUNTRIES)):
+        for j in range(len(CHANNELS)):
+            v = roas.values[i, j]
+            ax.text(j, i, f"{v:.2f}", ha="center", va="center", color="white" if v > 0.6 * roas.values.max() else "black", fontsize=10)
+    ax.set_xlabel("Channel"); ax.set_ylabel("Country")
+    fig.colorbar(im, ax=ax, label="True ROAS (EUR revenue per EUR spend)", shrink=0.85)
+    ax.spines[:].set_visible(False)
+    plt.tight_layout()
+else:
+    print("Placeholder: instructor/ground_truth/mmm_true_parameters.csv not found. The instructor fills this slide after grading.")
+```
+
+::: {.notes}
+Read the heatmap row by row. The Netherlands and Poland: TV weak, digital strong (young markets, fragmented awareness). France and Italy: OOH works (urban retail, lower retail concentration). Germany: paid search strongest. OOH in AT, NL, PL is below one. Ask which groups found these patterns and which groups' models produced a negative or absurd ROAS somewhere.
+:::
+
+## True optimal versus current allocation, by country
+
+```{python}
+#| label: fig-optimal-country
+#| fig-cap: "Weekly spend by country: 2025 average versus the true optimum for the same total budget (thousand EUR per week)"
+if (GT / "mmm_optimal_allocation.csv").exists():
+    opt = pd.read_csv(GT / "mmm_optimal_allocation.csv")
+    by_c = opt.groupby("country")[["current_weekly_spend_k_2025", "optimal_weekly_spend_k"]].sum().loc[COUNTRIES]
+    x = np.arange(len(COUNTRIES)); w = 0.38
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.bar(x - w / 2, by_c.current_weekly_spend_k_2025, w, label="2025 current", color="tab:gray")
+    ax.bar(x + w / 2, by_c.optimal_weekly_spend_k, w, label="True optimum", color="tab:blue")
+    for i, (cur, o) in enumerate(zip(by_c.current_weekly_spend_k_2025, by_c.optimal_weekly_spend_k)):
+        ax.text(x[i] + w / 2, o + 3, f"{100 * (o / cur - 1):+.0f} %", ha="center", fontsize=9)
+    ax.set_xticks(x, COUNTRIES); ax.set_ylabel("thousand EUR per week"); ax.set_xlabel("Country")
+    ax.legend(frameon=False); ax.spines[["top", "right"]].set_visible(False)
+    plt.tight_layout()
+else:
+    print("Placeholder: instructor/ground_truth/mmm_optimal_allocation.csv not found.")
+```
+
+::: {.notes}
+The optimum moves money out of the Netherlands and Poland in total (because TV and OOH there are wasted, not because the markets are bad) and, more mildly, out of Germany, and into France, Italy and Austria, where TV and (in FR, IT) OOH still have headroom. Total weekly budget 709.67 thousand EUR; the true optimum improves weekly incremental revenue by about 5.6 % (1,224 to 1,293 thousand EUR). Point out how small the headline gain is relative to the noise: this is why intervals matter.
+:::
+
+## True optimal versus current allocation, by cell
+
+```{python}
+#| label: fig-optimal-cells
+#| fig-cap: "Change from 2025 spend to the true optimum per country x channel (percentage points, capped at +150 %)"
+if (GT / "mmm_optimal_allocation.csv").exists():
+    chg = opt.pivot(index="country", columns="channel", values="change_pct").loc[COUNTRIES, CHANNELS].clip(upper=150)
+    fig, ax = plt.subplots(figsize=(8, 4))
+    im = ax.imshow(chg.values, cmap="RdBu", vmin=-150, vmax=150, aspect="auto")
+    ax.set_xticks(range(len(CHANNELS)), [LABELS[c] for c in CHANNELS])
+    ax.set_yticks(range(len(COUNTRIES)), COUNTRIES)
+    for i in range(len(COUNTRIES)):
+        for j in range(len(CHANNELS)):
+            v = chg.values[i, j]
+            ax.text(j, i, f"{v:+.0f}", ha="center", va="center", color="white" if abs(v) > 90 else "black", fontsize=10)
+    ax.set_xlabel("Channel"); ax.set_ylabel("Country")
+    fig.colorbar(im, ax=ax, label="Change vs 2025 (%)", shrink=0.85)
+    ax.spines[:].set_visible(False)
+    plt.tight_layout()
+else:
+    print("Placeholder: instructor/ground_truth/mmm_optimal_allocation.csv not found.")
+```
+
+::: {.notes}
+Red cells are cuts, blue cells are increases. The optimiser sets OOH to zero in AT, DE, NL, PL and TV to zero in NL and PL, and increases OOH in FR and IT by 77 and 144 %. Ask the board: would any real company approve a 100 % cut? This is the argument for the bounded scenario in the brief: the model's optimum is a direction, not an instruction.
+:::
+
+## Where the groups landed
+
+```{python}
+#| label: tbl-groups
+#| output: asis
+from IPython.display import Markdown
+
+folder = Path("group_allocations")
+files = sorted(folder.glob("group-*.csv")) if folder.exists() else []
+if files and (GT / "mmm_optimal_allocation.csv").exists():
+    rows = []
+    cur = opt.set_index(["country", "channel"]).current_weekly_spend_k_2025
+    best = opt.set_index(["country", "channel"]).optimal_weekly_spend_k
+    for f in files:
+        g = pd.read_csv(f).set_index(["country", "channel"]).weekly_spend_k.reindex(cur.index)
+        dist_opt = (g - best).abs().sum() / 2
+        dist_cur = (g - cur).abs().sum() / 2
+        same_dir = int(((g - cur).mul(best - cur) > 0).sum())
+        rows.append({"Group": f.stem, "Moved vs 2025 (k EUR/week)": round(dist_cur, 1),
+                     "Distance to optimum (k EUR/week)": round(dist_opt, 1), "Cells moved in the right direction (of 30)": same_dir})
+    display(Markdown(pd.DataFrame(rows).to_markdown(index=False)))
+else:
+    display(Markdown(
+        "| Group | Moved vs 2025 (k EUR/week) | Distance to optimum (k EUR/week) | Cells moved in the right direction (of 30) |\n"
+        "|---|---|---|---|\n" + "\n".join(f"| Group {i} | | | |" for i in range(1, 7)) +
+        "\n\n*Placeholder: copy each group's `allocation_2027.csv` to `sessions/05-project-pitches/group_allocations/group-XX.csv` and re-render.*"
+    ))
+```
+
+::: {.notes}
+"Moved vs 2025" is half the sum of absolute changes, i.e. the amount of money reallocated. "Distance to optimum" uses the same measure against the true optimum (the 2025 allocation itself is about 100 thousand EUR per week away). "Right direction" counts cells where the group moved the same way as the truth. Celebrate direction over distance: a group that moved 20 cells the right way with cautious steps did what a good analytics team does.
+:::
+
+## What the course taught
+
+- MMM, forecasting, experiments and attribution are regressions with different design matrices
+- Average ROAS tells you about the past; marginal ROAS tells you where the next euro goes
+- Budgets that follow demand confound the model: control for seasonality or be fooled
+- Small markets need pooling; hierarchical models borrow strength and admit uncertainty
+- One experiment is worth a lot of modelling, and it still needs the model to generalise
+- An AI assistant writes the code; you own every number
+
+::: {.notes}
+Connect each bullet to a session. Ask students which of the six they would put on a slide for their first employer. Close with the honesty point: the true improvement available was about 5.6 %, and most groups' intervals were wider than that. That is normal and it is why the board needs analysts rather than dashboards.
+:::
+
+## Where this work is done
+
+- **In-house analytics and media teams** of consumer companies (FMCG, retail, telecoms, travel): MMM, experimentation, budget planning
+- **MMM and measurement vendors and agencies**: Nielsen, Analytic Partners, Ekimetrics, GroupM/WPP, Publicis, dentsu, Omnicom
+- **Platforms**: Google (Meridian), Meta (Robyn, GeoLift), Amazon Ads measurement teams
+- **Open-source ecosystem**: PyMC Labs (PyMC-Marketing), Recast, Mutiny and many consultancies built on them
+- **Roles**: marketing analyst, marketing scientist, measurement lead, growth analyst, media planner with analytics focus
+- **What they test for**: can you explain adstock and saturation to a CMO, read a regression table, and say what you do not know
+
+::: {.notes}
+Encourage students to put the project repository on their CV and GitHub profile (after removing anything the group wants private). Mention that the CEMS network has alumni in most of these firms. Offer office hours for career questions.
+:::
+
+## Further reading and thank you
+
+- Chan and Perry (2017), *Challenges and opportunities in media mix modeling*; Jin et al. (2017) on carryover and shape effects
+- Gordon et al. (2019), *Marketing Science*: why observational attribution misses what experiments find
+- PyMC-Marketing documentation: MMM, budget allocation, multidimensional models
+- Google Meridian and Meta Robyn documentation for the vendor view
+- Hanssens, Parsons and Schultz (2001), *Market Response Models*, for the foundations
+- **Please complete the course evaluation** (link on the Discussions board) and the peer evaluation by Friday 6 November
+
+::: {.notes}
+Thank the groups and the board. Remind everyone of the two remaining deadlines: course evaluation and peer evaluation forms (Friday 6 November). Grades follow within the WU deadline.
+:::

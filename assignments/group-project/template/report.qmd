@@ -1,0 +1,145 @@
+---
+title: "Alpenglow 2027 media budget: a recommendation to the board"
+subtitle: "International Marketing Analytics · WU Vienna · Group XX"
+author:
+  - "Member 1 (GitHub: user1)"
+  - "Member 2 (GitHub: user2)"
+  - "Member 3 (GitHub: user3)"
+  - "Member 4 (GitHub: user4)"
+  - "Member 5 (GitHub: user5)"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    code-fold: true
+    fig-width: 8
+    fig-height: 4
+  pdf:
+    toc: false
+    fig-width: 8
+    fig-height: 4
+execute:
+  warning: false
+  echo: true
+---
+
+<!--
+Skeleton for the group report. Keep the section headings (the rubric follows them).
+Hard limit: 12 pages in the PDF/HTML print view, excluding the two appendices.
+Delete the guidance comments before submission.
+-->
+
+```{python}
+#| label: setup
+#| code-summary: "Setup and data loading"
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# The course repository is cloned next to this repository. The loader tries the
+# relative path first and falls back to the course GitHub URL (see code/00_load.py).
+sys.path.append("code")
+sys.path.append("../code")
+from importlib import import_module
+load = import_module("00_load")
+
+data = load.load_all()
+panel, meta, geolift, journeys = data["panel"], data["meta"], data["geolift"], data["journeys"]
+BUDGET_WEEKLY_K = load.weekly_budget_2027(panel)
+print(f"Data root: {load.data_root()}")
+print(f"2027 weekly budget: {BUDGET_WEEKLY_K:,.2f} thousand EUR per week ({52 * BUDGET_WEEKLY_K:,.0f} thousand EUR over 52 weeks)")
+```
+
+## Executive summary {.unnumbered}
+
+<!-- Half a page, written last. The decision, the expected gain in incremental revenue
+with its uncertainty, the three changes the board must approve, and the main risk. -->
+
+## 1. The decision and the data
+
+<!-- The manager's question. What the panel, country metadata, geo-lift and journey data
+contain; one descriptive figure (spend mix by country) and one table (2025 spend and sales). -->
+
+```{python}
+#| label: fig-spend-mix
+#| fig-cap: "2025 average weekly media spend by country and channel (thousand EUR)"
+spend_cols = [f"spend_{ch}_k" for ch in load.CHANNELS]
+y2025 = panel[panel.week.dt.year == 2025]
+mix = y2025.groupby("country")[spend_cols].mean()
+mix.columns = load.CHANNELS
+ax = mix.plot(kind="bar", stacked=True, figsize=(8, 4))
+ax.set_ylabel("thousand EUR per week"); ax.set_xlabel("")
+ax.legend(title="", ncol=5, fontsize=8, loc="upper right")
+plt.tight_layout()
+```
+
+## 2. Marketing mix models
+
+### 2.1 Per-country models
+
+<!-- Specification (adstock, saturation, controls), holdout performance, ROAS table
+for 6 countries x 5 channels. -->
+
+### 2.2 Pooled or hierarchical model
+
+<!-- Why pooling: small markets (AT, PL). Compare estimates with 2.1 and say which you trust where. -->
+
+### 2.3 Model comparison and diagnostics
+
+<!-- Holdout MAPE and R2 per country and model; residual checks; what you do not believe. -->
+
+## 3. 2026 baseline forecast
+
+<!-- Method, rolling-origin or holdout evaluation against seasonal naive, 2026 weekly
+baseline per country with intervals. -->
+
+## 4. Calibration with the German geo-lift test
+
+<!-- DiD or synthetic-control lift estimate with confidence interval; implied paid-social
+ROAS; comparison with the MMM estimate for Germany; what you changed in the model. -->
+
+## 5. The 2027 allocation
+
+<!-- Budget constraint (stated above), optimisation approach, at least two scenarios,
+expected incremental revenue and uncertainty per scenario, the recommended allocation. -->
+
+```{python}
+#| label: tbl-allocation
+#| tbl-cap: "Recommended 2027 weekly allocation (thousand EUR per week)"
+alloc = pd.read_csv("allocation_2027.csv")
+wide = alloc.pivot(index="country", columns="channel", values="weekly_spend_k")[load.CHANNELS]
+wide["total"] = wide.sum(axis=1)
+assert abs(alloc.weekly_spend_k.sum() - BUDGET_WEEKLY_K) / BUDGET_WEEKLY_K < 0.005, "allocation does not sum to the budget"
+wide.round(2)
+```
+
+## 6. International insight
+
+<!-- One cross-country pattern in channel effectiveness and the explanation you offer
+(market maturity, culture, retail structure) using country_meta.csv. One figure. -->
+
+## 7. Limitations and next steps
+
+<!-- What the board should not read into the numbers; which experiment to run next. -->
+
+## Appendix A: Prompt log {.unnumbered}
+
+<!-- One row per non-trivial prompt: date, tool, prompt (shortened), what it produced,
+what you checked and changed. -->
+
+| Date | Tool | Prompt (short) | Output used for | Verified by / how |
+|---|---|---|---|---|
+| | | | | |
+
+## Appendix B: Contribution statement {.unnumbered}
+
+<!-- Use the template in assignments/group-project/rubric.qmd. Signed by all members. -->
+
+| Member | Contribution | Share of work (%) | Signature (initials) |
+|---|---|---|---|
+| | | | |

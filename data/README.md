@@ -6,7 +6,7 @@ All course datasets describe **Alpenglow**, a fictional Vienna-based premium cho
 
 | Column | Description |
 |--------|-------------|
-| `week` | Monday of the ISO week, 2023-01-02 … 2025-12-29 |
+| `week` | Monday of the ISO week, 2023-01-02 … 2025-12-22 (156 ISO weeks; 2025 holds 51 weeks) |
 | `country` | ISO-2 code: AT, DE, FR, IT, NL, PL |
 | `sales_units_k` | Units sold (thousands) |
 | `revenue_eur_k` | Revenue (thousand EUR) = units × price |

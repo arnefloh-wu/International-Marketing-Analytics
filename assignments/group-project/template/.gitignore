@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# Quarto
+/.quarto/
+_freeze/
+*_files/
+report.html
+report.pdf
+*.pptx
+*.pdf
+!report.pdf
+!pitch.pdf
+
+# Data: never copy course data into the group repository
+data/
+*.csv
+!allocation_2027.csv
+!results/*.csv
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.positron/

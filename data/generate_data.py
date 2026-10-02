@@ -5,7 +5,7 @@ Generates three teaching datasets around a fictional premium chocolate brand,
 "Alpenglow", headquartered in Vienna and selling in six European markets.
 
 1. data/mmm/alpenglow_weekly.csv
-   Weekly country panel (6 countries x 156 weeks, 2023-01-02 .. 2025-12-29):
+   Weekly country panel (6 countries x 156 weeks, 2023-01-02 .. 2025-12-22):
    media spend in five channels, price, promotion, distribution, competitor
    activity, macro controls, holidays, and unit sales / revenue.
    The true data-generating process uses geometric adstock + Hill saturation
