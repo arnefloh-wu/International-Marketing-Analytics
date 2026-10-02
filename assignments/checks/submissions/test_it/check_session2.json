@@ -1,0 +1,8 @@
+{
+  "country": "IT",
+  "r2_train": 0.9592,
+  "r2_holdout": 0.9334,
+  "mape_holdout": 4.547,
+  "price_elasticity": -1.1429,
+  "n_weeks_train": 105
+}

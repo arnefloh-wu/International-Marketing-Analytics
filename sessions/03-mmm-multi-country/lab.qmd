@@ -143,7 +143,7 @@ pooled_tab["t"] = (pooled_tab.coef / pooled_tab.se).round(1)
 pooled_tab
 ```
 
-The pooled TV coefficient is about 0.05 with a standard error of 0.003, more than twice as precise as any single country. The country dummies (not shown) capture that German sales are structurally five times Austrian sales. The same model can be estimated with `linearmodels.PanelOLS(..., entity_effects=True)`, which also offers clustered standard errors by country; the point estimates are identical.
+The pooled TV coefficient is about 0.044 with a standard error of 0.003, more than twice as precise as any single country. The country dummies (not shown) capture that German sales are structurally five times Austrian sales. The same model can be estimated with `linearmodels.PanelOLS(..., entity_effects=True)`, which also offers clustered standard errors by country; the point estimates are identical.
 
 ```{python}
 #| label: partA-panelols
@@ -224,7 +224,7 @@ ax.set_xlabel("Country"); ax.legend(fontsize=8, loc="upper right")
 plt.tight_layout(); plt.show()
 ```
 
-**Interpretation.** The pooled band (about 0.045 to 0.055) is narrow but wrong for the Netherlands and Poland, where TV is clearly weaker: a pooled model would tell the Dutch team to keep buying TV. The separate and interaction estimates agree closely here because every country has three full years of data; the interaction model borrows the controls and so has slightly tighter intervals. The shrunk estimates move the two small-TV countries a little towards the pool. The trade-off in one sentence: pooling buys precision at the price of assuming homogeneity; partial pooling lets the data decide how much homogeneity to assume.
+**Interpretation.** The pooled band (about 0.038 to 0.050) is narrow but wrong for the Netherlands and Poland, where TV is clearly weaker (0.012 and 0.015): a pooled model would tell the Dutch team to keep buying TV. It is also too low for Italy (0.069). The separate and interaction estimates agree closely here because every country has three full years of data; the interaction model borrows the controls and so has slightly tighter intervals. The shrunk estimates move the two small-TV countries a little towards the pool. The trade-off in one sentence: pooling buys precision at the price of assuming homogeneity; partial pooling lets the data decide how much homogeneity to assume.
 
 ::: {.callout-note title="Check yourself"}
 - Does the pooled TV coefficient lie inside the separate-OLS interval for every country? For which countries does it not?
@@ -271,27 +271,40 @@ Sampling settings follow the course convention (`draws=500, tune=500, chains=2, 
 
 ```{python}
 #| label: partB-fit
-mmm = MMM(
-    date_column="week",
-    channel_columns=SPEND,
-    adstock=GeometricAdstock(l_max=10),
-    saturation=LogisticSaturation(),
-    control_columns=CTRL,
-    yearly_seasonality=2,
-)
+import logging
 
-t0 = time.time()
+class CollectLogs(logging.Handler):
+    """Collect the sampler's log messages (PyMC reports diagnostics through logging, not warnings)."""
+    def __init__(self):
+        super().__init__(); self.messages = []
+    def emit(self, record):
+        self.messages.append(record.getMessage())
+
+log_collector = CollectLogs()
+logging.getLogger("pymc").addHandler(log_collector)
+
 with warnings.catch_warnings(record=True) as caught:
     warnings.simplefilter("always")
+    mmm = MMM(
+        date_column="week",
+        channel_columns=SPEND,
+        adstock=GeometricAdstock(l_max=10),
+        saturation=LogisticSaturation(),
+        control_columns=CTRL,
+        yearly_seasonality=2,
+    )
+    t0 = time.time()
     mmm.fit(X, y, draws=500, tune=500, chains=2, random_seed=42, progressbar=False, target_accept=0.9)
-print(f"Sampling took {time.time() - t0:.0f} seconds.")
+print(f"Sampling took {time.time() - t0:.0f} seconds.\n")
 
-seen = set()
-for w in caught:
-    msg = str(w.message).strip().split("\n")[0]
-    if (w.category.__name__, msg) not in seen:
-        seen.add((w.category.__name__, msg))
-        print(f"- {w.category.__name__}: {msg[:160]}")
+print("Python warnings:")
+for cat, msg in {(w.category.__name__, str(w.message).strip().split("\n")[0]) for w in caught}:
+    print(f"- {cat}: {msg[:150]}")
+print("\nSampler messages:")
+for msg in log_collector.messages:
+    if any(key in msg.lower() for key in ("rhat", "recommend", "diverg", "effective")):
+        print("-", msg.split("\n")[0][:150])
+logging.getLogger("pymc").removeHandler(log_collector)
 ```
 
 ::: {.callout-warning title="What the warnings mean"}
@@ -315,7 +328,7 @@ How to read this table (the first Bayesian summary in the course):
 - `ess_bulk`: effective sample size; above about 400 is fine for means.
 - `r_hat`: agreement between chains; 1.00 is perfect, above 1.01 deserves a second look.
 
-The TV adstock posterior (`adstock_alpha[spend_tv_k]` mean about 0.69, interval about 0.58 to 0.79) recovers the Session 2 grid-search value of 0.7. The digital channels have wide adstock intervals (0.05 to 0.6): with EUR 7k per week of paid search in Austria, the data cannot pin down the carry-over, and the posterior mostly reflects the prior. That is the point of priors in a small market: they keep the model sensible where the data are silent. `saturation_beta` is the maximum effect of each channel on the scaled target; TV has the largest.
+The TV adstock posterior (`adstock_alpha[spend_tv_k]` mean about 0.69, interval about 0.58 to 0.79) recovers the Session 2 grid-search value of 0.7. The digital channels have wide adstock intervals (roughly 0 to 0.6): with EUR 7k per week of paid search in Austria, the data cannot pin down the carry-over, and the posterior mostly reflects the prior. That is the point of priors in a small market: they keep the model sensible where the data are silent. `saturation_beta` is the maximum effect of each channel on the scaled target; TV has the largest.
 
 ```{python}
 #| label: fig-partB-components
@@ -349,7 +362,7 @@ roas_tab = pd.DataFrame({
 roas_tab
 ```
 
-**Interpretation.** TV and paid social each account for roughly 30 % of the media-driven units in Austria; OOH for under 5 %. Paid social has the highest expected ROAS (about 2.5) and paid search is next (about 1.8). TV earns about EUR 1.4 per euro, with a 90 % interval of roughly 1.0 to 1.6: profitable, but not spectacular. OOH has an expected ROAS below 1 and a wide interval. The last column is the kind of statement only a Bayesian model gives directly: "the probability that TV pays back its cost is about 99 %, for OOH it is under 40 %".
+**Interpretation.** TV and paid social each account for roughly 30 % of the media-driven units in Austria; OOH for under 5 %. Paid social has the highest expected ROAS (about 2.5) and paid search is next (about 1.8). TV earns about EUR 1.4 per euro, with a 90 % interval of roughly 1.0 to 1.7: profitable, but not spectacular. OOH has an expected ROAS below 1 and a wide interval. The last column is the kind of statement only a Bayesian model gives directly: "the probability that TV pays back its cost is about 97 %, for OOH it is about 35 %".
 
 ```{python}
 #| label: fig-partB-curves
@@ -369,10 +382,11 @@ The response curves translate "spend x" into "incremental scaled sales". TV is s
 #| label: partB-signature
 import inspect
 sig = inspect.signature(mmm.optimize_budget)
-print({k: str(v.annotation).split(" | ")[0] for k, v in sig.parameters.items() if k in ("budget", "num_periods", "budget_bounds")})
+for name in ("budget", "num_periods", "budget_bounds"):
+    print(f"{name}: {sig.parameters[name].annotation}")
 ```
 
-`budget_bounds` accepts a dictionary `{channel column: (low, high)}` in the original spend units (or an xarray DataArray). Let us build it.
+`budget_bounds` accepts a dictionary `{channel column: (low, high)}` in the original spend units (or an xarray DataArray), and `None` means no bounds. Let us build the dictionary.
 
 ```{python}
 #| label: partB-optimise
@@ -397,7 +411,7 @@ opt_at["change_pct_bounded"] = ((opt_at.iloc[:, 1] / opt_at.current - 1) * 100).
 opt_at
 ```
 
-**Why bounds are needed.** Without bounds the optimiser puts the entire EUR 44k into paid social and nothing anywhere else: a *corner solution*. Paid social has the highest posterior ROAS and its response curve is nearly linear over the observed range, so the optimiser keeps buying until the budget is exhausted. This is mathematically correct and managerially absurd: the model has never seen EUR 44k of weekly social spend in Austria and knows nothing about what happens there. The bounded solution cuts TV to its floor, raises paid search and paid social to their 150 % ceilings, and keeps online video near current spend. Several channels sit exactly at a bound, which tells you the bounds are binding and the answer is partly a management assumption. The "Using default equality constraint" message simply confirms that total spend is held fixed.
+**Why bounds are needed.** Without bounds the optimiser puts the entire EUR 44k into paid social and nothing anywhere else: a *corner solution*. Paid social has the highest posterior ROAS and its response curve is nearly linear over the observed range, so the optimiser keeps buying until the budget is exhausted. This is mathematically correct and managerially absurd: the model has never seen EUR 44k of weekly social spend in Austria and knows nothing about what happens there. The bounded solution cuts TV to its floor (-50 %), trims online video by about 30 %, and raises paid search, paid social and OOH to their 150 % ceilings. OOH at a ceiling looks odd next to its average ROAS below 1: the optimiser works with *marginal* returns, and at EUR 3k per week the model's OOH curve is still steep, so the extra EUR 1.6k is cheap. Four of five channels sit exactly at a bound, which tells you the bounds are binding and the answer is partly a management assumption. The "Using default equality constraint" message simply confirms that total spend is held fixed.
 
 We can also quantify the expected gain with uncertainty by sampling the response under both allocations:
 
@@ -489,7 +503,7 @@ print(f"Total 2025 weekly budget: EUR {BUDGET:.1f}k;  modelled weekly incrementa
 cell.pivot(index="country", columns="channel", values="mroas").round(2)[CHANNELS]
 ```
 
-**Interpretation.** This table already answers "where should the next euro go" in the small: the marginal ROAS is the revenue the *next* euro in that cell would bring. Online video and paid search in the Netherlands, paid social in Austria and Poland, and online video in Germany and Poland have marginal returns above EUR 2. OOH in the Netherlands and Germany, paid social in France and paid search in Italy are below EUR 1 (a few are negative: the coefficient is indistinguishable from zero and the point estimate happened to be below it). An optimiser moves money from low to high marginal ROAS until they are equalised, within the constraints.
+**Interpretation.** This table already answers "where should the next euro go" in the small: the marginal ROAS is the revenue the *next* euro in that cell would bring. Online video in the Netherlands (about 2.2) is the best use of the next euro, followed by paid search in the Netherlands, paid social in Poland and Austria, and the three digital channels in Germany (all about 1.5 to 1.7). TV in the Netherlands and Poland, OOH in the Netherlands and Germany, and paid search in Italy are below EUR 0.5; paid social in France is essentially zero (its coefficient is indistinguishable from zero and the point estimate happened to fall just below it). An optimiser moves money from low to high marginal ROAS until they are equalised, within the constraints.
 
 ### The constrained optimisation
 
@@ -546,13 +560,13 @@ plt.tight_layout(); plt.show()
 
 **What moves where, and why.** The optimiser is doing marginal-ROAS arithmetic:
 
-- **Digital up in the Netherlands and Poland.** Online video, paid search and paid social in NL and online video and paid social in PL hit their +30 % ceilings: these cells had the highest marginal returns. TV in both countries is cut to its floor (-30 %), consistent with Part A, where the Dutch and Polish TV coefficients were small.
-- **Away from OOH.** OOH in the Netherlands, Germany, France and Austria is cut by 20 to 30 %; its coefficients are small and its curves flat.
-- **Germany reshuffles rather than shrinks.** Germany gains budget overall; TV gives up about 10 % and digital takes it, but German TV is so large that a 10 % cut funds most of the increases elsewhere.
-- **Italy and France lose a little in total.** Several of their cells (paid search and paid social in Italy, paid social in France) have low estimated marginal returns; the country floor (70 %) is not binding, the cell bounds are.
-- **The gain is modest.** About 3 % more weekly incremental revenue, or roughly EUR 2.9m per year, because ±30 % bounds keep every cell close to where it is. Loosen the bounds (Exercise 3) and the gain grows, together with the extrapolation risk.
+- **Digital up in the Netherlands and Poland.** Online video and paid search in NL (+30 %) and paid social (+21 %), online video (+27 %) and paid social (+30 %) in PL: these cells had the highest marginal returns. TV in both countries is cut to its floor (-30 %), consistent with Part A, where the Dutch and Polish TV coefficients were small. Polish paid search, with a marginal ROAS of 0.7, is cut.
+- **Away from OOH.** OOH in the Netherlands, Germany, France and Austria is cut by 30 %; its coefficients are small and its curves flat. Poland is the exception (+21 %): its OOH coefficient is comparatively large for a tiny budget.
+- **Germany reshuffles rather than shrinks.** Germany gains about EUR 23k per week overall: TV gives up 11 % and the three digital channels take it (+23 to +30 %). German TV is so large that an 11 % cut funds most of the increases elsewhere.
+- **France and Italy lose about 12 % each.** Several of their cells (paid search and paid social in Italy, paid social and OOH in France) have low estimated marginal returns, while French TV (+20 %) is one of the few TV cells that gains. The country floor (70 %) is not binding anywhere; the cell bounds are.
+- **The gain is modest.** About 3.3 % more weekly incremental revenue (EUR 55k per week, roughly EUR 2.9m per year), because ±30 % bounds keep every cell close to where it is. Loosen the bounds (Exercise 3) and the gain grows, together with the extrapolation risk.
 
-Most cells sit exactly at +30 % or -30 %. That is normal with concave, nearly linear curves: the optimiser pushes until a bound stops it, and the bounds (a management decision) determine the answer as much as the model does.
+Seventeen of the 30 cells sit exactly at +30 % or -30 %. That is normal with concave, nearly linear curves: the optimiser pushes until a bound stops it, and the bounds (a management decision) determine the answer as much as the model does.
 
 ### Uncertainty: 200 coefficient draws
 
@@ -579,7 +593,7 @@ print(f"Gain: mean EUR {gains.mean():.1f}k, 90 % interval {np.percentile(gains, 
       f"P(gain > 0) = {(gains > 0).mean():.2f}")
 ```
 
-**Interpretation.** The band is wide relative to the point estimate (roughly 30 to 90k per week), but the plan gains in every draw. That is reassuring but also slightly flattering: the draws vary the betas while keeping the curve *shape* (`k`, `s = 1`) fixed, and in Part B we saw that shape parameters are where the real uncertainty sits. A Bayesian multi-country model would propagate both. The honest statement for the board is "expected gain about 3 %, very likely positive, exact size uncertain".
+**Interpretation.** The band is wide relative to the point estimate (roughly 35 to 80k per week), but the plan gains in every draw. That is reassuring but also slightly flattering: the draws vary the betas while keeping the curve *shape* (`k`, `s = 1`) fixed, and in Part B we saw that shape parameters are where the real uncertainty sits. A Bayesian multi-country model would propagate both. The honest statement for the board is "expected gain about 3 %, very likely positive, exact size uncertain".
 
 ::: {.callout-note title="Check yourself"}
 - Count how many of the 30 cells sit at a bound. What does that tell you about the shape of the response curves?

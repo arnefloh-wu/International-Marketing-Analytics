@@ -681,7 +681,7 @@ compare_att.round(3)
 
 # Lab check-in 2
 
-Lab check-in 2 is individual and auto-checked. Save one JSON file with the numbers below from **your** run of this lab, using your own choice of countries. The checker compares your numbers with tolerance bands, so use the code exactly as written and replace only the two country choices and your GitHub username.
+Lab check-in 2 is individual and auto-checked. Save one JSON file with the numbers below from **your** run of this lab, using your own choice of countries. Use the code exactly as written and replace only the two country choices and your GitHub username.
 
 | Key | Meaning |
 |---|---|
@@ -696,7 +696,7 @@ Lab check-in 2 is individual and auto-checked. Save one JSON file with the numbe
 
 ```{python}
 #| label: check-in
-GITHUB_USERNAME = "your_github_username"     # <-- replace
+GITHUB_USERNAME = "your-github-username"     # <-- replace with your real GitHub username
 FORECAST_COUNTRY = "DE"                      # <-- your choice
 ATTRIBUTION_COUNTRY = "PL"                   # <-- your choice
 
@@ -722,7 +722,7 @@ out_dir.mkdir(parents=True, exist_ok=True)
 print(json.dumps(check, indent=2))
 ```
 
-Commit the file `assignments/checks/submissions/<your_github_username>/check_session4.json` to your fork and open a pull request to the course repository before the deadline in the syllabus. The auto-check runs `pytest assignments/checks` on your file.
+Commit the file `assignments/checks/submissions/<your_github_username>/check_session4.json` to your fork and open a pull request to the course repository before the start of Session 5. Check it yourself first with `pytest assignments/checks -k <your_github_username>` from the repository root (folders still named `your-github-username` are ignored by the checker). The full specification of the tests is in `assignments/checks/README.md`.
 
 # Your turn
 

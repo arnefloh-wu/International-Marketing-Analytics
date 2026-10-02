@@ -48,7 +48,7 @@ Run the lab for **one country other than Germany** (AT, FR, IT, NL or PL) and su
 
 - `country`: ISO-2 code, not DE
 - `channel`: `tv`, `online_video`, `paid_search`, `paid_social`, `ooh`
-- `adstock_alpha`: the selected alpha, in [0, 0.9]
+- `adstock_alpha`: the selected alpha, `0 <= alpha < 1`
 - `coefficient`: media coefficient of the final model estimated on all 156 weeks
 - `total_spend_k`: 2023-2025 spend in thousand EUR
 - `incremental_units_k`: 2023-2025 incremental units (thousand) from the decomposition
@@ -56,4 +56,4 @@ Run the lab for **one country other than Germany** (AT, FR, IT, NL or PL) and su
 
 **`check_session2.json`**: keys `country`, `r2_train`, `r2_holdout`, `mape_holdout` (model estimated on 2023-2024, evaluated on 2025), `price_elasticity` (log-price coefficient of the training model divided by mean training sales) and `n_weeks_train` (105).
 
-The auto-check (`pytest assignments/checks`) verifies file names and columns, that the country is not DE, five channels, alphas within [0, 0.9], `n_weeks_train == 105`, and that `roas` is consistent with `incremental_units_k`, `total_spend_k` and the country's average price within a tolerance. Numbers are not graded against a single "right" answer; a defensible model with correct structure receives full marks. Groups should spread across countries so that every market has been modelled before Session 3.
+The auto-check (`pytest assignments/checks -k <your_github_username>`, documented in `assignments/checks/README.md`) verifies file names and columns, that the country is not DE, five channels, `0 <= adstock_alpha < 1`, `roas` between 0.1 and 8, positive `incremental_units_k` for at least four channels, `total_spend_k` equal to the data within 1 %, `roas` consistent with `incremental_units_k` x mean price / `total_spend_k` within 25 %, R² values in (0.5, 1), `mape_holdout` below 25, `price_elasticity` between -4 and -0.3 and `n_weeks_train` between 100 and 110 (105 expected). Numbers are not graded against a single "right" answer; a defensible model with correct structure receives full marks. Groups should spread across countries so that every market has been modelled before Session 3.

@@ -238,7 +238,7 @@ Same total: the area under each adstocked curve equals the area of the bars. The
 - Alpha is **not** estimated by OLS; it sits inside a non-linear transformation
 - Practical approach: try a grid (0, 0.1, ..., 0.9) per channel, keep the best fit (AIC, or error on a holdout year)
 - One channel at a time with the others fixed, repeated twice: 100 regressions, a few seconds
-- Expect: search and social short (0.0 to 0.3), online video medium, TV and OOH long (0.5 to 0.8)
+- Expect: search and social short (0.0 to 0.3), online video medium, TV and OOH long (0.5 to 0.8); cap the grid accordingly, an alpha of 0.9 for search is a symptom, not a finding
 - A flat profile means the data cannot tell: then alpha is an assumption, report the sensitivity
 
 ```{python}

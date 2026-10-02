@@ -63,7 +63,7 @@ with exactly these keys (the last chunk of `lab.qmd` writes it for you; change o
 | `attribution_last_touch` | object | channel → share of that country's conversions under last touch (six channels, sums to 1) |
 | `attribution_logit` | object | channel → removal-effect share from the logit with country × channel interactions, for that country (sums to 1) |
 
-Commit the file to your fork and open a pull request to the course repository. The checker compares your numbers with tolerance bands around the course results for the countries you chose.
+Commit the file to your fork and open a pull request to the course repository before the start of Session 5. Run `pytest assignments/checks -k <your_github_username>` from the repository root to check it yourself; the tests (keys present, MAPEs in range with regression below seasonal naive, lift between 2 and 10 % with a bracketing CI, positive ROAS, attribution shares over exactly six channels summing to one) are documented in `assignments/checks/README.md`.
 
 ## Before the session
 

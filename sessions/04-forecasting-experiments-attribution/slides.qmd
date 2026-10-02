@@ -630,7 +630,7 @@ Point to the structure of the lab file and remind students to read the interpret
 - Commit, push, open a pull request
 
 ::: {.notes}
-Walk through the check-in chunk live at the end of the lab. The checker compares against tolerance bands around the course results for the chosen countries. The most common failure is a renamed key or a share dictionary that does not sum to one because a channel was dropped.
+Walk through the check-in chunk live at the end of the lab. The checker tests ranges and consistency, not exact values. The most common failure is a renamed key or a share dictionary that does not sum to one because a channel was dropped.
 :::
 
 ## Recap

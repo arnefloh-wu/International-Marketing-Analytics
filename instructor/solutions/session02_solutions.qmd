@@ -1,0 +1,320 @@
+---
+title: "Session 2 solutions: MMM for one country"
+subtitle: "Instructor only. Exercises 1 to 5, the France replication, and a comparison with the ground truth"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+    fig-width: 8
+    fig-height: 4
+execute:
+  warning: false
+  message: false
+---
+
+::: {.callout-warning}
+This file reads `instructor/ground_truth/`. Do not distribute before grading.
+:::
+
+## Setup: the lab pipeline as one function
+
+The lab's steps (controls, alpha grid by AIC with coordinate descent, common Hill grid by AIC, full-sample refit, decomposition, diagnostics) are wrapped in `run_mmm()` so that every exercise is a one-line variation.
+
+```{python}
+#| label: setup
+import sys, json
+sys.path.append("../../assets")
+from mma import *
+import numpy as np, pandas as pd, matplotlib.pyplot as plt, statsmodels.api as sm
+from statsmodels.stats.stattools import durbin_watson
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+plt.rcParams.update({"figure.figsize": (8, 4), "axes.spines.top": False, "axes.spines.right": False})
+COLOURS = dict(zip(CHANNELS, plt.cm.tab10.colors[:5]))
+
+panel = load_panel("../../data/mmm/alpenglow_weekly.csv")
+gt_params = pd.read_csv("../ground_truth/mmm_true_parameters.csv")
+gt_contrib = pd.read_csv("../ground_truth/mmm_true_contributions.csv", parse_dates=["week"])
+
+BASE_CONTROLS = ["log_price", "promo_share", "distribution", "xmas", "easter", "valentine",
+                 "sin_1", "cos_1", "sin_2", "cos_2", "t"]
+ALPHA_GRID = np.round(np.arange(0.0, 0.91, 0.1), 1)
+ALPHA_MAX = {"tv": 0.9, "online_video": 0.7, "paid_search": 0.3, "paid_social": 0.5, "ooh": 0.9}   # lab's caps
+HILL_GRID = [(q, s) for q in [0.5, 0.75, 1.0] for s in [1.0, 1.5, 2.0]]
+
+
+def run_mmm(country="DE", controls=BASE_CONTROLS, max_lag=12, saturation="hill", alphas=None,
+            alpha_grid=ALPHA_GRID, alpha_max=ALPHA_MAX, hill_grid=HILL_GRID, criterion="AIC"):
+    """Lab 2 pipeline. saturation: 'hill' (grid), 'log1p', None (linear) or ('hill', q, s)."""
+    d = add_fourier(panel[panel.country == country].copy().reset_index(drop=True), order=2)
+    d["log_price"] = np.log(d.price_eur); d["log_comp"] = np.log(d.competitor_spend_k)
+    train = (d.week < "2025-01-01").values
+    y, price = d.sales_units_k, d.price_eur
+    spend = d[[f"spend_{c}_k" for c in CHANNELS]].copy(); spend.columns = CHANNELS
+
+    def fit(X):
+        Xc = sm.add_constant(X, has_constant="add"); m = sm.OLS(y[train], Xc[train]).fit(); return m, m.predict(Xc)
+
+    def design(al, sat):
+        X = d[controls].copy(); ks = {}
+        for ch in CHANNELS:
+            x = geometric_adstock(spend[ch].values, al[ch], max_lag=max_lag)
+            if sat is None: X[f"x_{ch}"] = x
+            elif sat == "log1p": X[f"x_{ch}"] = np.log1p(x)
+            else:
+                _, q, s = sat; ks[ch] = np.quantile(x[train], q); X[f"x_{ch}"] = hill(x, ks[ch], s)
+        return X, ks
+
+    def score(m, p):
+        return m.aic if criterion == "AIC" else mape(y[~train], p[~train])
+
+    # (c) alpha search, linear adstock model
+    profiles = {}
+    if alphas is None:
+        alphas = {ch: min(0.3, alpha_max[ch]) for ch in CHANNELS}
+        for _ in range(2):
+            for ch in CHANNELS:
+                grid = alpha_grid[alpha_grid <= alpha_max[ch] + 1e-9]; sc = []
+                for a in grid:
+                    tr = dict(alphas); tr[ch] = a; sc.append(score(*fit(design(tr, None)[0])))
+                profiles[ch] = pd.Series(sc, index=grid); alphas[ch] = float(grid[int(np.argmin(sc))])
+    # (d) saturation
+    if saturation == "hill":
+        best = min(hill_grid, key=lambda qs: fit(design(alphas, ("hill",) + qs)[0])[0].aic)
+        sat = ("hill",) + best
+    else:
+        sat = saturation
+    X, ks = design(alphas, sat)
+    m_tr, pred = fit(X)
+    Xc = sm.add_constant(X, has_constant="add"); m_full = sm.OLS(y, Xc).fit()
+    contrib = pd.DataFrame({ch: m_full.params[f"x_{ch}"] * X[f"x_{ch}"] for ch in CHANNELS}); contrib.index = d.week
+    baseline = pd.Series(m_full.fittedvalues.values - contrib.sum(axis=1).values, index=d.week)
+    roas = contribution_table(contrib.reset_index(drop=True), price, spend)
+    # marginal ROAS at mean spend (steady state)
+    mr = {}
+    for ch in CHANNELS:
+        b, x0, h, pm = m_full.params[f"x_{ch}"], spend[ch].mean(), 1e-3, price.mean()
+        if sat is None: mr[ch] = b * pm
+        elif sat == "log1p": mr[ch] = b / (1 + x0) * pm
+        else: mr[ch] = b * (hill(x0 + h, ks[ch], sat[2]) - hill(x0 - h, ks[ch], sat[2])) / (2 * h) * pm
+    roas["marginal_roas"] = pd.Series(mr)
+    roas["alpha"] = pd.Series(alphas)
+    vif = pd.Series([variance_inflation_factor(Xc.values, i) for i in range(Xc.shape[1])], index=Xc.columns).drop("const")
+    stats = pd.Series({
+        "R2 train": m_tr.rsquared,
+        "R2 holdout": 1 - np.sum((y[~train] - pred[~train]) ** 2) / np.sum((y[~train] - y[~train].mean()) ** 2),
+        "MAPE holdout %": mape(y[~train], pred[~train]), "AIC train": m_tr.aic,
+        "Durbin-Watson": durbin_watson(m_full.resid), "max VIF media": vif.filter(like="x_").max(),
+        "baseline share %": 100 * baseline.sum() / m_full.fittedvalues.sum(),
+        "price elasticity": m_tr.params["log_price"] / y[train].mean(),
+    })
+    return dict(country=country, data=d, train=train, spend=spend, price=price, alphas=alphas, sat=sat, ks=ks,
+                profiles=profiles, X=X, m_train=m_tr, m_full=m_full, pred=pred, contrib=contrib, baseline=baseline,
+                roas=roas, stats=stats, vif=vif)
+
+
+def truth_for(country):
+    g = gt_params[gt_params.country == country].set_index("channel")
+    return g[["true_roas", "adstock_alpha", "hill_k", "hill_s", "beta_max_units_k"]]
+
+
+lab = run_mmm("DE")
+print("Lab model for Germany:", lab["alphas"], lab["sat"])
+lab["roas"].round(2)
+```
+
+```{python}
+#| label: lab-stats
+lab["stats"].round(3)
+```
+
+## Exercise 1: `max_lag` 4 vs 12
+
+```{python}
+#| label: ex1
+short = run_mmm("DE", max_lag=4)
+cmp = pd.DataFrame({"alpha (lag 12)": lab["alphas"], "alpha (lag 4)": short["alphas"],
+                    "ROAS (lag 12)": lab["roas"].roas, "ROAS (lag 4)": short["roas"].roas}).round(2)
+display(cmp)
+pd.DataFrame({"lag 12": lab["stats"], "lag 4": short["stats"]}).round(3)
+```
+
+```{python}
+#| label: ex1-cutoff
+w = 0.8 ** np.arange(0, 4)
+share_kept = w.sum() / (1 / (1 - 0.8))
+print(f"alpha 0.8: share of the infinite-horizon effect inside a 4-week window = {share_kept:.2f}")
+```
+
+**Answer.** With a 4-week window the selected TV alpha rises to `{python} f"{short['alphas']['tv']:.1f}"` (from `{python} f"{lab['alphas']['tv']:.1f}"`) and online video to `{python} f"{short['alphas']['online_video']:.1f}"`; the short-memory channels do not change. The TV ROAS moves from `{python} f"{lab['roas'].loc['tv','roas']:.2f}"` to `{python} f"{short['roas'].loc['tv','roas']:.2f}"`. With alpha 0.8 and a 4-week window only `{python} f"{100*share_kept:.0f}"` % of the geometric effect falls inside the window, so the normalised weights are "squeezed" into four weeks; to reproduce the observed slow decay the grid compensates with a higher alpha, which flattens the weights inside the window. For TV a 12-week window is the safe choice: with alpha 0.7 the weight in week 12 is already below 1 % of the total, so a longer window costs nothing, while a short window biases alpha and makes the ROAS depend on an arbitrary cut-off. (Normalising the weights keeps the sum at one in both cases; this is why the ROAS changes only moderately.)
+
+## Exercise 2: Competitor spend
+
+```{python}
+#| label: ex2
+comp = run_mmm("DE", controls=BASE_CONTROLS + ["log_comp"])
+print(comp["m_full"].summary().tables[1])
+cmp2 = pd.DataFrame({"ROAS (lab)": lab["roas"].roas, "ROAS (+ competitor)": comp["roas"].roas,
+                     "alpha (lab)": lab["roas"].alpha, "alpha (+ competitor)": comp["roas"].alpha}).round(2)
+display(cmp2)
+display(pd.DataFrame({"lab": lab["stats"], "+ competitor": comp["stats"]}).round(3))
+comp["vif"].round(1)
+```
+
+**Answer.** The competitor coefficient is `{python} f"{comp['m_full'].params['log_comp']:.0f}"` thousand units per log unit (p = `{python} f"{comp['m_full'].pvalues['log_comp']:.3f}"`): a 10 % increase in competitor activity costs about `{python} f"{abs(comp['m_full'].params['log_comp'])*np.log(1.1):.0f}"` thousand units a week, the expected negative sign. (The generator uses an elasticity of -0.05 on the baseline, roughly `{python} f"{0.05*lab['data'].sales_units_k.mean():.0f}"` thousand units per log unit at mean sales, so the estimate is in the right region.) Media ROAS move only slightly: the largest change is for `{python} (cmp2['ROAS (+ competitor)'] - cmp2['ROAS (lab)']).abs().idxmax()`. The holdout MAPE improves from `{python} f"{lab['stats']['MAPE holdout %']:.2f}"` % to `{python} f"{comp['stats']['MAPE holdout %']:.2f}"` %. Competitor spend is seasonal by construction, but its VIF stays low (`{python} f"{comp['vif']['log_comp']:.1f}"`) because the lognormal noise around its seasonal level dominates; the Fourier terms already capture the common seasonal component, so the competitor coefficient picks up the idiosyncratic weeks. Teaching point: a control that is correlated with spend changes the media coefficients; one that is not (like this one) improves precision but barely moves the ROAS.
+
+## Exercise 3: log1p vs Hill
+
+```{python}
+#| label: ex3
+lg = run_mmm("DE", saturation="log1p")
+cmp3 = pd.DataFrame({"ROAS Hill": lab["roas"].roas, "ROAS log1p": lg["roas"].roas,
+                     "marginal ROAS Hill": lab["roas"].marginal_roas, "marginal ROAS log1p": lg["roas"].marginal_roas}).round(2)
+display(cmp3)
+pd.DataFrame({"Hill": lab["stats"], "log1p": lg["stats"]}).round(3)
+```
+
+```{python}
+#| label: fig-ex3
+#| fig-cap: "TV response curves under Hill (lab) and log1p saturation; dots mark current mean weekly spend."
+d, sp, pm = lab["data"], lab["spend"], lab["price"].mean()
+grid = np.linspace(0, 2 * sp.tv.max(), 300)
+b_h, k_h, s_h = lab["m_full"].params["x_tv"], lab["ks"]["tv"], lab["sat"][2]
+b_l = lg["m_full"].params["x_tv"]
+fig, ax = plt.subplots()
+ax.plot(grid, b_h * hill(grid, k_h, s_h) * pm, color=COLOURS["tv"], label=f"Hill (k={k_h:.0f}, s={s_h})")
+ax.plot(grid, b_l * np.log1p(grid) * pm, color="tab:brown", label="log1p")
+x0 = sp.tv.mean()
+ax.plot([x0, x0], [b_h * hill(x0, k_h, s_h) * pm, b_l * np.log1p(x0) * pm], "o", color="black")
+ax.plot([0, grid.max()], [0, grid.max()], "--", color="grey", linewidth=1, label="revenue = spend")
+ax.set_xlabel("weekly TV spend (k EUR)"); ax.set_ylabel("weekly incremental revenue (k EUR)"); ax.legend()
+plt.tight_layout()
+```
+
+**Answer.** The log1p model credits TV with a ROAS of `{python} f"{lg['roas'].loc['tv','roas']:.2f}"` against `{python} f"{lab['roas'].loc['tv','roas']:.2f}"` under Hill, and the baseline share falls from `{python} f"{lab['stats']['baseline share %']:.0f}"` % to `{python} f"{lg['stats']['baseline share %']:.0f}"` %, while R² and holdout MAPE are practically identical. The curves differ most at low spend: log1p jumps steeply from zero (log1p(11) is already 2.5, a quarter of log1p(480)), so the model assigns a large "always-on" contribution to the minimum TV spend, which is really baseline. The marginal ROAS of TV at mean spend is `{python} f"{lab['roas'].loc['tv','marginal_roas']:.2f}"` under Hill and `{python} f"{lg['roas'].loc['tv','marginal_roas']:.2f}"` under log1p: both say the next TV euro returns little, so the budget conclusion is the same, but the log1p report would tell the CFO that TV "paid back" in the past, which the ground truth (below) shows is too generous. Present the Hill model and add: "The data cannot distinguish saturation shapes; across plausible shapes the TV ROAS lies between about 1 and 2.5, and only a test can narrow it."
+
+## Exercise 4: Dropping the seasonality controls
+
+```{python}
+#| label: ex4
+nos = run_mmm("DE", controls=["log_price", "promo_share", "distribution", "t"])
+cmp4 = pd.DataFrame({"ROAS (lab)": lab["roas"].roas, "ROAS (no season)": nos["roas"].roas,
+                     "alpha (lab)": lab["roas"].alpha, "alpha (no season)": nos["roas"].alpha}).round(2)
+display(cmp4)
+pd.DataFrame({"lab": lab["stats"], "no season": nos["stats"]}).round(3)
+```
+
+```{python}
+#| label: fig-ex4
+#| fig-cap: "Residuals of the model without seasonal controls: an annual wave remains."
+fig, ax = plt.subplots()
+ax.plot(nos["data"].week, nos["m_full"].resid, color="black", linewidth=1); ax.axhline(0, color="grey")
+ax.set_ylabel("residual (k units)"); plt.tight_layout()
+```
+
+**Answer.** Without Fourier terms and holiday dummies the baseline share drops from `{python} f"{lab['stats']['baseline share %']:.0f}"` % to `{python} f"{nos['stats']['baseline share %']:.0f}"` %: media now "explains" half of German sales. The digital channels explode (online video `{python} f"{nos['roas'].loc['online_video','roas']:.1f}"`, paid search `{python} f"{nos['roas'].loc['paid_search','roas']:.1f}"`, paid social `{python} f"{nos['roas'].loc['paid_social','roas']:.1f}"`) because their budgets follow the seasonal demand curve most closely and they are always on; TV changes less (`{python} f"{nos['roas'].loc['tv','roas']:.2f}"`) because its bursts are not purely seasonal and the model re-selects a different alpha. Durbin-Watson falls from `{python} f"{lab['stats']['Durbin-Watson']:.2f}"` to `{python} f"{nos['stats']['Durbin-Watson']:.2f}"`, and the residual plot shows the annual wave the model could not absorb. Holdout MAPE nearly doubles (`{python} f"{nos['stats']['MAPE holdout %']:.1f}"` %). The first question to a vendor reporting a paid-social ROAS of 8: "Which seasonality and promotion controls are in the model, and what is the baseline share?"
+
+## Exercise 5: Memo (model answer)
+
+> **To:** Country Manager Germany. **Re:** What TV did for us, 2023-2025.
+>
+> Our marketing mix model attributes about 6.9 million units, or EUR 21.6 million of revenue, to TV over the last three years, against EUR 16.5 million of spend: a return of about **EUR 1.3 per euro**, with a plausible range of **0.8 to 1.4** depending on how long we assume a TV burst keeps working (the data favour a carryover of about 70 % per week, so most of a TV week's effect arrives in the following weeks). TV is our largest contributor in absolute terms, but it is the least efficient of the four main channels and it is past its half-saturation point: the **next euro** in TV returns about EUR 1.2, against roughly EUR 2.2 to 3.1 in online video, paid search and paid social.
+>
+> Recommendation: hold the TV budget for the pre-Christmas flights, where it works hardest, and move the marginal spring and summer TV money to paid search and online video. Two caveats. First, the model cannot pin down the shape of diminishing returns from observational data alone; across plausible shapes the TV return lies between 1 and 2.5. Second, the digital budgets grew throughout the period while TV fell, so part of their measured return may be market growth.
+>
+> To narrow the range before the 2027 plan, we propose a geo-lift test: cut TV in a matched set of regions for eight weeks in Q2 and measure the sales difference. This would turn an assumption into a measurement at a cost of under EUR 200 000 in foregone spend.
+>
+> *Attached: response curves per channel; dots mark current average weekly spend.*
+
+Grading notes: full marks require the point and the range (not just 1.30), the marginal comparison, at least two of the caveats, and a proposal that is a test or a data improvement rather than "more modelling".
+
+## Your turn: France
+
+```{python}
+#| label: fr
+fr = run_mmm("FR")                                                   # lab defaults (capped alpha grid)
+fr_free = run_mmm("FR", alpha_max={ch: 0.9 for ch in CHANNELS})      # question 3: no caps
+truth_fr = truth_for("FR")
+cmp_fr = pd.DataFrame({"DE ROAS": lab["roas"].roas, "FR ROAS": fr["roas"].roas, "DE alpha": lab["roas"].alpha, "FR alpha": fr["roas"].alpha,
+                       "FR p-value": fr["m_full"].pvalues.filter(like="x_").set_axis(CHANNELS)}).round(2)
+display(cmp_fr)
+pd.DataFrame({"DE": lab["stats"], "FR": fr["stats"]}).round(3)
+```
+
+```{python}
+#| label: fr-free
+pd.DataFrame({"alpha (capped, lab)": fr["roas"].alpha, "alpha (uncapped)": fr_free["roas"].alpha,
+              "ROAS (capped)": fr["roas"].roas, "ROAS (uncapped)": fr_free["roas"].roas, "true ROAS": truth_fr.true_roas,
+              "p (uncapped)": fr_free["m_full"].pvalues.filter(like="x_").set_axis(CHANNELS)}).round(2)
+```
+
+```{python}
+#| label: fig-fr-profile
+#| fig-cap: "France, uncapped grid: AIC profiles along alpha. TV is identified; paid search and paid social drift to the top of the grid."
+fig, ax = plt.subplots()
+for ch in ["tv", "paid_search", "paid_social"]:
+    pr = fr_free["profiles"][ch]; ax.plot(pr.index, pr - pr.min(), marker="o", color=COLOURS[ch], label=CHANNEL_LABELS[ch])
+ax.set_xlabel("alpha"); ax.set_ylabel("AIC minus best"); ax.legend(); plt.tight_layout()
+```
+
+**Answer.** France recovers TV reasonably: alpha `{python} f"{fr['alphas']['tv']:.1f}"` (Germany `{python} f"{lab['alphas']['tv']:.1f}"`, truth 0.7) and a ROAS of `{python} f"{fr['roas'].loc['tv','roas']:.2f}"` against `{python} f"{lab['roas'].loc['tv','roas']:.2f}"` in Germany (truth `{python} f"{truth_fr.loc['tv','true_roas']:.2f}"`), with a clear AIC minimum. The small digital channels are a different story. Paid search and paid social have budgets around EUR 20 000 a week in a market with weekly sales noise of roughly 15 000 units: their contribution is below the noise floor and their coefficients are insignificant (p = `{python} f"{cmp_fr.loc['paid_search','FR p-value']:.2f}"` and `{python} f"{cmp_fr.loc['paid_social','FR p-value']:.2f}"`), so the ROAS of `{python} f"{fr['roas'].loc['paid_search','roas']:.2f}"` and `{python} f"{fr['roas'].loc['paid_social','roas']:.2f}"` (truth about 2 and 1.8) are not estimates but noise with the right sign. Question 3 shows what the caps do: without them the grid pushes the search and social alphas to 0.9 (a heavily smoothed series starts to mimic the trend), paid social turns negative (ROAS `{python} f"{fr_free['roas'].loc['paid_social','roas']:.2f}"`), and the holdout MAPE is worse (`{python} f"{fr_free['stats']['MAPE holdout %']:.2f}"` vs `{python} f"{fr['stats']['MAPE holdout %']:.2f}"` %). The caps are a crude prior: they encode what everyone knows about how search and social work. A better source would be a market where the carryover is identified (Germany) or a Bayesian prior with uncertainty, which is Session 3's partial pooling: small markets borrow strength from large ones. Note for grading: a student who submits France with the lab's caps passes the auto-check; without the caps the negative paid-social ROAS fails one test, which is exactly the signal intended.
+
+Three sentences for the European media director: "TV carries over similarly in both markets (60 to 70 % per week) and returns about EUR 1.3 per euro in both, slightly above break-even on revenue and below it on margin. Germany's digital channels are measurable and more efficient than TV at the margin; France's search and social budgets are too small to measure with national weekly data. Before shifting French money, run a test or model all six markets jointly."
+
+## Comparison with the ground truth (Germany)
+
+The generator (`data/generate_data.py`) uses geometric adstock with alpha 0.7 (TV), 0.5 (online video), 0.1 (paid search), 0.3 (paid social) and 0.6 (OOH), Hill saturation with channel-specific k and s, and a multiplicative baseline. The lab's additive OLS is a deliberate simplification; this section shows how close it gets.
+
+```{python}
+#| label: gt-table
+truth_de = truth_for("DE")
+gt_cmp = pd.DataFrame({
+    "estimated ROAS": lab["roas"].roas, "true ROAS": truth_de.true_roas,
+    "estimated alpha": lab["roas"].alpha, "true alpha": truth_de.adstock_alpha,
+    "estimated k": pd.Series(lab["ks"]), "true k": truth_de.hill_k,
+    "estimated max effect (k units)": lab["m_full"].params.filter(like="x_").set_axis(CHANNELS), "true max effect": truth_de.beta_max_units_k,
+}).round(2)
+gt_cmp["ROAS error %"] = (100 * (gt_cmp["estimated ROAS"] / gt_cmp["true ROAS"] - 1)).round(0)
+gt_cmp
+```
+
+```{python}
+#| label: gt-total
+tr = gt_contrib[gt_contrib.country == "DE"].set_index("week")
+true_media = tr[[f"contrib_{c}" for c in CHANNELS]].sum(axis=1)
+pd.Series({
+    "estimated media share of sales %": 100 * lab["contrib"].sum().sum() / lab["data"].sales_units_k.sum(),
+    "true media share of sales %": 100 * true_media.sum() / lab["data"].sales_units_k.sum(),
+    "estimated TV units (k)": lab["contrib"].tv.sum(), "true TV units (k)": tr.contrib_tv.sum(),
+}).round(1)
+```
+
+```{python}
+#| label: fig-gt-tv
+#| fig-cap: "Germany: estimated vs true weekly TV contribution."
+fig, ax = plt.subplots()
+ax.plot(tr.index, tr.contrib_tv, color="black", label="true TV contribution")
+ax.plot(lab["contrib"].index, lab["contrib"].tv, color=COLOURS["tv"], label="estimated (lab model)")
+ax.set_ylabel("k units per week"); ax.legend(); plt.tight_layout()
+```
+
+```{python}
+#| label: fig-gt-roas
+#| fig-cap: "Germany: estimated vs true ROAS by channel under the lab's specification and the alternatives from the lab's saturation table."
+alts = {"Hill (lab)": lab, "log1p": lg, "linear adstock": run_mmm("DE", saturation=None)}
+fig, ax = plt.subplots()
+idx = np.arange(5); w = 0.2
+ax.bar(idx - 1.5 * w, truth_de.true_roas.values, w, color="black", label="true")
+for i, (name, r) in enumerate(alts.items()):
+    ax.bar(idx + (i - 0.5) * w, r["roas"].roas.values, w, color=["tab:blue", "tab:brown", "tab:grey"][i], label=name)
+ax.set_xticks(idx); ax.set_xticklabels([CHANNEL_LABELS[c] for c in CHANNELS]); ax.set_ylabel("ROAS"); ax.legend(fontsize=8)
+plt.tight_layout()
+```
+
+**Reading.** The lab recovers the TV alpha exactly (0.7) and the online video alpha (0.5); paid search is close (0.2 vs 0.1); paid social is under-estimated (0.1 vs 0.3) and OOH is not identified (0.0 vs 0.6; the AIC profile is flat because OOH is small and bursty). The TV ROAS is over-estimated by about `{python} f"{gt_cmp.loc['tv','ROAS error %']:.0f}"` % (`{python} f"{gt_cmp.loc['tv','estimated ROAS']:.2f}"` vs `{python} f"{gt_cmp.loc['tv','true ROAS']:.2f}"`), which is acceptable for a planning decision; the digital channels are over-estimated by `{python} f"{gt_cmp.loc['paid_search','ROAS error %']:.0f}"` to `{python} f"{gt_cmp.loc['online_video','ROAS error %']:.0f}"` %, OOH by `{python} f"{gt_cmp.loc['ooh','ROAS error %']:.0f}"` %. Three reasons, all worth telling students in Session 3 or 5:
+
+1. **Additive vs multiplicative baseline.** The true baseline is seasonality times price times promotion; the additive controls approximate it, and the approximation error lands partly on channels whose spend grows over time (online video +12 %, paid social +15 % a year), which is why those are the most over-estimated.
+2. **Saturation shape.** The true curves have s between 1.1 and 1.8 and k well above the median spend for TV (180 vs 78): the true TV response is nearly linear and convex at low spend, while the lab's Hill with k at the median is more concave. The linear adstock model (grey bars) is in fact closest to the truth for paid search, paid social and OOH and within about 20 % for TV (where it under-estimates), a point the lab's saturation table hints at: for this data the simplest specification is not the worst one.
+3. **Weak identification of small channels.** OOH is 7 % of spend; its alpha and shape are unidentified, and its ROAS error is the largest.
+
+The ranking of channels by ROAS (search and video above social, TV above OOH) and the headline for the manager (TV around break-even on revenue, past its half-saturation point, digital more efficient at the margin) are correct. That is the standard an MMM should be held to: right order of magnitude, right ranking, honest range.

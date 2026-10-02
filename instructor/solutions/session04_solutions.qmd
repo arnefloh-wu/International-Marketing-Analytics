@@ -81,9 +81,9 @@ out = pd.DataFrame({"reg_13w": m13.regression, "naive_13w": m13.seasonal_naive,
 out
 ```
 
-**a, b.** At 26 weeks the regression's MAPE rises in most countries while seasonal naive barely changes (it does not accumulate error: every week's forecast is simply last year's value). The recursive lag-1 term feeds its own errors forward; the further the horizon, the more the forecast path drifts from the actual path, although the known inputs (price, promotions, media) keep it anchored and it still beats seasonal naive in every country.
+**a, b.** At 26 weeks the regression's MAPE rises in four of six countries (Germany 7.2 to 9.2 %, Italy 7.0 to 12.7 %, France 8.5 to 14.8 %) while seasonal naive is unchanged by construction: it does not accumulate error, every week's forecast is simply last year's value. The recursive lag-1 term feeds its own errors forward, so the forecast path drifts further from the actual path the longer the horizon. The known inputs (price, promotions, media) keep it anchored enough to beat seasonal naive in five countries; France is the exception at 26 weeks. Recommendation to finance: use the regression for the quarterly baseline and refresh it every quarter rather than forecasting two quarters at once.
 
-**c.** Without `log_price` and `promo_share` the regression is roughly as bad as seasonal naive (compare the last column with `naive_13w`). Almost all of the regression's advantage comes from knowing the commercial calendar. Message to finance: the baseline is only as good as the promotion plan it assumes; if the 2026 calendar is not fixed, present scenarios.
+**c.** Without `log_price` and `promo_share` the regression is as bad as or worse than seasonal naive (last column against `naive_13w`: Italy 19.0 vs 15.2 %, Netherlands 14.5 vs 10.9 %). Almost all of the regression's advantage comes from knowing the commercial calendar. Message to finance: the baseline is only as good as the promotion plan it assumes; if the 2026 calendar is not fixed, present scenarios.
 
 ## Exercise 2: Placebo difference-in-differences
 
@@ -104,8 +104,9 @@ plac = pd.concat([plac, pd.DataFrame([real])], ignore_index=True)
 print(plac.round(2))
 
 fig, ax = plt.subplots(figsize=(8, 3.5))
-ax.errorbar(range(len(plac)), plac.lift_pct, yerr=[plac.lift_pct - plac.lo, plac.hi - plac.lift_pct], fmt="o", capsize=4,
-            color=["tab:blue"] * 4 + ["tab:orange"])
+for i, r in plac.iterrows():
+    ax.errorbar(i, r.lift_pct, yerr=[[r.lift_pct - r.lo], [r.hi - r.lift_pct]], fmt="o", capsize=4,
+                color="tab:orange" if r.window == "real test" else "tab:blue")
 ax.axhline(0, color="black", lw=0.8); ax.set_xticks(range(len(plac))); ax.set_xticklabels(plac.window, rotation=20)
 ax.set_ylabel("estimated lift (%)"); plt.tight_layout()
 ```
@@ -125,9 +126,9 @@ print(f"As % of treated test-period mean ({test_treated_mean:.2f}): {b_lv / test
 print(f"Total incremental units: {b_lv * 12 * 8:.1f} k  (lab B6 from the log model: {geo[(geo.treated == 1) & (geo.period == 'test')].sales_units_k.sum() * (1 - 1 / (1 + real['lift_pct'] / 100)):.1f} k)")
 ```
 
-**b.** The level coefficient divided by the pre-period mean overstates the percentage because sales in the test weeks (September, October) are above the pre-period average; divided by the test-period mean it is close to the log estimate. In levels every region contributes in proportion to its size, so large treated regions dominate; in logs every region contributes its own percentage. With a homogeneous proportional effect the two agree, which is the case here.
+**b.** The level model gives 0.59 thousand units per region-week, which is 4.1 % of the treated test-period mean (4.6 % of the pre-period mean), below the 5.7 % of the log model, and with a much wider interval (0.06 to 1.12, so roughly 0.4 % to 7.8 %). Two reasons. First, the true effect is proportional, and the level model's additive week effects are estimated mainly from the 28 larger control regions: their Q4 build-up in units is larger than that of the smaller treated regions, so the additive counterfactual for treated regions is too high and the lift is understated. Second, in levels the largest regions dominate the fit and the residual variance, which inflates the standard error. In logs every region contributes its own percentage and the heteroskedasticity disappears.
 
-**c.** Both totals are close. The deck should carry the log-model lift with its CI (the design-consistent percentage) converted to units with the actual test-period sales, as in lab B6, and state the range from the CI.
+**c.** The level total (0.59 × 12 × 8 = 57 thousand units) is below the log-model total of 75 thousand, but inside its wide interval. The deck should carry the log-model lift with its CI, converted to units with the actual test-period sales as in lab B6 (75 thousand units, range 62 to 88), because the log specification matches a proportional effect and heterogeneous region sizes. Report the level estimate as a robustness check that points the same way.
 
 ## Exercise 4: New vs returning customers
 
@@ -146,7 +147,7 @@ print(coefs); print(shares)
 (shares * 100).plot.bar(figsize=(8, 3.5), ylabel="attributed share (%)", rot=0); plt.tight_layout()
 ```
 
-**c.** The data were generated with the same channel coefficients for both groups and a lower intercept for new customers, so the coefficients are statistically indistinguishable and the shares differ only by noise and by the non-linearity of the logit (lower base rate for new customers makes every channel's removal effect slightly smaller in absolute terms, but the shares are nearly identical). The CRM team's claim finds no support: email's attributed share is the same for both groups. Caveat: the logit measures association between touches and conversion within the observed journeys; if email is sent only to likely buyers, its coefficient is inflated for both groups equally and only a holdout can settle it.
+**c.** The data were generated with the same channel coefficients for both groups and only a lower intercept for new customers, so the differences in the coefficient table (display 0.15 vs 0.08, email 0.60 vs 0.53, paid search 0.65 vs 0.73) are within about two standard errors and reflect sampling noise, not a real difference. Email's attributed share is 15 % among new customers and 13 % among returning customers: if anything the opposite of the CRM team's claim, and in any case not evidence that email only harvests returning buyers. Caveat: the logit measures association between touches and conversion within the observed journeys; if email is sent only to likely buyers, its coefficient is inflated for both groups equally and only a holdout can settle it.
 
 ## Exercise 5: Memo on a geo test in Poland
 
@@ -165,9 +166,9 @@ for weeks in (8, 12):
 
 - *Why:* the Session 3 hierarchical estimate for paid social in Poland borrows strength from other countries and has a wide interval; Polish spend grew with distribution, so the planning confound is severe. A test gives a causal anchor for the market where the allocation moves most money.
 - *Design:* 16 voivodeships, stratified by size into pairs, 5 treated and 11 control (or 6 and 10), 26 weeks of pre-period (shorter than Germany because Polish data start later), 8 weeks of test outside Q4, 4 weeks of post-period, spend doubled in treated regions, primary metric weekly sales units from retail panel data, DiD with region and week fixed effects pre-registered.
-- *Power:* with the German noise scaled to five treated regions, the minimum detectable lift is around 3 to 4 % for an 8-week test (about 3 % for 12 weeks). The MMM expects an effect of that order, so an 8-week test is borderline; recommend 12 weeks or a larger spend change.
+- *Power:* the German pre-period gap has a standard deviation of 1.7 percentage points; scaled to 5 treated and 11 control voivodeships it is about 2.6 points, so the minimum detectable lift is about 2.6 % for an 8-week test and 2.1 % for 12 weeks. A paid social lift of the German size (6 %) would be detected comfortably; a 3 % lift would be borderline at 8 weeks. Polish retail panel data are likely noisier than the German data, so budget 12 weeks.
 - *Cost and risk:* extra spend about one quarter of the Polish paid social budget; control regions lose nothing because they stay at plan (the "holdout" here is the absence of the uplift, not a cut); brief the two largest retail chains; if inconclusive, the result still bounds the effect from above and the model prior is updated accordingly.
-- *Recommendation:* run a 12-week test in H1 2027 before the Q4 budget is committed; do not run an 8-week test in Q4 where seasonality noise is highest.
+- *Recommendation:* run a 12-week test in H1 2027 before the Q4 budget is committed, with spend doubled in five voivodeships; do not run it in Q4 where seasonal noise is highest and the opportunity cost of a control group is largest.
 
 ## Comparison with ground truth
 
@@ -184,7 +185,7 @@ post_gap = (gap - pre_gap.mean())[(gap.index > test_end)] * 100
 print(post_gap.round(2).rename("post-test gap (%)").to_frame().T)
 ```
 
-The DiD estimate of 5.74 % is slightly below the true 6 % because the test window and the two carryover weeks are in different coefficients and the log specification compounds a 6 % multiplicative lift with regional noise; the truth lies well inside the 95 % interval. The post-period gaps show the generated carryover (40 % and 15 % of the lift in the first two post weeks) and nothing afterwards, which matches the ground truth of two carryover weeks. The lab's `treated:post_period` coefficient (about 1.1 % averaged over eight weeks) is what two weeks of 2.4 % and 0.9 % look like when spread over eight.
+The DiD estimate of 5.74 % is slightly below the true 6 %; the truth lies well inside the 95 % interval (4.7 to 6.8 %), so the estimator is doing its job at the precision the design allows. The treated regions in the data are exactly the twelve in the ground truth. The post-period gaps show the first carryover week clearly (2.3 %, the generator's 40 % of 6 %); the second week's 0.9 % is lost in noise, and the later weeks fluctuate between 0 and 2.5 % because the weekly gap has a standard deviation of 1.7 points. Individual weeks cannot resolve a 1 % carryover; only the pooled `treated:post_period` coefficient (1.1 % over eight weeks, p = 0.05) can, and it is consistent with two carryover weeks of 2.4 % and 0.9 % spread over eight. Students who claim to "see" exactly two weeks of carryover in the event-study plot are reading the ground truth into the noise.
 
 ### Attribution
 

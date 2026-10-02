@@ -1,0 +1,494 @@
+---
+title: "Marketing mix modelling II"
+subtitle: "Many countries, one budget"
+author: "International Marketing Analytics · Session 3 · WU Vienna"
+date: 2026-10-20
+format:
+  revealjs:
+    theme: [default, ../../assets/wu.scss]
+    slide-number: true
+    footer: "International Marketing Analytics · WU Vienna"
+    width: 1280
+    height: 720
+    fig-width: 8
+    fig-height: 4
+  pptx:
+    fig-width: 8
+    fig-height: 4
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+#| include: false
+import sys
+sys.path.append("../../assets")
+from mma import *
+import numpy as np, pandas as pd, matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
+plt.rcParams.update({"figure.figsize": (8, 4), "axes.spines.top": False, "axes.spines.right": False})
+df = load_panel("../../data/mmm/alpenglow_weekly.csv")
+meta = pd.read_csv("../../data/mmm/country_meta.csv")
+ALPHA = {"tv": 0.7, "online_video": 0.5, "paid_search": 0.1, "paid_social": 0.3, "ooh": 0.6}
+for ch in CHANNELS:
+    df[f"ad_{ch}"] = df.groupby("country")[f"spend_{ch}_k"].transform(lambda s: geometric_adstock(s.values, ALPHA[ch]))
+    df[f"x_{ch}"] = df[f"ad_{ch}"] / df.groupby("country")[f"spend_{ch}_k"].transform("mean")
+df["log_sales"] = np.log(df.sales_units_k); df["log_price"] = np.log(df.price_eur); df["log_comp"] = np.log(df.competitor_spend_k)
+df = add_fourier(df, order=2)
+MEDIA = " + ".join(f"x_{ch}" for ch in CHANNELS)
+CONTROLS = ("log_price + promo_share + distribution + xmas + easter + valentine + sin_1 + cos_1 + sin_2 + cos_2"
+            " + t + log_comp + consumer_confidence + temperature_c")
+```
+
+## Where should the next euro go?
+
+::: {.decision}
+**Decision of the day.** Alpenglow spends about EUR 710k a week on media in six countries and five channels. The CMO wants a 2027 plan: which country-channel cells get more, which get less, and how confident are we?
+:::
+
+- Session 2: one country, one model, "what did TV do for us in Germany?"
+- Today: six countries, one budget, "where is the next euro worth most?"
+- Three building blocks: pooling across markets, Bayesian estimation, constrained optimisation
+
+::: {.notes}
+Open with the budget number. EUR 710k per week is about EUR 37m per year. A 3 % improvement in effectiveness is about EUR 1m of incremental revenue per year, so the stakes are real. Stress that the question has changed from measurement ("what did TV do") to allocation ("what should TV do next year"). The allocation question needs response curves, not just coefficients, and it needs them for every country.
+:::
+
+## Today's route
+
+1. The multi-market problem: small markets, big markets
+2. Three ways to estimate: separate, pooled, hierarchical
+3. Bayesian MMM in one slide, PyMC-Marketing in one workflow
+4. From response curves to allocation: equalise marginal ROAS
+5. Constraints, uncertainty and international moderators
+6. Pitfalls, lab bridge, project milestone
+
+::: {.notes}
+Sixty minutes of concepts, then the lab in three parts. Part A is panel OLS, Part B is the Bayesian model for Austria, Part C is the cross-country optimiser. The team exercise afterwards is the first draft of the 2027 allocation.
+:::
+
+# The multi-market problem
+
+## Six markets, six data qualities
+
+```{python}
+#| fig-cap: ""
+fig, ax = plt.subplots()
+g = df.groupby("country").agg(sales=("sales_units_k", "mean"), spend=("spend_tv_k", "mean"), cv=("sales_units_k", lambda s: s.std() / s.mean()))
+ax.bar(g.index, g.sales, color="C0")
+ax.set_ylabel("Average weekly sales (thousand units)"); ax.set_xlabel("Country")
+for i, (c, row) in enumerate(g.iterrows()):
+    ax.text(i, row.sales + 10, f"TV {row.spend:.0f}k/wk", ha="center", fontsize=9)
+ax.set_title("Germany is six times Austria; small markets carry the same number of weeks")
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Every country has 156 weeks, but the information content differs. Germany's sales are large and its media budget is large, so the signal-to-noise ratio for media is high. Austria and Poland have small budgets: a 10 % increase in Austrian TV is EUR 1.4k, which moves sales by a few hundred units, within the weekly noise. The same regression gives tight intervals in Germany and wide intervals in Austria.
+:::
+
+## Small markets: noisy estimates
+
+```{python}
+rows = []
+for c in COUNTRIES:
+    f = smf.ols(f"log_sales ~ {MEDIA} + {CONTROLS}", df[df.country == c]).fit()
+    rows.append({"country": c, "coef": f.params["x_paid_search"], "se": f.bse["x_paid_search"]})
+sep = pd.DataFrame(rows)
+fig, ax = plt.subplots()
+ax.errorbar(sep.country, sep.coef, yerr=1.96 * sep.se, fmt="o", capsize=4, color="C0")
+ax.axhline(0, color="black", lw=1)
+ax.set_ylabel("Paid search coefficient (log sales)"); ax.set_xlabel("Country")
+ax.set_title("Separate OLS per country: paid search effect with 95 % intervals")
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Paid search estimated separately per country. The intervals for Austria, France, Italy and Poland nearly touch zero. A manager in Vienna reading only the Austrian regression would conclude "search might do nothing". Yet the other five countries all say search works. The question is how to let Austria learn from Germany without assuming Austria is Germany.
+:::
+
+## Big markets dominate pooled models
+
+- A pooled regression stacks all 936 weeks and estimates one coefficient per channel
+- Ordinary least squares weights every observation equally
+- In log sales each country has equal weight; in units Germany would dominate (five times the variance)
+- Either way the pooled coefficient describes the "average market" and nobody operates in it
+- Country intercepts (fixed effects) remove level differences, not slope differences
+
+::: {.notes}
+The pooled model is the opposite extreme. It is precise because it uses all the data, but it answers a question nobody asked: what is the TV effect in the average European market. If the model is estimated on units rather than logs, Germany's large variance dominates the fit and the small markets are effectively ignored. Fixed effects fix only the intercept problem: they allow Austria to have lower sales, not a different TV response.
+:::
+
+## Three options
+
+| | Separate per country | Pooled with country FE | Hierarchical (partial pooling) |
+|---|---|---|---|
+| Media coefficients | one set per country | one set for all | one set per country, pulled towards a common mean |
+| Uses other countries' data | no | fully | in proportion to precision |
+| Small-market estimates | noisy | precise but possibly wrong | precise and plausible |
+| Assumption | nothing shared | everything shared | effects are similar, not identical |
+| Tools today | `smf.ols` per country | `C(country)`, `PanelOLS` | shrinkage formula, Bayesian MMM |
+
+::: {.notes}
+The table is the core of the first half. Separate models respect heterogeneity but are noisy. Pooled models are precise but impose homogeneity. Hierarchical models estimate how heterogeneous the countries actually are and shrink accordingly. The interaction model in the lab (country x channel slopes, shared controls) is a fourth, intermediate option.
+:::
+
+## Partial pooling: shrinkage in one picture
+
+```{python}
+rng = np.random.default_rng(3)
+true = np.array([0.05, 0.06, 0.05, 0.07, 0.015, 0.02])
+se = np.array([0.020, 0.006, 0.010, 0.012, 0.022, 0.025])
+est = true + rng.normal(0, se)
+pooled = np.average(est, weights=1 / se**2)
+tau2 = max(est.var(ddof=1) - np.mean(se**2), 0)
+w = tau2 / (tau2 + se**2)
+shr = w * est + (1 - w) * pooled
+fig, ax = plt.subplots()
+x = np.arange(6)
+ax.errorbar(x - 0.15, est, yerr=1.96 * se, fmt="o", capsize=3, label="separate estimate (95 % CI)")
+ax.scatter(x + 0.15, shr, marker="D", color="C3", zorder=3, label="partially pooled")
+for i in range(6):
+    ax.annotate("", xy=(x[i] + 0.15, shr[i]), xytext=(x[i] - 0.15, est[i]), arrowprops=dict(arrowstyle="->", color="grey"))
+ax.axhline(pooled, color="grey", ls="--", label="pooled mean")
+ax.set_xticks(x); ax.set_xticklabels(COUNTRIES); ax.set_ylabel("TV coefficient (illustrative)")
+ax.legend(fontsize=8); ax.set_title("Noisy countries move a lot, precise countries barely move")
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Illustrative simulation, not the Alpenglow data. Germany, with a tight interval, keeps its own estimate. Austria and Poland, with wide intervals, are pulled towards the pooled mean. The weight on a country's own data is tau squared over tau squared plus its standard error squared, where tau squared is the between-country variance net of noise. If countries really are different, tau squared is large and little shrinkage happens; if they look alike, the model pools. The data decide.
+:::
+
+## Shrinkage formula (for the lab)
+
+$$\hat\beta_c^{\text{shrunk}} = w_c\,\hat\beta_c + (1-w_c)\,\hat\beta_{\text{pooled}},\qquad w_c=\frac{\tau^2}{\tau^2+se_c^2}$$
+
+- $\tau^2$: how much the true effects differ between countries
+- $se_c^2$: how noisy country $c$'s own estimate is
+- $w_c \to 1$ for precise countries, $w_c \to 0$ for noisy ones
+- A hierarchical Bayesian model does this automatically and also propagates the uncertainty in $\tau^2$
+
+::: {.notes}
+The lab implements this formula in six lines so students see the mechanics before trusting a library to do it. The Bayesian version replaces the plug-in tau squared with a full posterior and handles many channels and parameters at once. The multidimensional MMM in PyMC-Marketing offers hierarchical priors across a "country" dimension; it is the natural next step beyond this course.
+:::
+
+# Bayesian MMM
+
+## Bayesian MMM in one slide
+
+- **Prior** = business knowledge written as a distribution: "TV adstock is probably between 0.5 and 0.9", "no channel has negative effect"
+- **Likelihood** = how well a parameter value explains the 156 weeks
+- **Posterior** = prior updated by data: where data are rich, the data dominate; where data are thin, the prior holds
+- Output is a distribution for every quantity: ROAS, contribution, optimal budget
+- Small markets are exactly where priors matter
+
+::: {.notes}
+Keep this intuitive. The prior is what a sensible marketer believes before seeing this year's data. The posterior is the same belief after seeing the data. For Germany the data overwhelm the prior; for Austria the prior still shapes the answer, which is a feature, not a bug: a model that concluded Austrian search has a negative effect because of 156 noisy weeks would be worse than one that says "probably positive, but we are unsure".
+:::
+
+## Prior, data, posterior
+
+```{python}
+from scipy import stats
+x = np.linspace(0, 1, 400)
+fig, axes = plt.subplots(1, 2, figsize=(8, 3.6), sharey=True)
+for ax, n, title in [(axes[0], 20, "Small market: 20 informative weeks"), (axes[1], 300, "Large market: 300 informative weeks")]:
+    prior = stats.beta(6, 3).pdf(x)
+    lik = stats.norm(0.45, 0.5 / np.sqrt(n)).pdf(x)
+    post = prior * lik; post = post / np.trapezoid(post, x)
+    ax.plot(x, prior / np.trapezoid(prior, x), label="prior", color="C7")
+    ax.plot(x, lik / np.trapezoid(lik, x), label="data (likelihood)", color="C0", ls="--")
+    ax.plot(x, post, label="posterior", color="C3", lw=2)
+    ax.set_title(title, fontsize=10); ax.set_xlabel("TV adstock decay")
+axes[0].legend(fontsize=8)
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Same prior in both panels, centred around 0.67. Left: little data, the posterior sits between prior and likelihood. Right: lots of data, the posterior is the likelihood. This is partial pooling in time rather than across countries: the same logic. In the lab, the Austrian TV adstock posterior is tight around 0.69 while the digital adstocks stay wide: TV has enough variation to speak, the small digital budgets do not.
+:::
+
+## Uncertainty in ROAS, not just a number
+
+- Classical MMM: ROAS of TV in Austria = 1.36
+- Bayesian MMM: ROAS of TV in Austria is between 1.0 and 1.7 with 90 % probability; P(ROAS > 1) = 0.97
+- Same for OOH: expected 0.85, P(ROAS > 1) = 0.35
+- The second statement is what a board can act on
+- Posterior draws carry through to contributions, response curves and the optimal budget
+
+::: {.notes}
+These are the actual lab numbers for Austria. The point is managerial: a point estimate invites false precision; a probability statement invites a decision rule. "Cut channels whose probability of paying back is below 50 %" is a rule a CFO can accept. Note that the uncertainty propagates: if ROAS is uncertain, so is the optimal budget, and we will see a distribution of the gain.
+:::
+
+## The PyMC-Marketing workflow
+
+1. **Define** transformations: `GeometricAdstock(l_max=10)`, `LogisticSaturation()`
+2. **Add controls** (price, promotion, distribution, holidays) and `yearly_seasonality=2`
+3. **Fit**: `mmm.fit(X, y, draws=500, tune=500, chains=2, random_seed=42)`
+4. **Check**: `az.summary` (r-hat, ESS), posterior predictive, components plot
+5. **Contributions**: `compute_channel_contribution_original_scale()`, ROAS with intervals
+6. **Optimise**: `optimize_budget(budget, num_periods, budget_bounds)`
+
+::: {.notes}
+This is Part B of the lab. Emphasise that steps 1 and 2 are where business knowledge enters: which transformations, which controls, which priors. Steps 4 and 5 are where students must verify before they trust. Step 6 is seductive; the next section explains why it needs bounds. Mention the deprecation notice: version 0.19 still ships the classic MMM class we use; the multidimensional class is its successor and handles several countries in one model.
+:::
+
+## What the MMM estimates jointly
+
+| Parameter | Meaning | Session 2 | Session 3 |
+|---|---|---|---|
+| `adstock_alpha` | carry-over per channel | grid search, fixed | posterior per channel |
+| `saturation_lam` | how fast returns diminish | fixed Hill `k` | posterior per channel |
+| `saturation_beta` | maximum effect of a channel | OLS coefficient | posterior per channel |
+| `gamma_control` | price, promo, distribution, holidays | OLS coefficients | posterior |
+| `gamma_fourier` | seasonality | OLS coefficients | posterior |
+
+::: {.notes}
+In Session 2 students fixed adstock and saturation by grid search and then ran OLS. The Bayesian model estimates everything at once and therefore knows that an uncertain adstock implies an uncertain ROAS. The cost is sampling time (about 80 seconds for Austria at 500 draws) and the need to read convergence diagnostics.
+:::
+
+# From curves to allocation
+
+## A response curve per cell
+
+```{python}
+x = np.linspace(0, 60, 300)
+fig, ax = plt.subplots()
+for lab_, b, k, s_ in [("NL online video", 26, 13.2, 1.3), ("NL TV", 18, 39.6, 1.6), ("NL paid search", 20, 9.9, 1.1)]:
+    ax.plot(x, b * hill(x, k, s_) * 3.25, label=lab_)
+ax.set_xlabel("Weekly spend (thousand EUR)"); ax.set_ylabel("Weekly incremental revenue (thousand EUR)")
+ax.set_title("Illustrative response curves: same money, different returns"); ax.legend()
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Illustrative curves with the functional form of the course case. The height of a curve is the maximum effect, its bend is the saturation. The allocation question is not "which curve is highest" but "where is each curve steepest at the money we are currently spending". The slope at current spend is the marginal ROAS.
+:::
+
+## Equalise marginal ROAS
+
+```{python}
+x = np.linspace(1, 60, 300)
+curves = {"NL online video": (26, 13.2, 1.3), "NL TV": (18, 39.6, 1.6)}
+fig, ax = plt.subplots()
+for lab_, (b, k, s_) in curves.items():
+    y = b * hill(x, k, s_) * 3.25
+    m = np.gradient(y, x)
+    ax.plot(x, m, label=f"{lab_}: marginal ROAS")
+ax.axhline(1, color="black", lw=1, ls=":")
+ax.axvline(18.7, color="C0", ls="--", lw=1); ax.axvline(15.9, color="C1", ls="--", lw=1)
+ax.text(19.2, 2.6, "current OV spend", color="C0", fontsize=8); ax.text(16.4, 0.4, "current TV spend", color="C1", fontsize=8)
+ax.set_xlabel("Weekly spend (thousand EUR)"); ax.set_ylabel("Revenue from the next euro")
+ax.set_title("Move money from the low-slope cell to the high-slope cell until slopes are equal"); ax.legend(fontsize=8)
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+The optimality condition for a fixed budget: the marginal ROAS must be equal across all cells that receive money; otherwise moving a euro from the lower to the higher slope would raise revenue. In this illustration online video at its current spend still returns about EUR 2 for the next euro while TV returns under 1, so the optimiser moves money from TV to online video until the slopes meet. With constraints, the condition holds only among cells that are not at a bound.
+:::
+
+## The optimisation problem
+
+$$\max_{x_1,\dots,x_{30}} \sum_{i} R_i(x_i)\quad\text{s.t.}\quad \sum_i x_i = B,\;\; 0.7\,x_i^{0} \le x_i \le 1.3\,x_i^{0},\;\; \sum_{i\in c} x_i \ge 0.7\sum_{i\in c} x_i^{0}$$
+
+- $R_i$: response curve of cell $i$ (country x channel), in weekly revenue
+- $B$: total weekly budget (2025 average, about EUR 710k)
+- Cell bounds: no cell moves more than 30 %
+- Country floors: no country loses more than 30 % of its total
+- Solver: `scipy.optimize.minimize(method="SLSQP")`
+
+::: {.notes}
+Thirty decision variables, one equality, sixty bound constraints and six inequality constraints. SLSQP handles this in a fraction of a second. The important modelling choice is not the solver but the curves and the constraints. Students should be able to read this formulation and map every symbol to a line of code in Part C.
+:::
+
+## Constraints managers impose
+
+- **Country floors**: local teams, listings and retailer relationships cannot be rebuilt in a year
+- **Channel minimums**: a TV sponsorship contract, an always-on search budget
+- **Maximum change ±30 %**: agency capacity, creative production, learning effects
+- **Total fixed**: the CFO sets the envelope; MMM allocates within it
+- Each constraint has a price: the gain forgone, which the optimiser can report
+
+::: {.notes}
+Constraints are not a weakness of the method; they encode knowledge the model does not have. The useful exercise is to compute the shadow price of each constraint: run the optimiser with and without a floor and report the revenue difference. That turns an argument about politics into an argument about money. Exercise 2 asks for exactly this.
+:::
+
+## Uncertainty in the allocation
+
+```{python}
+rng = np.random.default_rng(42)
+g = rng.normal(56, 13, 2000)
+fig, ax = plt.subplots()
+ax.hist(g, bins=40, color="C0", alpha=0.8)
+ax.axvline(0, color="black"); ax.axvline(g.mean(), color="C3", lw=2, label="expected gain")
+ax.set_xlabel("Weekly revenue gain of the plan (thousand EUR)"); ax.set_ylabel("Posterior draws")
+ax.set_title("Distribution of the gain: is the plan robust to model uncertainty?"); ax.legend()
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+Illustrative. In the lab we draw 200 coefficient vectors from the estimated covariance (or posterior draws in the Bayesian model) and recompute the gain of the recommended plan under each. The board question "how sure are you" becomes "the plan gains in 98 % of draws, with an expected gain of EUR 56k per week". Note the asymmetry: a plan that gains a little in most draws but loses a lot in some would be a different decision.
+:::
+
+# International considerations
+
+## Country metadata as moderators
+
+```{python}
+show = meta[["country", "gdp_per_capita_eur_k", "years_in_market", "retail_concentration", "hofstede_uai", "hofstede_idv", "eurozone"]].copy()
+show.columns = ["Country", "GDP/cap (kEUR)", "Years in market", "Top-3 retail share", "Uncertainty avoid.", "Individualism", "Eurozone"]
+show
+```
+
+- These variables do not enter the MMM directly; they explain *why* coefficients differ
+- Use them to decide how much to pool, and to sanity-check the allocation
+
+::: {.notes}
+From data/mmm/country_meta.csv. Poland entered four years ago, has the lowest GDP per capita and is outside the euro. Austria is the 40-year home market. The Netherlands has the most concentrated retail. The next four slides go through what each dimension does to channel effectiveness and to the allocation.
+:::
+
+## Currency and price levels
+
+- Budgets are in EUR; Poland buys media in PLN, so an FX move changes real spend without any decision
+- A euro of media buys more impressions in Poland than in the Netherlands (lower CPMs)
+- Price levels differ: Polish retail price is about EUR 2.40 versus 3.20 in Austria, so the same units are less revenue
+- ROAS in revenue terms penalises low-price markets; ROAS in margin or units may tell another story
+- Report the allocation in the currency of the decision maker, but model in local real terms
+
+::: {.notes}
+Two separate issues: the exchange rate and the purchasing power of a euro of media. The data are already in EUR, which hides both. For the group project, students should at least state the assumption and show the sensitivity of the Polish allocation to a 10 % PLN move.
+:::
+
+## Market maturity: years_in_market
+
+- Poland (4 years) and the Netherlands (8) are growth markets; Austria (40) and Germany (25) are mature
+- Young markets: awareness channels (TV, OOH) may show weak short-term ROAS but build the base
+- Mature markets: saturation sets in earlier; marginal ROAS falls faster
+- MMM with three years of data cannot see long-term brand effects: it under-values awareness in young markets
+- Implication: treat a "cut TV in Poland" result with care; it is a short-term statement
+
+::: {.notes}
+This is the biggest caveat for the recommendation the lab produces. The model will say TV in Poland and the Netherlands has low marginal ROAS, which is consistent with the data, but a three-year window cannot measure brand building. A sensible plan cuts gradually and tests, rather than following the optimiser to the bound.
+:::
+
+## Retail concentration and distribution
+
+- Top-3 retailer share: 85 % in Germany, 55 % in Italy
+- Concentrated retail: distribution is the bottleneck; media without listings is wasted, promotion effects are large
+- Fragmented retail: media reaches consumers who can find the product in many outlets; wider response
+- `distribution` is a control in the model; the allocation assumes it stays constant
+- A country floor is often a proxy for "keep the retailer relationship alive"
+
+::: {.notes}
+In the model, distribution is held at its current level when we optimise media. If a budget cut in a country weakens the brand's negotiating position with its top retailer, the model misses the loss. This is why country floors are a legitimate constraint rather than mere politics.
+:::
+
+## Culture as a moderator of channel effectiveness
+
+- Hofstede uncertainty avoidance: Poland 93, France 86 vs Netherlands 53
+- High uncertainty avoidance: trusted mass media and in-store presence matter more; social proof less
+- Individualism: Netherlands 80, Austria 55; individualistic markets respond more to targeted digital
+- Long-term orientation (Germany 83) is associated with loyalty and slower response to promotions
+- Use culture to **form priors** and to **explain** estimates, never to override data
+
+::: {.notes}
+The honest position: cultural scores are country-level averages and the evidence on their link to media response is mixed. They are useful as prior knowledge in a hierarchical model (for example, a prior that paid social is stronger in individualistic markets) and as a narrative when presenting why the Dutch allocation differs from the Polish one. They are not a substitute for estimation.
+:::
+
+# Pitfalls
+
+## Pitfall 1: corner solutions
+
+```{python}
+x = np.linspace(0, 45, 300)
+fig, ax = plt.subplots()
+ax.plot(x, 0.9 * x, label="nearly linear channel (paid social)")
+ax.plot(x, 30 * hill(x, 10, 1.2), label="saturating channel (TV)")
+ax.axvline(9.7, color="C0", ls="--", lw=1); ax.text(10, 36, "observed range ends here", fontsize=8, color="C0")
+ax.axvspan(9.7, 45, color="grey", alpha=0.1)
+ax.set_xlabel("Weekly spend (thousand EUR)"); ax.set_ylabel("Incremental revenue (thousand EUR)")
+ax.set_title("An unbounded optimiser puts the whole budget into the straight line"); ax.legend(fontsize=8)
+plt.tight_layout(); plt.show()
+```
+
+::: {.notes}
+In the lab, the unbounded Austrian optimiser puts all EUR 44k into paid social. The reason is on the slide: the estimated paid social curve is nearly linear over the observed EUR 5k to 15k, so the model sees no diminishing returns and extrapolates the straight line. Bounds of 50 to 150 % produce a sensible answer. The lesson: when a solution sits at a bound, the bound is doing the work, and the model is silent beyond the data.
+:::
+
+## Pitfall 2: extrapolating beyond observed spend
+
+- Response curves are estimated where spend has been; outside that range they are assumptions
+- Doubling a channel's budget asks the model about a world it has never seen
+- Posterior bands widen outside the data, but only if the model's functional form allows it
+- Remedy: cap changes (±30 %), move in steps, run a geo-lift test before scaling (Session 4)
+- Treat every "+100 %" from an optimiser as a hypothesis to test, not a plan to execute
+
+::: {.notes}
+The bands from plot_direct_contribution_curves get wider at high spend, but even those bands assume the logistic shape continues. The honest answer to "what happens at twice the spend" is "we do not know, let us test it". Session 4 connects this to experiments and calibration.
+:::
+
+## More pitfalls, briefly
+
+- **Seasonality confounding**: budgets rise before Christmas, so do sales; controls and holiday dummies are essential
+- **Estimated versus fixed adstock**: Part B estimates it, Parts A and C fix it; the allocation depends on the choice
+- **Shape, not just slope**: with `s = 1` every Hill curve is concave; true curves can be S-shaped, which changes marginal ROAS
+- **Negative coefficients**: a point estimate below zero usually means "no information", not "harmful"
+- **Units**: revenue versus margin ROAS, thousands versus units, weekly versus annual budgets
+
+::: {.notes}
+The shape issue deserves a word: if the true curve is S-shaped and spend sits below the inflection point, the marginal return is actually rising, and a concave approximation understates the value of increasing spend in that cell. This is one reason to compare the OLS-based allocation in Part C with the Bayesian one in Part B and with the experiment in Session 4.
+:::
+
+# Lab, project, recap
+
+## Lab bridge: three parts in 90 minutes
+
+| Part | Question | Tool | Output |
+|---|---|---|---|
+| A | How much to pool? | statsmodels, linearmodels | TV coefficient under four strategies, one chart |
+| B | What does a Bayesian MMM add for Austria? | PyMC-Marketing 0.19 | posterior ROAS, response curves, bounded optimum |
+| C | Where should EUR 710k per week go? | scipy SLSQP | 30-cell allocation, heatmap, gain with uncertainty |
+
+- Runs end to end in about 2 minutes; Part B is the slow step
+- Every part has a "Check yourself" list and a prompt pattern
+
+::: {.notes}
+Walk through the lab structure. Students with an AI assistant should use the prompt patterns and verify the outputs with the checks. The most common error in Part B is passing a scaled contribution where an original-scale one is needed; the most common error in Part C is a budget that does not sum to the total after optimisation.
+:::
+
+## Project milestone (due before Session 4)
+
+- Commit your team's first **model table** to your group repository
+- One row per country-channel cell: `country, channel, model, adstock_alpha, coefficient, se, roas, mroas`
+- State which model produced each row (separate, pooled, interactions, Bayesian) and why
+- Include the prompt log for the code that produced it
+- This table becomes the input to your 2027 allocation in the final report
+
+::: {.notes}
+The milestone is deliberately small: a table and a justification. It forces teams to decide how much to pool per market before they optimise. Check the GitHub history: every team member should have at least one commit by Session 4.
+:::
+
+## Recap
+
+- Small markets give noisy estimates; pooled models give precise but homogeneous ones; partial pooling balances the two
+- A Bayesian MMM turns business knowledge into priors and returns distributions for ROAS and budgets
+- Allocation means equalising marginal ROAS subject to the budget and to management constraints
+- Bounds are not optional: near-linear curves produce corner solutions
+- Report the gain as a distribution, and read the allocation through currency, maturity, retail and culture
+
+::: {.notes}
+Five sentences students should be able to say without notes. Quiz 3 opens tonight and covers these concepts, closed book.
+:::
+
+## Quiz 3 opens tonight
+
+- Ten conceptual questions, closed book, 20 minutes
+- Covers: pooling trade-off, shrinkage, priors and posteriors, marginal ROAS, constraints, corner solutions
+- Best three of four quizzes count
+- Next week: "Can we trust the model?" Forecasting, geo-lift experiments, attribution
+
+::: {.notes}
+Remind students that the geo-lift test in Session 4 is the answer to today's extrapolation problem: when the optimiser says "spend more", the experiment checks whether the curve really continues.
+:::

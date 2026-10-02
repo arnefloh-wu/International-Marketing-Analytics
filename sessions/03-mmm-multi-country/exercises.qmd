@@ -1,0 +1,70 @@
+---
+title: "Exercises 3 · Many countries, one budget"
+subtitle: "Team exercise (60 min) and homework"
+format:
+  html:
+    toc: true
+execute:
+  eval: false
+---
+
+Work in your project team. Start from your rendered `lab.qmd` so that the objects `df`, `mmm`, `cell`, `revenue()` and `res` exist. Record the prompts you used in your prompt log. Solutions are discussed in Session 4; the instructor version is in `instructor/solutions/`.
+
+## Exercise 1 · Priors matter in a small market (Part B)
+
+The Austrian model uses PyMC-Marketing's default priors. Inspect them and change two of them:
+
+```{python}
+mmm.default_model_config          # the default priors
+```
+
+a. Replace the TV adstock prior with a prior that encodes Session 2's knowledge: decay around 0.7, fairly tight. In PyMC-Marketing 0.19 this is done through the `priors` argument of `GeometricAdstock`, for example `GeometricAdstock(l_max=10, priors={"alpha": Prior("Beta", alpha=7, beta=3)})` with `from pymc_marketing.prior import Prior`.
+b. Make the `saturation_beta` prior for all channels twice as wide (a `HalfNormal` with twice the default `sigma`).
+c. Refit with the course settings (plus `target_accept=0.95` to remove the r-hat warning) and compare the posterior ROAS table with the lab's. Which channels change, and why do the TV posteriors barely move while online video and OOH move more?
+
+Write three sentences for a manager: when do priors matter, and how would you justify a prior in a budget meeting?
+
+## Exercise 2 · Country floors and their price (Part C)
+
+Management in Italy and France object to the allocation: both countries lose about 12 % of their budget.
+
+a. Add a constraint that every country keeps at least **90 %** of its 2025 budget. Re-run the SLSQP optimisation and report the new allocation and gain.
+b. Compute the *shadow price* of the Italian floor: the weekly revenue the company gives up by protecting Italy at 90 % instead of 70 %.
+c. Now add the opposite constraint: no country may *gain* more than 10 %. Which countries are affected? Does the gain fall more than in (a)?
+
+Deliverable: a table with four rows (lab constraints, 90 % floors, 10 % ceilings, both) and columns `gain_k_per_week`, `gain_pct`, `binding_countries`.
+
+## Exercise 3 · Wider bounds: ±50 % (Part C)
+
+a. Re-run the lab's optimisation with cell bounds of ±50 % instead of ±30 % (keep the 70 % country floors). Report the gain, the number of cells at a bound, and the three largest absolute changes in kEUR.
+b. Evaluate the ±50 % plan under the 200 coefficient draws. Compare the 90 % interval and P(gain > 0) with the ±30 % plan.
+c. Plot the estimated response curve of German online video from 0 to 2 x its maximum observed adstocked spend and mark the range in which the data actually lie. How much of the ±50 % plan relies on extrapolation?
+
+In one paragraph: should the CMO adopt ±30 % or ±50 % for 2027? What would make you comfortable with ±50 %?
+
+## Exercise 4 · Competitor spend as a moderator (Parts A and C)
+
+The panel contains `competitor_spend_k`. The lab uses its log as a control that shifts the baseline. Competitors can also change *how well* our media works.
+
+a. In the pooled fixed-effects model, add interactions between each scaled media variable and `log_comp` (centred: subtract its mean). Report the five interaction coefficients with standard errors. Which channels lose effectiveness when competitors spend more?
+b. Repeat the per-country Hill models of Part C with the same interaction for TV only. For each country, compute the TV marginal ROAS at the 25th and 75th percentile of competitor spend.
+c. Re-run the allocation assuming 2027 competitor spend is 20 % higher than the 2025 average in Germany and France only. How does the recommendation for German and French TV change?
+
+## Exercise 5 · The one-page allocation memo
+
+Write a one-page memo (max. 400 words plus one table and one chart) to Alpenglow's CMO recommending the 2027 weekly allocation across countries and channels. Use the structure:
+
+1. **Decision requested** (two sentences).
+2. **Recommendation**: the country x channel table with current, proposed and % change.
+3. **Expected effect**: weekly and annual incremental revenue, with a 90 % interval and P(gain > 0).
+4. **What drives it**: three bullets on marginal ROAS, with the international context (currency, maturity, retail concentration, culture) where it matters.
+5. **Risks and safeguards**: constraints used, extrapolation, and the test you propose before scaling (link to Session 4).
+6. **Next steps**: what the team needs from the country managers.
+
+Render it as `memo.qmd` to HTML and PDF or DOCX in your group repository, and tag the commit `milestone-3`.
+
+::: {.callout-tip title="Prompt pattern for the memo"}
+*"Here is a DataFrame with the current and proposed weekly spend per country and channel and the estimated gain with a 90 % interval. Draft a 400-word memo for a CMO with the following six sections ... Keep every number traceable to the table; do not invent figures."*
+
+**What to verify:** every number in the memo appears in your tables; the interval and probability are the ones you computed; the memo states the constraints and the model used.
+:::
