@@ -1,6 +1,0 @@
-country,channel,adstock_alpha,coefficient,total_spend_k,incremental_units_k,roas
-FR,tv,0.7,85.231,9003.1,3917.2346,1.4559
-FR,online_video,0.8,64.5559,4267.15,4660.0297,3.673
-FR,paid_search,0.9,7.4932,2901.26,532.4723,0.617
-FR,paid_social,0.9,-28.8248,3860.57,-2129.0007,-1.8561
-FR,ooh,0.9,30.7325,2921.29,1544.2027,1.7794

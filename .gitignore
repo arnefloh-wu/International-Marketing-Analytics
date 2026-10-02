@@ -21,3 +21,5 @@ __pycache__/
 assignments/checks/submissions/your-github-username/
 assignments/checks/submissions/your_github_username/
 *.quarto_ipynb
+assignments/checks/submissions/*
+!assignments/checks/submissions/.gitkeep
