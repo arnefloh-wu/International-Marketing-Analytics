@@ -110,7 +110,7 @@ Give the two-minute history: MMM was invented in the 1960s for packaged goods, l
 - Regression is the one language: MMM, forecasting, experiments, attribution are all regressions with different design matrices
 - It is not a programming course: an AI assistant writes most code
 - It is a course about checking code and numbers you did not write yourself
-- Assessment: 4 quizzes (best 3), 2 lab check-ins, group project, peer evaluation
+- Assessment: online certificates, self-reflection, 4 quizzes, 2 lab check-ins, group project, peer review
 - Reading: Yildirim and Kübler (2025); Schwarz, Chapman and Feit (2020)
 
 ::: {.notes}
