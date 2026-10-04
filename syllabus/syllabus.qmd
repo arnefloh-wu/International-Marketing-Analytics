@@ -58,16 +58,18 @@ None beyond bachelor-level statistics. No programming experience is expected. Yo
 | 4 | Tue 27 Oct | Forecasting, experiments and attribution | Can we trust the model? |
 | 5 | Tue 3 Nov | Group project pitches and wrap-up | Board meeting: the 2027 budget |
 
-Each session combines a concept lecture (60 min), a guided lab in Positron (90 min) and a team exercise on the project data (60 min), followed by a debrief. A short online quiz opens after each of Sessions 1 to 4.
+Each session combines a concept lecture (60 min), a guided lab in Positron (90 min) and a team exercise on the project data (60 min), followed by a debrief. A short online quiz opens after each of Sessions 1 to 4 (Wednesday 9 am to Monday 11:59 pm).
 
 ## Assessment **[to align]**
 
 | Component | Weight | Format |
 |---|---|---|
-| Weekly quizzes (best 3 of 4) | 30 % | individual, online, auto-graded |
-| Lab check-ins (after Sessions 2 and 4) | 20 % | individual Quarto notebook, auto-checked |
-| Group project: Alpenglow 2027 budget allocation | 40 % | group of 5: GitHub repository, Quarto report, 10-minute pitch |
-| Peer evaluation and contribution | 10 % | GitHub history and peer form |
+| Online certificates (Kaggle Learn Python, GitHub Skills) and installation check | 5 % | individual, before Session 2 |
+| Self-reflection | 5 % | individual, short written reflection after Session 5 |
+| Online quizzes after Sessions 1 to 4 | 4 × 5 % = 20 % | individual, closed book, 10 questions in 10 minutes |
+| Lab check-ins after Sessions 2 and 4 | 2 × 10 % = 20 % | individual Quarto notebook plus result files, auto-checked |
+| Group project: Alpenglow 2027 budget allocation | 40 % | group of 5: GitHub repository, Quarto report, pitch deck, 10-minute pitch |
+| Peer review | 10 % | peer rating form |
 
 Grades follow the WU scale: 1 (≥ 90 %), 2 (80–89 %), 3 (70–79 %), 4 (60–69 %), 5 (< 60 %). Attendance of at least 80 % of sessions is required **[to align]**.
 

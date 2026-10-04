@@ -1,6 +1,6 @@
 # Quiz banks
 
-Each session folder holds a `quiz.md` with **10 closed-book multiple-choice questions** (four options, one correct, one-line rationale). The quizzes open online after Sessions 1 to 4 and are auto-graded; the best 3 of 4 count for 30 % of the grade.
+Each session folder holds a `quiz.md` with **10 closed-book multiple-choice questions** (four options, one correct, one-line rationale). The quizzes open online after Sessions 1 to 4 and are auto-graded; each quiz counts 5 % of the grade (20 % in total).
 
 ## Source format (`sessions/0X-*/quiz.md`)
 

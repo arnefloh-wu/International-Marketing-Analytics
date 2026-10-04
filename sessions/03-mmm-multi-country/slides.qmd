@@ -486,7 +486,7 @@ Five sentences students should be able to say without notes. Quiz 3 opens tonigh
 
 - Ten conceptual questions, closed book, 20 minutes
 - Covers: pooling trade-off, shrinkage, priors and posteriors, marginal ROAS, constraints, corner solutions
-- Best three of four quizzes count
+- Opens Wednesday 9 am, closes Monday 11:59 pm; 5 % of the grade
 - Next week: "Can we trust the model?" Forecasting, geo-lift experiments, attribution
 
 ::: {.notes}

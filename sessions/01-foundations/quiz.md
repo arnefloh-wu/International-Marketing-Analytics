@@ -1,6 +1,6 @@
 # Quiz 1: Toolkit and regression foundations
 
-Closed book, 10 questions, one correct answer each. Opens after Session 1, closes Sunday 23:59. Tests understanding, not code.
+Closed book, 10 questions in 10 minutes, one correct answer each. Opens Wednesday 7 October 2026, 9 am, closes Monday 12 October 2026, 11:59 pm. Each quiz counts 5 % of the grade. Tests understanding, not code.
 
 **1. In a regression of log(units) on log(price), the price coefficient is -1.4. What does this mean?**
 

@@ -50,10 +50,12 @@ Session rhythm (4 h): 60 min concept lecture → 90 min guided lab → 15 min br
 
 | Component | Weight | Individual / group | Auto-graded |
 |-----------|--------|--------------------|-------------|
-| Four weekly online quizzes (Sessions 1–4), best 3 of 4 | 30 % | individual | yes (Moodle/Canvas-ready question bank) |
-| Two lab check-ins (Session 2, Session 4): short Quarto notebook, auto-checked with `pytest` | 20 % | individual | yes (`assignments/checks/`) |
-| Group project: Alpenglow 2027 budget allocation (GitHub repo + Quarto report + 10-min pitch) | 40 % | group of 5 | rubric + automated checks |
-| Peer evaluation & contribution (GitHub commit history, peer form) | 10 % | individual | partly |
+| Online certificates (Kaggle Learn Python, GitHub Skills) + installation check, before Session 2 | 5 % | individual | upload check |
+| Self-reflection after Session 5 | 5 % | individual | no |
+| Four online quizzes (Sessions 1–4), 10 questions in 10 minutes, Wed 9 am to Mon 11:59 pm | 4 × 5 % = 20 % | individual | yes (GIFT question banks in `assignments/quizzes/`) |
+| Two lab check-ins (Session 2, Session 4): short Quarto notebook, auto-checked with `pytest` | 2 × 10 % = 20 % | individual | yes (`assignments/checks/`) |
+| Group project: Alpenglow 2027 budget allocation (GitHub repo + Quarto report + pitch deck + 10-min pitch) | 40 % | group of 5 | rubric + automated checks |
+| Peer review (peer rating form) | 10 % | individual | partly |
 
 Grading scale (WU): 1 (≥ 90 %), 2 (80–89 %), 3 (70–79 %), 4 (60–69 %), 5 (< 60 %). Attendance required at ≥ 80 % of sessions (WU PI rule). **[SYLLABUS]**
 

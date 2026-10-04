@@ -648,7 +648,7 @@ Close with the decision of the day. Can we trust the model? The forecast says th
 
 ## Before next week
 
-- Quiz 4 opens tonight, closes Sunday; best three of four quizzes count
+- Quiz 4 opens Wednesday 9 am, closes Monday 11:59 pm; 5 % of the grade
 - Lab check-in 2 due before Session 5
 - Group project: final allocation, report and 10-minute pitch
 - Every line of the allocation needs a source: model, experiment or attribution, and a range

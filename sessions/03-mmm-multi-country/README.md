@@ -43,5 +43,5 @@ Data: `data/mmm/alpenglow_weekly.csv`, `data/mmm/country_meta.csv`. Helpers: `as
 
 ## Deliverables
 
-- Quiz 3 (opens after the session, best 3 of 4 count).
+- Quiz 3 (opens Wednesday 9 am, closes Monday 11:59 pm, 5 % of the grade).
 - Project milestone: the team's first model table (`country, channel, model, adstock_alpha, coefficient, se, roas, mroas`) committed to the group repository before Session 4.

@@ -591,7 +591,7 @@ Six bullets, six quiz questions. The quiz tests exactly these ideas without code
 
 ## Before next week
 
-- Quiz 1 opens tonight, closes Sunday 23:59; closed book, 10 questions
+- Quiz 1 opens Wednesday 9 am, closes Monday 11:59 pm; closed book, 10 questions in 10 minutes
 - Exercises 1 to 5 in `sessions/01-foundations/exercises.qmd`; solutions discussed next week
 - Group repositories: one commit per member by Friday
 - Read: Yildirim and Kübler, chapter on market response models; Chan and Perry (2017) sections 1 to 3

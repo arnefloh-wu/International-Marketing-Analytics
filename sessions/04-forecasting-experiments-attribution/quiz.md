@@ -1,6 +1,6 @@
 # Quiz 4: Forecasting, experiments and attribution
 
-Closed book, 10 questions, one correct answer each. Opens after Session 4, closes Sunday 1 November 2026, 23:59. Best three of four quizzes count.
+Closed book, 10 questions in 10 minutes, one correct answer each. Opens Wednesday 28 October 2026, 9 am, closes Monday 2 November 2026, 11:59 pm. Each quiz counts 5 % of the grade.
 
 ---
 
