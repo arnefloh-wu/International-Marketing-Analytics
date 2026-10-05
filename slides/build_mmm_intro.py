@@ -301,8 +301,10 @@ divider("How MMM works", "Part 2 of 5" + NB + "·" + NB + "base and incremental 
 s = add_slide("Titel und Inhalt", "Sales = base + incremental",
               notes="The chart splits German weekly sales in 2025 into a base and the part the model attributes to media. "
                     "It comes from a deliberately simple regression (all five channels with the same carryover of 0.5, no "
-                    "saturation); in this first model media account for about 41 % of fitted sales. That number is "
-                    "illustrative only: Session 2 builds a proper model and you will see how much it moves. The dashed "
+                    "saturation); in this first model media account for about 41 % of fitted sales. That number is too "
+                    "high: Alpenglow raises its budgets before Christmas, when people buy chocolate anyway, so a naive "
+                    "model credits media with part of the seasonal demand (the endogeneity pitfall later in this deck). "
+                    "Session 2 builds a proper model and you will see the media share fall considerably. The dashed "
                     "line is actual sales; the gap to the coloured area is what the model cannot explain.")
 picture(s, "mmm_decomposition.png", 0.5, 1.35, 5.4, 3.5,
         "Stacked area chart of weekly sales in Germany in 2025, split into a base of about 300 to 800 thousand units and "
@@ -316,11 +318,11 @@ for i, para in enumerate(rows):
     box(s, 6.05, y, 0.07, 0.9, ACC, f"Decomp bar {i + 1}")
     text(s, 6.25, y, 3.17, 0.9, [para], f"Decomp text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, size=12)
 box(s, 6.05, 4.35, 3.45, 0.5, NAVY, "Decomp share box")
-text(s, 6.2, 4.35, 3.25, 0.5, [[("First model: ", {"bold": True, "col": WHITE, "size": 12}),
-                                ("media ≈ 41" + PCT + " of sales", {"col": WHITE, "size": 12})]], "Decomp share text",
+text(s, 6.2, 4.35, 3.25, 0.5, [[("Naive model: ", {"bold": True, "col": WHITE, "size": 12}),
+                                ("media ≈ 41" + PCT + ", too high", {"col": WHITE, "size": 12})]], "Decomp share text",
      anchor=MSO_ANCHOR.MIDDLE)
-text(s, 0.5, 4.95, 9.0, 0.32, [[("Alpenglow Germany, 2025: a simple first regression for illustration, not the final "
-                                 "model.", {"col": GREY_TXT, "size": 11})]], "Decomp caption", anchor=MSO_ANCHOR.MIDDLE)
+text(s, 0.5, 4.95, 9.0, 0.32, [[("Alpenglow Germany, 2025, naive regression: budgets follow Christmas demand, so media get credit for "
+                                 "seasonal sales (see the pitfalls slide).", {"col": GREY_TXT, "size": 11})]], "Decomp caption", anchor=MSO_ANCHOR.MIDDLE)
 source(s, "Hanssens et al. 2001; Jin et al. 2017; own calculation on the Alpenglow data")
 
 # 8  The equation
@@ -330,7 +332,7 @@ s = add_slide("Titel und Inhalt", "The regression behind it",
                     "unit of transformed spend. In the log-log form coefficients are elasticities: the per cent change in "
                     "sales for a 1 % change in the driver. Log-log is the classic constant-elasticity model of Hanssens et "
                     "al.; Tellis (2006) gives a compact primer. In Session 2 you estimate both with statsmodels.")
-stepper(s, 0.5, 1.35, 9.0, 0.66, ["Spend per\vchannel", "Adstock:\vcarryover", "Saturation:\vless per euro",
+stepper(s, 0.5, 1.35, 9.0, 0.66, ["Spend per\vchannel", "Adstock:\vcarryover", "Saturation:\vless per €",
                                   "× β:\vthe effect", "Sales\vcontribution"], "Pipeline", size=11)
 cw2 = (9.0 - GAP) / 2
 forms = [("Additive form", "sales_t = β0 + Σ βc·f(spend_c,t)\n          + γ·controls_t + ε_t",
@@ -655,7 +657,7 @@ table(s, [
     [1.5, 2.5, 2.5, 2.5], "Tools table", size=13, row_margin=60000)
 callout(s, 4.62, 0.6, "LuCode", ("In this course: ", "PyMC-Marketing and Meridian in Python, Session 5."), "Tools course",
         size=12)
-source(s, "Runge et al. 2024; Meridian and PyMC-Marketing documentation; Customer Needs and Solutions review 2026")
+source(s, "Runge et al. 2024; Meridian and PyMC-Marketing documentation; open-source MMM review (2026)")
 
 # ---------------------------------------------------------------- Part 5 -----
 divider("MMM in this course", "Part 5 of 5" + NB + "·" + NB + "how the sessions build the skills, the group case study",
@@ -700,9 +702,12 @@ case = [("LuCandy", "The brief", ["Alpenglow's web shop in AT, DE and CH", "Four
         ("LuDatabase", "The data", ["Weekly shop data, 3 countries × 156 weeks", "Club subscribers", "The Q1 2026 plan"]),
         ("LuFileText", "You deliver", ["A Quarto report with all code", "Groups of at most 4", "30" + PCT + " of the grade"])]
 for i, (ic, head, items) in enumerate(case):
-    card(s, 0.5 + i * (tw3 + GAP), 2.2, tw3, 2.35, head, items, ic, f"Case card {i + 1}", head_h=0.45)
-callout(s, 4.75, 0.75, "LuBriefcase", ("Every number from code: ", "the report renders from a fresh copy of your "
+    card(s, 0.5 + i * (tw3 + GAP), 2.2, tw3, 2.0, head, items, ic, f"Case card {i + 1}", head_h=0.45)
+callout(s, 4.38, 0.75, "LuBriefcase", ("Every number from code: ", "the report renders from a fresh copy of your "
                                                                   "repository."), "Case rule", dark=True, size=12)
+text(s, 0.5, 5.2, 9.0, 0.32, [[("Brief, data and assessment criteria: ", {"bold": True, "col": NAVY, "size": 12}),
+                               ("assignments/group-project/ and Canvas", {"font": MONO, "col": NAVY, "size": 12})]],
+     "Case where", anchor=MSO_ANCHOR.MIDDLE)
 
 # 22  Key takeaways
 s = add_slide("Titel und Inhalt", "Key takeaways",
