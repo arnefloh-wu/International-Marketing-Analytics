@@ -9,9 +9,16 @@ If this document renders, your set-up works: Quarto ran Python, and polars, plot
 
 **How to use it**
 
-1. Open this file in Positron and pick a Python 3.14 interpreter at the top right (your project's `.venv` if you have one).
+1. Open this file in Positron. If its folder has a `.venv`, pick **Python 3.14.8 (.venv)** at the top right: Quarto runs the file with that `.venv`, so the packages must go there.
 2. Run the install cell below **once**: click into it and press Ctrl/Cmd + Enter. Quarto cannot install its own helpers while it renders, so this step comes first.
 3. Press **Preview** (Ctrl/Cmd + Shift + K).
+
+Preview says *No module named 'yaml'* or *There is an unactivated Python environment in .venv*? Then the packages went to a different Python. Install them straight into the `.venv` from Positron's terminal, then preview again:
+
+```bash
+.venv\Scripts\python -m pip install polars plotnine great-tables statsmodels pyarrow jupyter   # Windows
+.venv/bin/python -m pip install polars plotnine great-tables statsmodels pyarrow jupyter         # macOS
+```
 
 ```{python}
 #| eval: false

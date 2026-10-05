@@ -159,4 +159,5 @@ Terminal alternative on Windows: `py install 3.14`, then `Remove-Item -Recurse -
 - **No `.venv` in the Interpreter picker:** open the course folder (not a single file), then pick *Python 3.14.8 (.venv)*.
 - **macOS: `externally-managed-environment`:** you used the system Python; select the project's `.venv` first.
 - **PyMC compiles slowly on first run:** this is normal (a C compiler is used once).
+- **Preview says "No module named 'yaml'" or "There is an unactivated Python environment in .venv":** Quarto runs your file with the folder's `.venv`, but the packages are not in it. In Positron's terminal: `.venv\Scripts\python -m pip install -r requirements.txt` (Windows) or `.venv/bin/python -m pip install -r requirements.txt` (macOS); for the single-file stack test, install `polars plotnine great-tables statsmodels pyarrow jupyter` instead of `-r requirements.txt`.
 - **Quarto cannot find Python:** check that the `.venv` interpreter is selected; in the terminal run `quarto check jupyter`.
