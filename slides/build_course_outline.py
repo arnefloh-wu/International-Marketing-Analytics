@@ -229,30 +229,29 @@ s = add_slide("Titel und Inhalt", "Module content",
               notes="Marketing mix modelling in one breath: take the sales history, separate what would have sold anyway "
                     "from what each marketing activity added, and use that to decide where the next euro goes.")
 rows = [
-    ("LuChartLine", ("Marketing analytics ", "turns marketing data into decisions. It measures what marketing achieved and shows "
-                                              "where the next euro should go.")),
+    ("LuChartLine", ("Marketing analytics ", "is the measurement, management and analysis of marketing performance data "
+                                              "to improve marketing effectiveness and return on investment. It turns data "
+                                              "into decisions and shows where the next euro should go.")),
     ("LuTarget", ("Key questions: ", "how do price, place, product features and promotion drive performance measures such "
                                      "as sales, and how should a fixed budget be split across countries and channels?")),
-    ("LuScale", ("Marketing mix modelling in plain words: ", "a model that splits sales into what would have sold anyway and "
-                                                             "the extra sales each marketing activity brought in.")),
     ("LuLaptop", ("Tools: ", "Python in Positron, GitHub for versioning and DataCamp courses; AI assistants do most of the "
                              "typing, you check the results.")),
     ("LuBriefcase", ("Case studies: ", "Zalando and NEOH, plus a six-country teaching dataset with known answers for the labs.")),
 ]
-rh = (4.25 - GAP * 4) / 5
+rh = (4.25 - GAP * 3) / 4
 for i, (ic, para) in enumerate(rows):
     y = 1.35 + i * (rh + GAP)
     box(s, 0.5, y, 9.0, rh, LIGHT, f"Content row {i + 1}")
-    icon(s, ic, "navy", 0.72, y + (rh - 0.42) / 2, 0.42, f"content row {i + 1}")
-    text(s, 1.4, y, 7.9, rh, [para], f"Content text {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
+    icon(s, ic, "navy", 0.72, y + (rh - 0.45) / 2, 0.45, f"content row {i + 1}")
+    text(s, 1.45, y, 7.85, rh, [para], f"Content text {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
 
 # 4  Course roadmap: five stops on a road, one card per session
 s = add_slide("Titel und Inhalt", "Course roadmap: five sessions",
               notes="Session 1 combines the introduction with linear regression. Each session adds one method; "
                     "the last brings them together in dedicated MMM software.")
 stops = [
-    ("Introduction and linear regression", "MMM basics, OLS, elasticities, dummy variables"),
-    ("Advanced regression", "Non-linear effects, interactions, adstock, saturation"),
+    ("Introduction and linear regression", "MMM basics, OLS, model fit and interpretation"),
+    ("Advanced regression", "Log-log, dummies, interactions, adstock, saturation"),
     ("Logistic regression", "Binary outcomes such as purchase or churn, odds ratios"),
     ("ARIMA", "Trend, seasonality, forecasting the sales baseline"),
     ("Advanced MMM tools", "Bayesian MMM, budget optimisation across channels"),
@@ -357,8 +356,8 @@ s = add_slide("Titel und Tabelle", "Module roadmap",
               notes="Topics follow the course roadmap; methods in detail.")
 rows = [
     ("Session", "Topic", "Methods"),
-    ("1", "Introduction and linear regression", "Course content and style; Python, Positron, GitHub and DataCamp; MMM fundamentals; OLS, log-log elasticities, dummy variables"),
-    ("2", "Advanced regression", "Non-linear effects, moderation and mediation, adstock and saturation, regression diagnostics"),
+    ("1", "Introduction and linear regression", "Course content and style; Python, Positron, GitHub and DataCamp; MMM fundamentals; OLS, model fit and interpretation"),
+    ("2", "Advanced regression", "Log-log elasticities, dummy variables, non-linear effects, moderation and mediation, adstock and saturation, diagnostics"),
     ("3", "Logistic regression", "Binary outcomes such as purchase or churn, odds ratios, model fit and classification"),
     ("4", "ARIMA", "Trend, seasonality and autocorrelation; ARIMA and ARIMAX forecasts as the sales baseline"),
     ("5", "Advanced MMM tools", "Bayesian MMM with PyMC-Marketing and Google Meridian; budget optimisation across channels and countries"),
@@ -382,59 +381,80 @@ for r_i, row in enumerate(rows):
             p.alignment = PP_ALIGN.CENTER
         cell.margin_top = cell.margin_bottom = Emu(54000)
 
-# 8  Assessment: native bar chart of the weights plus a rules card
+# 8  Assessment strategy: composition bar, one card per component, grading scale
 s = add_slide("Titel und Inhalt", "Assessment strategy",
-              notes="Four components. Certificates, coding exercises and the exam are individual; the case study report "
-                    "is written in groups.")
-text(s, 0.5, 1.28, 5.0, 0.35, [[("Weight in the final grade", {"bold": True, "col": NAVY, "size": HEAD, "head": True})]],
-     "Weights heading")
-cd = CategoryChartData()
-cd.categories = ["Coding exercises (4" + NB + "×" + NB + "5" + NB + "%)",
-                 "Online certificates, DataCamp (4" + NB + "×" + NB + "5" + NB + "%)",
-                 "Written exam", "Case study: written report (group)"]
-cd.add_series("Weight", (20, 20, 30, 30))
-gfc = s.shapes.add_chart(XL_CHART_TYPE.BAR_CLUSTERED, I(0.5), I(1.7), I(5.0), I(3.85), cd)
-gfc.name = "Grade weights chart"
-ch = gfc.chart
-ch.has_legend = False
-ch.has_title = False
-ch.font.size = Pt(BODY)
-ch.font.name = "+mn-lt"
-plot = ch.plots[0]
-plot.gap_width = 55
-plot.has_data_labels = True
-dl = plot.data_labels
-dl.number_format = '0" %"'
-dl.number_format_is_linked = False
-dl.position = XL_LABEL_POSITION.OUTSIDE_END
-dl.font.size = Pt(BODY); dl.font.bold = True; dl.font.color.theme_color = NAVY
-ser = plot.series[0]
-ser.format.fill.solid(); ser.format.fill.fore_color.theme_color = BARS
-va = ch.value_axis
-va.visible = False
-va.has_major_gridlines = False
-va.maximum_scale = 38
-va.minimum_scale = 0
-ca = ch.category_axis
-ca.format.line.fill.background()
-ca.tick_labels.font.size = Pt(BODY)
-ca.tick_labels.font.color.theme_color = INK
-card(s, 5.75, 1.35, 3.75, 4.2, "Rules", [
-    ("Individual: ", "certificates, coding exercises and the written exam"),
-    ("Group: ", "case study report, groups of 4 to 5; enrol on Canvas"),
-    ("Grades: ", "WU scale, 1 from 90" + NB + "%, 2 from 80" + NB + "%, 3 from 70" + NB + "%, 4 from 60" + NB + "%"),
-    ("Attendance: ", "at least 80" + NB + "% of sessions"),
-    ("AI tools: ", "expected; you own every number you report"),
-], "LuShieldCheck", "Rules card")
+              notes="Three individual components (70 %) and one group component (30 %). The bar shows the shares at a "
+                    "glance; the cards say what each part is.")
+comps = [
+    ("Online certificates", "DataCamp, 4" + NB + "×" + NB + "5" + NB + "%", 20, "Individual", "LuGraduationCap", MSO_THEME_COLOR.ACCENT_4, WHITE),
+    ("Coding exercises", "4" + NB + "×" + NB + "5" + NB + "%", 20, "Individual", "LuCode", ACC, WHITE),
+    ("Written exam", "paper and pencil, multiple choice", 30, "Individual", "LuPencilLine", NAVY, WHITE),
+    ("Case study report", "written report, groups of max." + NB + "4", 30, "Group", "LuBriefcase", MSO_THEME_COLOR.ACCENT_6, NAVY),
+]
+x = 0.5
+for i, (name, detail, w, who, ic, fillc, txtc) in enumerate(comps):
+    seg_w = 9.0 * w / 100
+    box(s, x, 1.35, seg_w - 0.04, 0.5, fillc, f"Share {i + 1}")
+    text(s, x, 1.35, seg_w - 0.04, 0.5, [[(f"{w}" + NB + "%", {"bold": True, "col": txtc})]], f"Share label {i + 1}",
+         align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+    x += seg_w
+cw4 = (9.0 - GAP * 3) / 4
+for i, (name, detail, w, who, ic, fillc, txtc) in enumerate(comps):
+    x = 0.5 + i * (cw4 + GAP)
+    box(s, x, 2.05, cw4, 1.85, LIGHT, f"Component card {i + 1}")
+    box(s, x, 2.05, cw4, 0.08, fillc, f"Component strip {i + 1}")
+    icon(s, ic, "navy", x + 0.15, 2.25, 0.4, f"component {i + 1}")
+    text(s, x + cw4 - 1.25, 2.25, 1.1, 0.4, [[(f"{w}" + NB + "%", {"size": FIG, "bold": True, "col": NAVY, "head": True})]],
+         f"Component weight {i + 1}", align=PP_ALIGN.RIGHT, anchor=MSO_ANCHOR.MIDDLE)
+    text(s, x + 0.15, 2.8, cw4 - 0.3, 1.05, [[(name, {"bold": True, "col": NAVY})], detail,
+                                              [(who, {"bold": True, "col": ACC})]], f"Component text {i + 1}", space=3)
+text(s, 0.5, 4.05, 9.0, 0.3, [[("Grading scale (WU)", {"bold": True, "col": NAVY})]], "Scale label")
+scale = [("1", "Excellent", "90" + NB + "% and above"), ("2", "Good", "80 to 89" + NB + "%"),
+         ("3", "Satisfactory", "70 to 79" + NB + "%"), ("4", "Sufficient", "60 to 69" + NB + "%"),
+         ("5", "Fail", "below 60" + NB + "%")]
+sw5 = (9.0 - 0.1 * 4) / 5
+for i, (g, word, rng) in enumerate(scale):
+    x = 0.5 + i * (sw5 + 0.1)
+    box(s, x, 4.4, sw5, 0.6, NAVY if i < 4 else LIGHT, f"Grade {g}")
+    col = WHITE if i < 4 else NAVY
+    text(s, x + 0.1, 4.4, sw5 - 0.2, 0.6, [[(g + "  ", {"size": HEAD, "bold": True, "col": col, "head": True}),
+                                            (word, {"bold": True, "col": col})], [(rng, {"col": col})]],
+         f"Grade text {g}", anchor=MSO_ANCHOR.MIDDLE, space=0)
+text(s, 0.5, 5.12, 9.0, 0.4, [[("Attendance: ", {"bold": True, "col": NAVY}), ("at least 80" + NB + "% of sessions.   ", {}),
+                               ("AI tools: ", {"bold": True, "col": NAVY}), ("expected; you own every number you report.", {})]],
+     "Rules line", anchor=MSO_ANCHOR.MIDDLE)
 
-# 9  Online certificates and set-up: stat rows plus a callout
-s = add_slide("Titel und Inhalt", "Online certificates and set-up",
-              notes="The DataCamp courses are assigned on Canvas. The installation check is the command in the setup guide "
-                    "that prints 'ready'.")
+# 9  Software and set-up: tool cards plus installation stepper
+s = add_slide("Titel und Inhalt", "Software and set-up",
+              notes="Everything is free for students. Follow the setup guide before Session 1; the installation check is "
+                    "the command in the guide that prints 'ready'. Bring problems to Session 1.")
+tools = [("LuCode", "Python", "the language for all analyses"),
+         ("LuLaptop", "Positron", "the editor where you write, run and see results"),
+         ("LuFileText", "Quarto", "turns code and text into reports and slides"),
+         ("LuGitBranch", "GitHub", "versions and shares your work"),
+         ("LuBot", "AI assistant", "GitHub Copilot, free with the student plan")]
+tw5 = (9.0 - 0.12 * 4) / 5
+for i, (ic, name, role) in enumerate(tools):
+    x = 0.5 + i * (tw5 + 0.12)
+    box(s, x, 1.35, tw5, 1.9, LIGHT, f"Tool card {i + 1}")
+    icon(s, ic, "navy", x + 0.15, 1.5, 0.45, f"tool {i + 1}")
+    text(s, x + 0.15, 2.05, tw5 - 0.25, 1.15, [[(name, {"bold": True, "col": NAVY})], role], f"Tool text {i + 1}", space=3)
+text(s, 0.5, 3.4, 9.0, 0.3, [[("Set-up in five steps", {"bold": True, "col": NAVY})]], "Set-up label")
+stepper(s, 0.5, 3.75, 9.0, 0.75, ["Install\vPython (uv)", "Install\vPositron", "Install\vQuarto",
+                                  "GitHub:\vclone the repo", "Run the\vcheck"], "Set-up steps", current=4)
+box(s, 0.5, 4.75, 9.0, 0.8, LIGHT, "Set-up callout")
+icon(s, "LuClock", "navy", 0.7, 4.91, 0.48, "set-up time")
+text(s, 1.4, 4.75, 7.9, 0.8, [("About 45" + NB + "minutes. ", "Follow the setup guide on Canvas before Session 1 and bring "
+                                                             "any installation problems to the first session.")],
+     "Set-up text", anchor=MSO_ANCHOR.MIDDLE)
+
+# 10  Online certificates: stat rows plus a callout
+s = add_slide("Titel und Inhalt", "Online certificates",
+              notes="The DataCamp courses are assigned on Canvas. Each certificate counts 5 % once it is uploaded on time.")
 stats = [
     ("4", ("DataCamp courses. ", "Python courses assigned on Canvas, each ending with a certificate.")),
-    ("5" + NB + "%", ("Per certificate. ", "Upload each certificate on Canvas by its deadline; 20" + NB + "% of the grade in total.")),
-    ("45" + NB + "min", ("Course environment. ", "Install Python (via uv), Positron, Quarto and GitHub Desktop with the setup guide, then run the installation check.")),
+    ("5" + NB + "%", ("Per certificate. ", "Upload each certificate on Canvas by its deadline.")),
+    ("20" + NB + "%", ("In total. ", "Together the four certificates count one fifth of the final grade.")),
 ]
 for i, (fig, para) in enumerate(stats):
     y = 1.4 + i * (0.85 + GAP)
@@ -443,64 +463,78 @@ for i, (fig, para) in enumerate(stats):
          anchor=MSO_ANCHOR.MIDDLE)
     text(s, 2.6, y, 6.9, 0.85, [para], f"Stat text {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
 box(s, 0.5, 4.5, 9.0, 1.05, LIGHT, "Deadline callout")
-icon(s, "LuClock", "navy", 0.75, 4.75, 0.55, "deadline")
-text(s, 1.55, 4.5, 7.75, 1.05, [("Deadlines: ", "the date for each certificate is on Canvas. Bring installation problems "
-                                                "to Session 1.")], "Deadline text", anchor=MSO_ANCHOR.MIDDLE)
+icon(s, "LuGraduationCap", "navy", 0.75, 4.75, 0.55, "certificates")
+text(s, 1.55, 4.5, 7.75, 1.05, [("Deadlines: ", "the date for each certificate is on Canvas. The courses build the Python "
+                                                "basics you need for the labs, so start early.")],
+     "Deadline text", anchor=MSO_ANCHOR.MIDDLE)
 
-# 10  Coding exercises and written exam: two cards with figures
-s = add_slide("Titel und Inhalt", "Coding exercises and written exam",
-              notes="Coding exercises apply the lab code to a similar task. The exam tests concepts and interpretation, "
-                    "not code.")
-cw3 = (9.0 - 0.2) / 2
-card(s, 0.5, 1.35, cw3, 3.25, "Coding exercises", [
-    "Four exercises during the course",
-    "Apply the lab code to a similar task",
-    "Submit your Python or Quarto file on Canvas",
-    "AI assistants allowed; add a short prompt log"], "LuCode", "Coding card",
-     stat=("5" + NB + "%", "per exercise, 20" + NB + "% in total"))
-card(s, 0.7 + cw3, 1.35, cw3, 3.25, "Written exam", [
-    "At the end of the course",
-    "Paper and pencil",
-    "Multiple-choice questions",
-    "Concepts and interpretation, not code"], "LuPencilLine", "Exam card", stat=("30" + NB + "%", "of the final grade"))
-box(s, 0.5, 4.8, 9.0, 0.75, NAVY, "Takeaway box")
-text(s, 0.75, 4.8, 8.5, 0.75, [[("Both are individual. ", {"bold": True, "col": WHITE}),
-                               ("The case study report (30" + NB + "%) is the group component.", {"col": WHITE})]],
-     "Takeaway text", anchor=MSO_ANCHOR.MIDDLE)
 
-# 11  Case study: written report (group)
+# 11  Coding exercises: figures, how it works, rules
+def fact_tiles(slide, facts, y, prefix):
+    tw = (9.0 - GAP * (len(facts) - 1)) / len(facts)
+    for i, (fig, label) in enumerate(facts):
+        x = 0.5 + i * (tw + GAP)
+        box(slide, x, y, tw, 1.0, LIGHT, f"{prefix} tile {i + 1}")
+        box(slide, x, y, 0.07, 1.0, ACC, f"{prefix} bar {i + 1}")
+        text(slide, x + 0.25, y, tw - 0.35, 1.0, [[(fig, {"size": FIG, "bold": True, "col": NAVY, "head": True})], label],
+             f"{prefix} text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
+
+
+s = add_slide("Titel und Inhalt", "Coding exercises",
+              notes="Each exercise takes the code from the guided lab and applies it to a similar task. AI assistants are "
+                    "allowed; the prompt log shows how you used them.")
+fact_tiles(s, [("4", "exercises during the course"), ("5" + NB + "%", "per exercise"), ("20" + NB + "%", "of the final grade")],
+           1.35, "Coding")
+text(s, 0.5, 2.55, 9.0, 0.3, [[("How it works", {"bold": True, "col": NAVY})]], "Coding label")
+stepper(s, 0.5, 2.9, 9.0, 0.75, ["Guided lab\vin class", "Apply the code\vto a similar task", "Submit on\vCanvas",
+                                 "Feedback\vand grade"], "Coding steps")
+card(s, 0.5, 3.85, 9.0, 1.7, "Rules", [
+    "Submit your Python or Quarto file; it must run from top to bottom",
+    "AI assistants are allowed; add a short prompt log at the end",
+    "Individual work: discuss ideas, but write and check your own code"], "LuShieldCheck", "Coding rules card", head_h=0.45)
+
+# 12  Written exam: figures and three cards
+s = add_slide("Titel und Inhalt", "Written exam",
+              notes="The exam checks understanding, not coding. The non-graded online quiz at the end of each session "
+                    "uses the same question format.")
+fact_tiles(s, [("30" + NB + "%", "of the final grade"), ("1", "exam at the end of the course"),
+               ("MC", "multiple-choice questions")], 1.35, "Exam")
+cw3 = (9.0 - GAP * 2) / 3
+card(s, 0.5, 2.55, cw3, 3.0, "Format", [
+    "Paper and pencil", "Multiple-choice questions", "Individual, closed book"], "LuPencilLine", "Exam format card")
+card(s, 0.5 + cw3 + GAP, 2.55, cw3, 3.0, "Content", [
+    "All five sessions", "Concepts and interpretation", "Reading model output, not coding"], "LuBookOpen", "Exam content card")
+card(s, 0.5 + 2 * (cw3 + GAP), 2.55, cw3, 3.0, "Preparation", [
+    "Online quiz after every session (not graded)", "Session materials and book chapters",
+    "Q&A forum on Canvas"], "LuListChecks", "Exam preparation card")
+
+# 13  Case study: written report (group)
 s = add_slide("Titel und Inhalt", "Case study: written report",
-              notes="The case and its data are published on Canvas together with the deadline. Online consulting hours "
-                    "need registration. The report is the only group component of the grade.")
-facts = [("4–5", "students per group; enrol on Canvas"), ("30" + NB + "%", "of the final grade"),
-         ("1", "written report per group")]
+              notes="The case and its data are published on Canvas. Online consulting hours need registration. "
+                    "The report is the only group component of the grade.")
+fact_tiles(s, [("1", "written report per group"), ("max." + NB + "4", "students per group"),
+               ("30" + NB + "%", "of the final grade"), ("2" + NB + "weeks", "after the last session: deadline")],
+           1.35, "Case")
 tw = (9.0 - GAP * 2) / 3
-for i, (fig, label) in enumerate(facts):
-    x = 0.5 + i * (tw + GAP)
-    box(s, x, 1.35, tw, 0.95, LIGHT, f"Fact tile {i + 1}")
-    box(s, x, 1.35, 0.07, 0.95, ACC, f"Fact bar {i + 1}")
-    text(s, x + 0.25, 1.35, tw - 0.35, 0.95,
-         [[(fig, {"size": FIG, "bold": True, "col": NAVY, "head": True}), ("  " + label, {})]],
-         f"Fact text {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
-text(s, 0.5, 2.45, 9.0, 0.3, [[("What you submit", {"bold": True, "col": NAVY})]], "Submit label")
+text(s, 0.5, 2.55, 9.0, 0.3, [[("What you submit", {"bold": True, "col": NAVY})]], "Submit label")
 subs = [("LuCode", "Quarto file", "your analysis and text in one reproducible document"),
         ("LuFileText", "Rendered report", "the output of the Quarto file; HTML recommended"),
         ("LuFileSpreadsheet", "Data file", "the data you analysed, so the report can be rerun")]
 for i, (ic, head, body) in enumerate(subs):
     x = 0.5 + i * (tw + GAP)
-    box(s, x, 2.8, tw, 1.45, LIGHT, f"Submission card {i + 1}")
-    icon(s, ic, "navy", x + 0.18, 2.95, 0.4, f"submission {i + 1}")
-    text(s, x + 0.75, 2.95, tw - 0.9, 1.2, [[(head, {"bold": True, "col": NAVY})], body], f"Submission text {i + 1}", space=4)
+    box(s, x, 2.9, tw, 1.35, LIGHT, f"Submission card {i + 1}")
+    icon(s, ic, "navy", x + 0.18, 3.05, 0.4, f"submission {i + 1}")
+    text(s, x + 0.75, 3.05, tw - 0.9, 1.1, [[(head, {"bold": True, "col": NAVY})], body], f"Submission text {i + 1}", space=4)
 box(s, 0.5, 4.45, 9.0, 1.1, NAVY, "Task box")
 text(s, 0.75, 4.45, 8.5, 1.1,
      [[("The task: ", {"bold": True, "col": WHITE}),
        ("apply marketing mix modelling to a real marketing case, interpret the results and recommend a decision "
         "to management.", {"col": WHITE})],
       [("Support: ", {"bold": True, "col": WHITE}),
-       ("online consulting hours (registration needed). Deadline: see Canvas.", {"col": WHITE})]],
+       ("online consulting hours (registration needed).", {"col": WHITE})]],
      "Task text", anchor=MSO_ANCHOR.MIDDLE, space=6)
 
-# 12  Closing contact card
+# 14  Closing contact card
 add_slide("Abschlussfolie Kontakt", notes="Any questions? Contact details on the card.")
 
 # ---- language tag on every run ----------------------------------------------

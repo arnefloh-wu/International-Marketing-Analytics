@@ -1,7 +1,8 @@
 """Adapt the instructor profile slides added by the add-instructor-slide skill to this deck.
 
 - Type sizes: slide titles 16 pt, card heading 15 pt.
-- Module Convenor slide: the two cards (personal, contact) are merged into one card,
+- Module Convenor slide: programme name on its own line, shorter WWW label;
+  the two cards (personal, contact) are merged into one card,
   with a thin divider between the two columns, and the contact column gets a link
   to the online office-hours calendar next to the e-mail address.
 
@@ -12,12 +13,15 @@ usage: python slides/finish_profile_slides.py DECK.pptx
 import copy
 import sys
 
+from lxml import etree
+
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE, PP_PLACEHOLDER
 from pptx.util import Emu, Pt
 
 CALENDAR = "https://calendar.app.google/o4FuKoF1YcarRfnC8"
+A = "http://schemas.openxmlformats.org/drawingml/2006/main"
 
 
 def I(x):
@@ -68,6 +72,22 @@ for slide in prs.slides:
         np_.runs[0].text = "Office hours: "
         np_.runs[1].text = "book online (Google Calendar)"
         np_.runs[1].hyperlink.address = CALENDAR
+    personal = shapes.get("Inhaltsplatzhalter 1")
+    if personal is not None:
+        for para in personal.text_frame.paragraphs:
+            t = para.text
+            if t.startswith("Deputy Program Director") and "ExInt" not in t:
+                # "Deputy Program Director MSc ExInt" + line break + programme name
+                r0 = para.runs[0]
+                r0.text = "Deputy Program Director MSc ExInt"
+                br = etree.SubElement(para._p, f"{{{A}}}br")
+                br.append(copy.deepcopy(r0._r.find(f"{{{A}}}rPr")))
+                r1 = copy.deepcopy(r0._r)
+                r1.find(f"{{{A}}}t").text = "Export- und Internationalisierungsmanagement"
+                br.addnext(r1)
+            elif t.startswith("WWW") and len(para.runs) > 1:
+                # keep the full link, show a shorter label so the line fits
+                para.runs[1].text = "wu.ac.at/en/welthandel/arne-floh"
     for sh in slide.shapes:
         if sh.name.startswith("Card header") and sh.has_text_frame:
             for p in sh.text_frame.paragraphs:
