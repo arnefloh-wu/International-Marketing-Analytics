@@ -9,6 +9,18 @@ format:
     toc-depth: 2
     number-sections: true
     embed-resources: true
+    include-in-header:
+      text: |
+        <style>
+        @media print {
+          h1, h2, h3, h4 { break-after: avoid; page-break-after: avoid; break-inside: avoid; }
+          p, li { orphans: 3; widows: 3; }
+          tr, .callout, pre, figure { break-inside: avoid; page-break-inside: avoid; }
+          thead { display: table-header-group; }
+          pre, pre code { white-space: pre-wrap !important; overflow: visible !important; word-break: break-word; }
+          .code-copy-button { display: none !important; }
+        }
+        </style>
 ---
 
 ::: {.callout-important}
