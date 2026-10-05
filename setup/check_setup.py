@@ -24,6 +24,8 @@ PACKAGES = [  # (import name, what it is for)
     ("statsmodels", "regression"),
     ("sklearn", "machine learning helpers"),
     ("pymc_marketing", "Bayesian MMM (Session 5)"),
+    ("ipykernel", "lets Quarto run Python"),
+    ("yaml", "lets Quarto read cell options (pyyaml)"),
 ]
 
 problems = []
