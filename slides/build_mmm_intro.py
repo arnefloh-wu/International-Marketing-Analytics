@@ -1,7 +1,9 @@
 """Build the deck "Introduction to marketing mix modelling" on the WU template (polish-slides skill).
 
-Five parts: what MMM is, how it works, what we know (empirical generalisations), doing it
-well, and MMM in this course. Content and sources come from the resource search in
+Seven parts: what MMM is, how it works (with a key-terms recap), what we know (empirical
+generalisations), doing it well, ad spend and attribution (last click, its problems, real-world tests and a
+discussion), the reading "Analytics for Marketers" (Fantini & Narayandas, HBR 2023) with
+an in-class discussion, and MMM in this course. Content and sources come from the resource search in
 instructor/resources/mmm-resource-guide.md; every Alpenglow number comes from
 make_mmm_figures.py (slides/figures/mmm_numbers.txt), which also draws the charts. Run it first.
 
@@ -12,6 +14,7 @@ import sys
 from pathlib import Path
 
 from lxml import etree
+from pptx.enum.dml import MSO_LINE
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu, Pt
@@ -165,7 +168,7 @@ callout(s, 4.95, 0.6, "LuWallet", ("The CEO's brief: ", "the 2027 budget stays a
                                                        "the next euro earns more."), "CEO", dark=True)
 
 # ---------------------------------------------------------------- Part 1 -----
-divider("What marketing mix modelling is", "Part 1 of 5" + NB + "·" + NB + "definition, inputs and outputs, "
+divider("What marketing mix modelling is", "Part 1 of 7" + NB + "·" + NB + "definition, inputs and outputs, "
         "MMM versus attribution and experiments, history",
         "First what MMM is and what it delivers, then how it relates to the other measurement tools, and why it is "
         "popular again.")
@@ -293,7 +296,7 @@ stat(s, 0.65 + cw2 + GAP, 4.37, cw2 - 0.25, 0.68, "13" + PCT, "of advertisers tu
 source(s, "Clarke 1976; Little 1979; Hanssens et al. 2001; Jin et al. 2017; Gartner 2024; WFA & Ebiquity 2026")
 
 # ---------------------------------------------------------------- Part 2 -----
-divider("How MMM works", "Part 2 of 5" + NB + "·" + NB + "base and incremental sales, the equation, adstock, "
+divider("How MMM works", "Part 2 of 7" + NB + "·" + NB + "base and incremental sales, the equation, adstock, "
         "saturation, seasonality",
         "Five building blocks. Each one is a variable or a transformation in the regression you will estimate.")
 
@@ -427,8 +430,49 @@ for i, para in enumerate(rows):
 callout(s, 5.1, 0.45, "LuCalendarDays", ("TV peaks when sales peak: ", "does TV drive Christmas, or Christmas the TV "
                                                                       "budget?"), "Season why", dark=True, size=12)
 
+# 11b  Key terms: the vocabulary of MMM (two slides, six terms each)
+TERMS = [
+    ("Key terms (1): what the model splits",
+     "Six words you will use every week. Each card has the definition and where you meet it in the Alpenglow data.",
+     [("LuSlidersHorizontal", "Marketing mix", "The levers a brand controls: product, price, place (distribution) and promotion.",
+       "Alpenglow: price, promotions, distribution and five media channels"),
+      ("LuHouse", "Base sales", "What would sell without media: driven by price, distribution, season and trend.",
+       "The dark area in the decomposition chart"),
+      ("LuTrendingUp", "Incremental sales", "What a channel adds on top of the base: the sales lost if it were switched off.",
+       "Also called the channel's contribution"),
+      ("LuHistory", "Adstock", "Advertising keeps working after the week it runs; the decay is the share that carries over.",
+       "Decay 0.7: half the effect is gone after about 2 weeks"),
+      ("LuGauge", "Saturation", "Each extra euro buys less: the response flattens as spend grows.",
+       "The next EUR 10k buys far fewer units at high spend"),
+      ("LuShieldCheck", "Control variables", "Non-media drivers in the model, so media are not credited with their effect.",
+       "Price, promotions, holidays, temperature, competitors")]),
+    ("Key terms (2): what the model tells you",
+     "These six words turn model output into decisions. Marginal ROAS is the one that moves budgets.",
+     [("LuScale", "Elasticity", "The % change in sales for a 1 % change in a driver; the coefficient in a log-log model.",
+       "Price elasticity −1.4: 1 % higher price, 1.4 % fewer units"),
+      ("LuChartSpline", "Response curve", "Incremental sales at each spend level: adstock and saturation in one picture.",
+       "Read it to see where a channel stops paying off"),
+      ("LuCoins", "ROAS and ROI", "ROAS: incremental revenue per euro spent. ROI: incremental profit per euro spent.",
+       "ROAS 3: every euro returned EUR 3 of revenue on average"),
+      ("LuTarget", "Marginal ROAS", "The return on the next euro: the slope of the response curve.",
+       "Move budget to the highest marginal, not average, ROAS"),
+      ("LuCalendarDays", "Holdout", "Fit on past weeks, predict weeks the model has not seen, compare the errors.",
+       "Fit 2023–2024, forecast 2025, report the MAPE"),
+      ("LuFlaskConical", "Calibration", "Checking or anchoring model effects with experiments such as geo lift tests.",
+       "Paid-social test in 12 of 40 German regions")]),
+]
+tw3 = (9.0 - GAP * 2) / 3
+th = (4.25 - GAP) / 2
+for title, notes, terms in TERMS:
+    s = add_slide("Titel und Inhalt", title, notes=notes)
+    for i, (ic, term, definition, example) in enumerate(terms):
+        x = 0.5 + (i % 3) * (tw3 + GAP)
+        y = 1.35 + (i // 3) * (th + GAP)
+        tile(s, x, y, tw3, th, ic, term, [definition, [(example, {"col": ACC, "bold": True, "size": 11.5})]],
+             f"Term {i + 1}", size=12)
+
 # ---------------------------------------------------------------- Part 3 -----
-divider("What we know: empirical generalisations", "Part 3 of 5" + NB + "·" + NB + "elasticities, carryover and "
+divider("What we know: empirical generalisations", "Part 3 of 7" + NB + "·" + NB + "elasticities, carryover and "
         "wear-out, differences between countries",
         "Decades of studies give benchmarks. Use them to judge whether your own model's results are plausible and, in a "
         "Bayesian model, as priors.")
@@ -524,7 +568,7 @@ callout(s, 4.75, 0.8, "LuMap", ("For Alpenglow: ", "expect Poland to respond dif
                                                    "(Sun et al. 2017)."), "Country rule", dark=True, size=12)
 
 # ---------------------------------------------------------------- Part 4 -----
-divider("Doing it well", "Part 4 of 5" + NB + "·" + NB + "data, pitfalls, validation, Bayesian priors, open-source tools",
+divider("Doing it well", "Part 4 of 7" + NB + "·" + NB + "data, pitfalls, validation, Bayesian priors, open-source tools",
         "Most MMM failures are data and identification problems, not software problems.")
 
 # 15  Data requirements
@@ -660,7 +704,365 @@ callout(s, 4.62, 0.6, "LuCode", ("In this course: ", "PyMC-Marketing and Meridia
 source(s, "Runge et al. 2024; Meridian and PyMC-Marketing documentation; open-source MMM review (2026)")
 
 # ---------------------------------------------------------------- Part 5 -----
-divider("MMM in this course", "Part 5 of 5" + NB + "·" + NB + "how the sessions build the skills, the group case study",
+divider("Ad spend and attribution", "Part 5 of 7" + NB + "·" + NB + "where the money goes, last click, why "
+        "attribution misleads, real-world tests", "Before we read the article: how much money is at stake, and how most "
+        "firms decide today which ad deserves the credit for a sale.")
+
+# M1  Ad spend
+s = add_slide("Titel und Inhalt", "Where the advertising money goes",
+              notes="WPP Media's This Year Next Year (mid-year 2025) puts global advertising revenue at about $1.14 trillion "
+                    "in 2025, up 8.8 %, with digital at about 73 % (search, social, online video, retail media); its "
+                    "forecasts for 2026 are around $1.3 trillion. In Europe, IAB Europe's AdEx Benchmark 2024 counts "
+                    "€118.9 billion of digital advertising, up 16 %, 67 % of all ad spend. Most of this money is bought "
+                    "click by click and judged by reports from the platforms that sell it. That is the problem of this part.")
+spend = [("$1.14" + NB + "tn", ["global advertising spend in 2025, ", ("+8.8" + PCT, {"bold": True})]),
+         ("73" + PCT, ["of it is digital: search, social, video, retail media"]),
+         ("€119" + NB + "bn", ["digital advertising in Europe in 2024, ", ("+16" + PCT, {"bold": True})]),
+         ("67" + PCT, ["of all ad spend in Europe is digital"])]
+for i, (fig, lab) in enumerate(spend):
+    y = 1.35 + i * (0.75 + 0.08)
+    box(s, 0.5, y, 5.45, 0.75, LIGHT, f"Spend row {i + 1}")
+    stat(s, 0.5, y, 5.45, 0.75, fig, [p if isinstance(p, tuple) else (p, {}) for p in lab], f"Spend stat {i + 1}",
+         fig_w=2.0, size=12)
+card(s, 6.1, 1.35, 3.4, 3.24, "What this means", ["Digital ads are bought click by click",
+                                                   "The platforms that sell the ads also report their success",
+                                                   "Small measurement errors move billions"], "LuCoins", "Spend card",
+     head_h=0.45)
+callout(s, 4.72, 0.48, "LuCrosshair", ("The question of this part: ", "who gets the credit for a sale, and is it "
+                                                                      "deserved?"), "Spend question", dark=True, size=12)
+source(s, "WPP Media, This Year Next Year, mid-year 2025; IAB Europe, AdEx Benchmark 2024")
+
+# M2  Attribution example
+s = add_slide("Titel und Inhalt", "Attribution: who gets the credit?",
+              notes="Attribution splits the credit for one tracked sale between the ads a customer clicked or saw before "
+                    "buying. The journey: a TV spot (not tracked), an Instagram ad click, a YouTube video, then a Google "
+                    "search for 'alpenglow chocolate' and an order of EUR 40. Last click gives everything to search, first "
+                    "click to Instagram, linear splits equally; data-driven attribution (the GA4 default) estimates shares "
+                    "from paths that did and did not end in a purchase. The numbers in the last row are illustrative. TV "
+                    "gets nothing in every model, because no click is recorded. And no model asks whether the sale would "
+                    "have happened without any ad: that is a causal question for experiments and MMM.")
+steps = [("LuTv", "TV spot", "not tracked"), ("LuSmartphone", "Instagram ad", "click"), ("LuVideo", "YouTube video", "view"),
+         ("LuSearch", "Google search", "“alpenglow”"), ("LuShoppingCart", "Order", "EUR" + NB + "40")]
+bw, aw, ag = 1.5, 0.22, 0.07
+for i, (ic, head, sub) in enumerate(steps):
+    x = 0.5 + i * (bw + aw + 2 * ag)
+    fill = WHITE if i == 0 else (NAVY if i == 4 else LIGHT)
+    b = box(s, x, 1.35, bw, 1.05, fill, f"Journey step {i + 1}")
+    if i == 0:
+        b.line.color.theme_color = NAVY; b.line.dash_style = MSO_LINE.DASH; b.line.width = Pt(1.25)
+    ink = WHITE if i == 4 else NAVY
+    icon(s, ic, "white" if i == 4 else "navy", x + (bw - 0.4) / 2, 1.42, 0.4, f"journey {i + 1}")
+    text(s, x + 0.05, 1.83, bw - 0.1, 0.55, [[(head, {"bold": True, "col": ink, "size": 12})],
+                                            [(sub, {"col": ink if i else GREY_TXT, "size": 11})]],
+         f"Journey text {i + 1}", align=PP_ALIGN.CENTER, space=0)
+    if i < 4:
+        arrow(s, x + bw + ag, 1.69, f"Journey arrow {i + 1}")
+grid = [("Credit for the order", "TV", "Instagram", "YouTube", "Search"),
+        ("Last click", "0" + PCT, "0" + PCT, "0" + PCT, "100" + PCT),
+        ("First click", "0" + PCT, "100" + PCT, "0" + PCT, "0" + PCT),
+        ("Linear", "0" + PCT, "33" + PCT, "33" + PCT, "33" + PCT),
+        ("Data-driven (GA4)", "0" + PCT, "e.g. 25" + PCT, "e.g. 15" + PCT, "e.g. 60" + PCT)]
+cws = [2.6, 1.6, 1.6, 1.6, 1.6]
+for r_i, row in enumerate(grid):
+    y = 2.55 + r_i * 0.42
+    x = 0.5
+    for c_i, val in enumerate(row):
+        w = cws[c_i] - (0.03 if c_i < 4 else 0)
+        head_row = r_i == 0
+        tv_col = c_i == 1 and not head_row
+        box(s, x, y, w, 0.39, ACC if head_row else LIGHT, f"Grid {r_i + 1}-{c_i + 1}")
+        col = WHITE if head_row else (ACC if tv_col else NAVY)
+        text(s, x + 0.1, y, w - 0.2, 0.39, [[(val, {"bold": head_row or c_i == 0 or tv_col, "col": col,
+                                                    "size": 12})]], f"Grid text {r_i + 1}-{c_i + 1}",
+             anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.LEFT if c_i == 0 else PP_ALIGN.CENTER)
+        x += cws[c_i]
+callout(s, 4.72, 0.48, "LuTriangleAlert", ("All four models share out one sale: ", "none asks if it would have "
+                                                                                 "happened without ads."),
+        "Attribution catch", dark=True, size=12)
+source(s, "Google Analytics 4 documentation; journey and data-driven shares are illustrative")
+
+# M3  Last click
+s = add_slide("Titel und Inhalt", "Last click: simple, common and biased",
+              notes="Last-click attribution gives all the credit to the last ad clicked before the purchase. It is easy to "
+                    "compute and explain, and it is still the default in many shop systems and affiliate contracts. In 2023 "
+                    "Google removed first click, linear, time decay and position-based models from Google Ads and GA4, "
+                    "leaving data-driven and last click; fewer than 3 % of conversions had used the removed models. Last "
+                    "click favours channels that sit at the end of the journey (branded search, retargeting, coupon and "
+                    "affiliate sites), which often catch people who had already decided to buy. Upper-funnel media that "
+                    "create the demand look worthless. Li and Kannan (2014) show with path data that last click misallocates "
+                    "credit and over-credits search.")
+cw2 = (9.0 - GAP) / 2
+card(s, 0.5, 1.35, cw2, 1.95, "How it works", ["100" + PCT + " of the credit to the last ad clicked before the order",
+                                               "Easy to compute, easy to explain",
+                                               "GA4 and Google Ads: since 2023 only last click and data-driven are left"],
+     "LuMousePointerClick", "LC card", head_h=0.45)
+card(s, 0.5 + cw2 + GAP, 1.35, cw2, 1.95, "Who wins, who loses", ["Wins: branded search, retargeting, coupon and "
+                                                                  "affiliate sites",
+                                                                  "Loses: TV, online video, social, posters",
+                                                                  "Ignores: views without a click, offline sales"],
+     "LuScale", "WL card", head_h=0.45)
+catch = [("The catch: ", "the last click often comes from people who had already decided to buy"),
+         ("Example: ", "after a TV spot, a viewer searches “alpenglow”: search gets the sale, TV gets nothing"),
+         ("The result: ", "budgets drift to the end of the funnel, and the demand that feeds it slowly dries up")]
+for i, para in enumerate(catch):
+    y = 3.45 + i * 0.58
+    box(s, 0.5, y, 9.0, 0.5, LIGHT, f"Catch row {i + 1}")
+    box(s, 0.5, y, 0.07, 0.5, ACC, f"Catch bar {i + 1}")
+    text(s, 0.72, y, 8.7, 0.5, [para], f"Catch text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, size=12)
+source(s, "Search Engine Land 2023 (Google Ads and GA4); Li & Kannan 2014 (Journal of Marketing Research)")
+
+# M4  Problems of attribution
+s = add_slide("Titel und Inhalt", "Six problems of attribution models",
+              notes="1 Correlation, not cause: ads are targeted at people who are likely to buy anyway (retargeting, branded "
+                    "search), so credit is not the same as extra sales. 2 Tracking gaps: cookie consent, ad blockers, browser "
+                    "limits and Apple's App Tracking Transparency (iOS 14.5, 2021); at launch only about 4 % of US users and "
+                    "12 % worldwide allowed tracking (Flurry). 3 Offline is invisible: TV, radio, posters, word of mouth, and "
+                    "sales in shops. 4 Every platform counts its own conversions with its own rules and windows, so the sum "
+                    "of the reports is larger than the real number of orders. 5 Fraud and poaching: affiliates and ad "
+                    "networks can 'claim' sales that would have happened anyway; Uber found fake clicks attached to organic "
+                    "installs. 6 Many devices: one person on phone, tablet and laptop looks like three customers.")
+tw3 = (9.0 - GAP * 2) / 3
+probs = [("LuShuffle", "Correlation only", ["Ads target people who buy anyway", "Credit is not extra sales"]),
+         ("LuEyeOff", "Tracking gaps", ["Cookie consent, ad blockers, Apple's ATT",
+                                        "2021: 4" + PCT + " of US iPhone users allowed tracking"]),
+         ("LuTv", "Offline is invisible", ["TV, radio, posters, word of mouth", "Sales in shops have no click"]),
+         ("LuCopy", "Double counting", ["Each platform counts its own orders", "Sum of reports > real orders"]),
+         ("LuBug", "Click fraud", ["Affiliates claim sales that come anyway", "Uber: fake clicks on free installs"]),
+         ("LuSmartphone", "Many devices", ["Phone on the sofa, laptop at work", "One buyer looks like three"])]
+for i, (ic, head, lines) in enumerate(probs):
+    x = 0.5 + (i % 3) * (tw3 + GAP)
+    y = 1.35 + (i // 3) * (1.62 + 0.1)
+    tile(s, x, y, tw3, 1.62, ic, head, [[(ln, {})] for ln in lines], f"Problem {i + 1}", size=12)
+callout(s, 4.8, 0.42, "LuFlaskConical", ("The remedy: ", "experiments (ads off in some regions) and MMM, which needs "
+                                                         "no tracking."), "Remedy", size=12)
+source(s, "Gordon et al. 2019 (Marketing Science); Flurry Analytics 2021; WARC 2019 (Uber)")
+
+# M5  Real-world tests
+s = add_slide("Titel und Inhalt", "When the ads were switched off",
+              notes="eBay (Blake, Nosko and Tadelis 2015, Econometrica): when eBay stopped paying for brand keywords, 99.5 % "
+                    "of that traffic came back through the free search results; in a test across US regions, non-brand "
+                    "search mainly reached people who would have bought anyway, and the return was far below what the "
+                    "click reports showed. Uber: Kevin Frisch turned off $100 million of $150 million yearly performance "
+                    "ads and saw no change in rider app installs; much of the spend was fraud. P&G cut $200 million of "
+                    "digital ads in 2017 that did not reach real people, moved money to TV, audio and e-commerce, and its "
+                    "reach rose about 10 %. Airbnb cut marketing from $1.62 billion (2019) to $0.55 billion (2020), mostly "
+                    "performance ads, and kept about 95 % of its traffic; Covid is a confound, but Airbnb kept the shift. "
+                    "Gordon et al. (2019) compared 15 Facebook experiments with observational methods, which often missed "
+                    "the true lift, mostly overstating it.")
+tests = [("99.5" + PCT, [("eBay: ", {"bold": True}), ("brand-keyword traffic that came back through the free links "
+                                                       "when the ads were paused", {})]),
+         ("$100" + NB + "m", [("Uber: ", {"bold": True}), ("of $150" + NB + "m yearly performance ads switched off, with no "
+                                                            "change in app installs", {})]),
+         ("$200" + NB + "m", [("P&G: ", {"bold": True}), ("of digital ads cut in 2017; reach rose about 10" + PCT, {})]),
+         ("95" + PCT, [("Airbnb: ", {"bold": True}), ("of web traffic kept in 2020 after cutting marketing by more than "
+                                                      "half", {})]),
+         ("15", [("Facebook experiments: ", {"bold": True}), ("click-based methods often missed the true lift, mostly "
+                                                              "overstating it", {})])]
+for i, (fig, lab) in enumerate(tests):
+    y = 1.35 + i * (0.62 + 0.07)
+    box(s, 0.5, y, 9.0, 0.62, LIGHT, f"Test row {i + 1}")
+    stat(s, 0.5, y, 9.0, 0.62, fig, lab, f"Test stat {i + 1}", fig_w=2.25, size=12)
+callout(s, 4.85, 0.4, "LuLightbulb", ("Lesson: ", "test what the ads add; do not trust the click report."), "Test lesson",
+        dark=True, size=12)
+source(s, "Blake, Nosko & Tadelis 2015; WARC 2019; Adweek 2018; Campaign Asia 2021; Gordon et al. 2019", y=5.29)
+
+# M6  In-class discussion: attribution
+s = add_slide("Titel und Inhalt", "Discuss: who sold the chocolate?",
+              notes="15 minutes: 10 in pairs, 5 in plenary. Suggested answers. Q1: every platform counts its own clicks and "
+                    "views with its own window, so one order is claimed two or three times; some orders would have come "
+                    "anyway. Q2: no. Branded search catches people TV made curious (the mediation in case task B5); a last-"
+                    "click ROAS of 12 says nothing about extra sales; cutting TV may later reduce searches. Q3: switch "
+                    "branded search off in some German regions or weeks and compare orders with the others (geo test, like "
+                    "eBay); or a holdout group. Q4: MMM sees TV, prices, holidays and weather without tracking, but it "
+                    "needs years of data, sees only weekly totals, and cannot split credit for one customer.")
+stepper(s, 0.5, 1.35, 9.0, 0.5, ["Pairs: 10 minutes", "Plenary: 5 minutes"], "Discussion steps", size=12)
+box(s, 0.5, 2.0, 3.3, 3.12, LIGHT, "Reports panel")
+text(s, 0.65, 2.07, 3.0, 0.42, [[("Alpenglow Germany, November", {"bold": True, "col": NAVY, "size": 12})]],
+     "Reports heading", anchor=MSO_ANCHOR.MIDDLE)
+reports = [("Google Ads (last click)", "3,900", False), ("Meta (click or view)", "2,600", False),
+           ("Affiliate sites", "1,300", False), ("Sum of the reports", "7,800", True),
+           ("Orders in the web shop", "6,000", True)]
+for i, (lab, val, strong) in enumerate(reports):
+    y = 2.55 + i * 0.49 + (0.1 if i >= 3 else 0)
+    if i == 3:
+        box(s, 0.65, y - 0.06, 3.0, 0.02, NAVY, "Reports rule")
+    col = ACC if i == 4 else NAVY
+    text(s, 0.65, y, 2.2, 0.42, [[(lab, {"bold": strong, "col": col, "size": 12})]], f"Report label {i + 1}",
+         anchor=MSO_ANCHOR.MIDDLE)
+    text(s, 2.8, y, 0.85, 0.42, [[(val, {"bold": True, "col": col, "size": 12})]], f"Report value {i + 1}",
+         anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.RIGHT)
+numbered(s, 3.95, 2.0, 5.55, [
+    ("Why ", "do the reports add up to 7,800 orders when the shop had 6,000?"),
+    ("Branded search ", "shows a last-click ROAS of 12, TV of 2. The CFO wants to move TV money to search. Your answer?"),
+    ("Design a test: ", "how would you find out what branded search really adds?"),
+    ("MMM: ", "what can it see that attribution cannot, and what can it not see?")],
+    "Attribution questions", row_h=0.72, gap=0.08, size=12)
+source(s, "Illustrative numbers; real-world cases on the previous slide", y=5.27)
+
+# ---------------------------------------------------------------- Part 6 -----
+divider("Reading: Analytics for Marketers", "Part 6 of 7" + NB + "·" + NB + "Fantini & Narayandas (HBR 2023) and an "
+        "in-class discussion", "Reading for this session: Fantini, F. & Narayandas, D. (2023). Analytics for Marketers: "
+        "when to rely on algorithms and when to trust your gut. Harvard Business Review, May–June 2023 (on Canvas).")
+
+# R1  Three approaches
+s = add_slide("Titel und Inhalt", "Three approaches to analytics",
+              notes="The article sorts analytics by who decides. Descriptive: humans read aggregated past data (business "
+                    "intelligence, dashboards) and decide; cheap, but coarse and dependent on the manager's intuition and "
+                    "biases. Predictive: models estimate what will happen for different inputs (regression, elasticities, "
+                    "forecasts, segments); humans choose. Prescriptive: machines decide within objectives, rules and "
+                    "constraints set by managers, learning from many low-cost experiments and modelling uncertainty and "
+                    "costs; expensive to set up. MMM is mostly predictive; a budget optimiser on top makes it prescriptive.")
+stepper(s, 0.5, 1.35, 9.0, 0.6, ["Descriptive:\vhumans decide", "Predictive: machines\vpredict, humans choose",
+                                 "Prescriptive:\vmachines decide"], "Approach steps", size=12)
+tw3 = (9.0 - GAP * 2) / 3
+approaches = [("LuChartColumn", "What happened?", ["Dashboards of aggregated past data", "Managers add experience and gut feeling",
+                                                    "Low pain, low gain"]),
+              ("LuTrendingUp", "What if …?", ["Regression, elasticities, forecasts", "Finer, tactical decisions",
+                                                             "Few variables, uncertain inputs"]),
+              ("LuBot", "What to do?", ["Optimises towards goals and rules set by managers", "Learns from many cheap experiments",
+                                               "Costly to build and run"])]
+for i, (ic, head, items) in enumerate(approaches):
+    card(s, 0.5 + i * (tw3 + GAP), 2.15, tw3, 2.45, head, items, ic, f"Approach card {i + 1}", head_h=0.45)
+callout(s, 4.75, 0.5, "LuSlidersHorizontal", ("MMM today: ", "predictive. With a budget optimiser on top it becomes "
+                                                             "prescriptive."), "MMM approach", size=12)
+source(s, "Fantini & Narayandas 2023 (Harvard Business Review)")
+
+# R2  When to use which
+s = add_slide("Titel und Inhalt", "When to use which approach",
+              notes="Two factors decide: how relevant and plentiful the data are, and the business case (how much profit "
+                    "better decisions can unlock). Little data and high uncertainty: descriptive gives direction. Many "
+                    "repeated, granular decisions with rich data: prescriptive pays for its cost. In between, and for long "
+                    "horizons, noisy granular data or small gains from extreme optimisation: predictive. Strategy and "
+                    "innovation stay with humans, because asking the right question matters more than an accurate answer.")
+box(s, 0.5, 1.35, 4.6, 3.75, LIGHT, "Map area")
+box(s, 0.95, 1.55, 0.03, 3.0, NAVY, "Map y axis")
+box(s, 0.95, 4.52, 4.0, 0.03, NAVY, "Map x axis")
+text(s, 0.55, 1.5, 0.35, 3.0, [[("business case", {"size": 11, "col": NAVY, "bold": True})]], "Map y label",
+     anchor=MSO_ANCHOR.MIDDLE)
+s.shapes[-1].rotation = 270
+s.shapes[-1].left, s.shapes[-1].top, s.shapes[-1].width, s.shapes[-1].height = I(-0.85), I(2.88), I(3.0), I(0.35)
+text(s, 0.95, 4.6, 4.0, 0.35, [[("relevant data, decisions repeated often", {"size": 11, "col": NAVY, "bold": True})]],
+     "Map x label", align=PP_ALIGN.CENTER)
+zones = [("Descriptive", "little data, high uncertainty", 1.15, 3.6, LIGHT, NAVY, "C8E8F4"),
+         ("Predictive", "the middle ground", 2.05, 2.75, ACC, WHITE, None),
+         ("Prescriptive", "rich data, many decisions", 2.95, 1.75, NAVY, WHITE, None)]
+for j, (name, sub, x, y, fill, ink, custom) in enumerate(zones):
+    b = box(s, x, y, 1.95, 0.75, custom or fill, f"Zone {j + 1}", shape=MSO_SHAPE.ROUNDED_RECTANGLE)
+    text(s, x + 0.1, y, 1.75, 0.75, [[(name, {"bold": True, "col": ink, "size": 12})], [(sub, {"col": ink, "size": 11})]],
+         f"Zone text {j + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
+rows = [("LuCompass", ("Humans lead: ", "strategy, innovation, entering a new market")),
+        ("LuChartLine", ("Predictive fits: ", "planning, noisy customer data, small gains from fine-tuning")),
+        ("LuSettings", ("Prescriptive pays: ", "prices, stock, marketing spend, decided often with rich data"))]
+for i, (ic, para) in enumerate(rows):
+    y = 1.35 + i * (1.2 + 0.075)
+    box(s, 5.25, y, 4.25, 1.2, LIGHT, f"Use row {i + 1}")
+    icon(s, ic, "navy", 5.45, y + 0.38, 0.44, f"use {i + 1}")
+    text(s, 6.05, y, 3.35, 1.2, [para], f"Use text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, size=12)
+source(s, "Fantini & Narayandas 2023 (Harvard Business Review); simplified illustration")
+
+# R3  Event Network case
+s = add_slide("Titel und Inhalt", "Case: markdowns at Event Network",
+              notes="Event Network runs gift shops in museums, zoos and aquariums in the US and Canada, with more than "
+                    "100,000 SKUs. Descriptive: discount the SKUs with the highest coverage ratio (days of stock left) until "
+                    "the markdown budget is spent; ignores customers. Predictive: regress volume on price by category, store "
+                    "and week to get elasticities. With an elasticity of −2, a 10 % price cut raises units by 20 %: 100 units "
+                    "at $10 ($1,000) become 120 units at $9 ($1,080), 8 % more revenue. Price explained only 10 to 20 % of "
+                    "sales, yet the crude model beat the descriptive rule. Prescriptive: machine learning and automated "
+                    "optimisation over many data sources decide which products to discount, when and by how much.")
+tw3 = (9.0 - GAP * 2) / 3
+ev = [("LuChartColumn", "1 Descriptive", ["Discount SKUs with the most days of stock", "Until the markdown budget is spent",
+                                          "Ignores customers and context"]),
+      ("LuTrendingUp", "2 Predictive", ["Regression of volume on price", "Elasticity by category, store and week",
+                                        "Crude, but better than the rule"]),
+      ("LuBot", "3 Prescriptive", ["Machine learning plus optimisation", "Many data sources, 100,000+ SKUs",
+                                   "Learns and improves over time"])]
+for i, (ic, head, items) in enumerate(ev):
+    card(s, 0.5 + i * (tw3 + GAP), 1.35, tw3, 2.15, head, items, ic, f"EN card {i + 1}", head_h=0.45)
+tw4 = (9.0 - GAP * 3) / 4
+nums = [("−2", "price elasticity"), ("+20" + PCT, "units after a 10" + PCT + " price cut"),
+        ("+8" + PCT, "revenue: $1,000 → $1,080"), ("10–20" + PCT, "of sales explained by price")]
+for i, (fig, lab) in enumerate(nums):
+    x = 0.5 + i * (tw4 + GAP)
+    box(s, x, 3.65, tw4, 1.05, LIGHT, f"EN stat {i + 1}")
+    box(s, x, 3.65, 0.07, 1.05, ACC, f"EN stat bar {i + 1}")
+    text(s, x + 0.2, 3.68, tw4 - 0.3, 0.5, [[(fig, {"size": FIG, "bold": True, "col": NAVY, "head": True})]],
+         f"EN stat figure {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
+    text(s, x + 0.2, 4.18, tw4 - 0.3, 0.48, [lab], f"EN stat label {i + 1}", size=11.5, space=0)
+callout(s, 4.8, 0.42, "LuLightbulb", ("Lesson: ", "a crude model can still beat a rule of thumb."), "EN lesson", size=12)
+source(s, "Fantini & Narayandas 2023 (Harvard Business Review)", y=5.27)
+
+# R4  Accuracy versus business value
+s = add_slide("Titel und Inhalt", "Accuracy is not the goal",
+              notes="Data scientists tend to maximise accuracy; business scientists maximise impact by weighing the cost "
+                    "of each kind of error. A false positive (predicted win, no win) wastes sales and marketing effort; a "
+                    "false negative (predicted loss, but it would have been a win) loses the opportunity. A model that cuts "
+                    "false positives but misses many real chances can be accurate and still unprofitable. Session 3 and "
+                    "task C7 of the case study do exactly this: choose the churn threshold by profit. The closing quote is "
+                    "the article's main message about the manager's role.")
+cw2 = (9.0 - GAP) / 2
+card(s, 0.5, 1.35, cw2, 1.75, "Data scientists", ["Aim: the most accurate model", "Judge by statistical fit"],
+     "LuSigma", "DS card", head_h=0.45)
+card(s, 0.5 + cw2 + GAP, 1.35, cw2, 1.75, "Business scientists", ["Aim: the most profitable decision",
+                                                                  "Judge by the cost of each error"],
+     "LuCoins", "BS card", head_h=0.45)
+errs = [("False positive: ", "predicted a win that does not come: wasted sales and marketing effort"),
+        ("False negative: ", "predicted a loss that would have been a win: a lost opportunity"),
+        ("In this course: ", "Session 3 and case task C7 set the churn threshold by profit, not accuracy")]
+for i, para in enumerate(errs):
+    y = 3.25 + i * 0.52
+    box(s, 0.5, y, 9.0, 0.46, LIGHT, f"Error row {i + 1}")
+    box(s, 0.5, y, 0.07, 0.46, ACC, f"Error bar {i + 1}")
+    text(s, 0.72, y, 8.7, 0.46, [para], f"Error text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, size=12)
+callout(s, 4.78, 0.47, "LuMessagesSquare", ("The manager's new role: ", "“from the person who has all the answers to the "
+                                                                       "one who asks the right questions”"),
+        "Quote", dark=True, size=11.5)
+source(s, "Fantini & Narayandas 2023 (Harvard Business Review)")
+
+# D1  In-class assignment: the task
+s = add_slide("Titel und Tabelle", "In-class discussion: six Alpenglow decisions",
+              notes="25 minutes: 15 in groups of 3 to 4, 10 in plenary. Suggested answers. 1 Media budget: predictive (MMM "
+                    "estimates response curves; humans decide once a year, stakes are high, data moderate); an optimiser "
+                    "can propose, managers approve. 2 Search bids: prescriptive (thousands of small, repeated decisions "
+                    "with rich data; automated bidding). 3 Polish Christmas price: predictive (elasticity from regression; "
+                    "the brand manager decides with positioning in mind). 4 Retention offer: predictive moving to "
+                    "prescriptive (score plus profit threshold, can run automatically every month). 5 Swiss retail entry: "
+                    "descriptive and human judgement (one-off, little data, high uncertainty, strategy). 6 Easter "
+                    "markdowns: prescriptive (the Event Network situation: many SKUs and stores, repeated, rich data).")
+rows = [("", "Decision", "How often", "Data available"),
+        ("1", "Split next year's media budget over 6 countries and 5 channels", "once a year", "3 years of weekly sales and spend"),
+        ("2", "Set the bids for paid-search keywords", "every day", "clicks, costs and orders per keyword"),
+        ("3", "Price of the Christmas gift box in Poland", "once a year", "156 weeks of prices and sales"),
+        ("4", "Choose which Club members get a retention offer", "every month", "6,000 subscribers and their history"),
+        ("5", "Enter Swiss supermarkets, beyond the web shop", "once", "almost none"),
+        ("6", "Discount unsold Easter chocolate after Easter", "every year, 200 SKUs × stores", "sales and stock per SKU and store")]
+tbl = table(s, rows, [0.45, 4.15, 1.75, 2.65], "Decision table", size=12, top=1.35)
+for r_i in range(1, len(rows)):
+    tbl.cell(r_i, 0).text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+text(s, 0.5, 4.95, 9.0, 0.5, [[("Your task: ", {"bold": True, "col": NAVY}),
+                               ("for each decision, choose descriptive, predictive or prescriptive, and say who decides.",
+                                {})]], "Task line", anchor=MSO_ANCHOR.MIDDLE, size=12)
+
+# D2  In-class assignment: questions and timing
+s = add_slide("Titel und Inhalt", "Discuss in your group",
+              notes="Expected points. Q2: today the MMM is predictive; a budget optimiser makes it prescriptive, but the "
+                    "yearly budget is high-stakes, rare and politically loaded, so managers should approve. Q3: a crude "
+                    "model is good enough when it beats the current rule and its errors are cheap; Event Network's case. "
+                    "Q4: depends on costs: with a EUR 5 offer and EUR 80 margin, a missed churner (false negative) costs "
+                    "more than an unnecessary offer. Q5: strategic questions, for example which brand Alpenglow wants to "
+                    "be in Poland, or whether to enter retail at all.")
+stepper(s, 0.5, 1.35, 9.0, 0.55, ["Groups of 3–4:\v15 minutes", "Plenary:\v10 minutes", "Hand in: one\vphoto of your table"],
+        "Timing steps", size=12)
+numbered(s, 0.5, 2.05, 9.0, [
+    ("Classify ", "the six decisions with the article's two criteria: relevant data and the business case"),
+    ("Alpenglow's MMM: ", "predictive or prescriptive? Should a machine decide the yearly budget?"),
+    ("Crude models: ", "Event Network's price model explained 10–20" + PCT + " of sales. When is that good enough?"),
+    ("Errors: ", "for the retention offer, which costs more: a false positive or a false negative?"),
+    ("The manager's job: ", "write one question for Alpenglow's CMO that no model can answer")],
+    "Questions", row_h=0.56, gap=0.08, size=12)
+source(s, "Reading: Fantini & Narayandas 2023, Analytics for Marketers, Harvard Business Review (on Canvas)", y=5.3)
+
+# ---------------------------------------------------------------- Part 7 -----
+divider("MMM in this course", "Part 7 of 7" + NB + "·" + NB + "how the sessions build the skills, the group case study",
         "Every session adds one piece of the model. By Session 5 you can build and judge a full MMM.")
 
 # 20  Sessions
@@ -704,7 +1106,7 @@ case = [("LuCandy", "The brief", ["Alpenglow's web shop in AT, DE and CH", "Four
 for i, (ic, head, items) in enumerate(case):
     card(s, 0.5 + i * (tw3 + GAP), 2.2, tw3, 2.0, head, items, ic, f"Case card {i + 1}", head_h=0.45)
 callout(s, 4.38, 0.75, "LuBriefcase", ("Every number from code: ", "the report renders from a fresh copy of your "
-                                                                  "repository."), "Case rule", dark=True, size=12)
+                                                                  "project folder."), "Case rule", dark=True, size=12)
 text(s, 0.5, 5.2, 9.0, 0.32, [[("Brief, data and assessment criteria: ", {"bold": True, "col": NAVY, "size": 12}),
                                ("assignments/group-project/ and Canvas", {"font": MONO, "col": NAVY, "size": 12})]],
      "Case where", anchor=MSO_ANCHOR.MIDDLE)
