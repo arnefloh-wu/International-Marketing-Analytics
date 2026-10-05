@@ -1,7 +1,7 @@
 ---
 title: "International Marketing Analytics"
 subtitle: "MSc International Management / CEMS · WU Vienna · Winter 2026/27"
-author: "Dr. Arne Floh, Department of Global Business and Trade"
+author: "Dr Arne Floh, Senior Lecturer in Marketing, Institute for International Business"
 date: 2026-10-06
 format:
   html:
@@ -23,70 +23,110 @@ Items marked **[to align]** are working assumptions. They must be aligned with t
 | Dates | Tuesdays, 6, 13, 20, 27 October and 3 November 2026 **[to align: times and rooms]** |
 | Cohort | ca. 30 CEMS students |
 | Language | English |
-| Tools | Python, Positron, Quarto, GitHub, AI coding assistants |
-| Running case | Alpenglow, a Vienna-based premium chocolate brand active in six European markets |
+| Tools | Python 3.14 in Positron, Quarto, GitHub Desktop, DataCamp, AI assistants (Posit Assistant with GitHub Copilot) |
+| Teaching data | Alpenglow, a fictional Vienna chocolate brand: six European markets in the labs, its web shop in Austria, Germany and Switzerland in the group case study |
+| Assessment | DataCamp certificates 20 %, coding exercises 20 %, written exam 30 %, group case study report 30 % |
 
 ## Why this course
 
-Marketing budgets are the largest discretionary spend in most consumer companies, and they are increasingly allocated across countries and media channels by models rather than by negotiation. Marketing mix modelling (MMM) has returned to the centre of this debate since privacy changes made user-level tracking unreliable. Managers who can read, challenge and commission these models hold the budget conversation.
+Marketing budgets are the largest discretionary spend in most consumer companies, and they are increasingly allocated across countries and media channels by models rather than by negotiation. Marketing mix modelling (MMM) has returned to the centre of this debate since privacy changes made user-level tracking and click-based attribution unreliable. Managers who can read, challenge and commission these models hold the budget conversation.
 
-This course trains you to do exactly that. You will build marketing mix models in Python for a company operating in six markets, forecast its sales, test what an experiment can add, compare attribution methods, and finally defend a cross-country budget allocation in front of a "board". You will write little code by hand: the course assumes that an AI coding assistant writes most of it and teaches you to specify, check and communicate analyses instead.
+Marketing analytics is the measurement, management and analysis of marketing performance data to improve marketing effectiveness and return on investment. The course asks how price, place, product features and promotion drive sales, and how a fixed budget should be split across countries and channels. You will write little code by hand: AI assistants do most of the typing, and the course teaches you to specify, check and communicate analyses. Case examples include Zalando and NEOH.
 
 ## Learning outcomes
 
-After the course, you can:
+On successful completion of this module, students will be able to:
 
-1. Explain the logic of marketing mix modelling: carryover (adstock), saturation, baseline versus incremental sales, ROAS versus marginal ROAS.
-2. Specify, estimate and diagnose regression models for marketing response data in Python: OLS, log-log elasticity models, panel fixed effects, hierarchical Bayesian MMM.
-3. Translate model output into a cross-country, cross-channel budget allocation and defend it under uncertainty.
-4. Produce and evaluate short-term sales forecasts as a planning baseline.
-5. Design and analyse a geo-lift experiment and use it to calibrate an MMM.
-6. Compare attribution approaches and explain why they disagree across markets.
-7. Work reproducibly with Python, Positron, Quarto and GitHub, and use AI assistants responsibly.
+*Understand*
+
+1. Explain the fundamentals of marketing mix modelling, its strengths and limits.
+2. Describe real-world applications of MMM in marketing.
+
+*Apply*
+
+3. Apply MMM in Python to cross-sectional and longitudinal data.
+4. Interpret results and turn them into marketing decisions.
+
+*Transfer*
+
+5. Use AI tools for analysis and reporting, and check their output.
+6. Think critically and work effectively in teams.
 
 ## Prerequisites
 
-None beyond bachelor-level statistics. No programming experience is expected. You need your own laptop with administrator rights to install software (see the setup guide in `setup/`).
+None beyond bachelor-level statistics. No programming experience is expected. Bring your own laptop with administrator rights: we register the accounts and install the software together in Session 1, so no preparation is needed.
 
 ## Schedule
 
-| Session | Date | Topic | Decision of the day |
+| Session | Date | Topic | Methods |
 |---|---|---|---|
-| 1 | Tue 6 Oct | Toolkit and regression foundations | Is our price too high in Poland? |
-| 2 | Tue 13 Oct | Marketing mix modelling I: one country | What did TV do for us in Germany? |
-| 3 | Tue 20 Oct | Marketing mix modelling II: many countries, one budget | Where should the next euro go? |
-| 4 | Tue 27 Oct | Forecasting, experiments and attribution | Can we trust the model? |
-| 5 | Tue 3 Nov | Group project pitches and wrap-up | Board meeting: the 2027 budget |
+| 1 | Tue 6 Oct | Introduction and linear regression | Course content; registration and set-up (Python, Positron, GitHub Desktop, DataCamp); introduction to MMM; OLS, model fit and interpretation |
+| 2 | Tue 13 Oct | Advanced regression | Log-log elasticities, dummy variables, non-linear effects, moderation and mediation, adstock and saturation, diagnostics |
+| 3 | Tue 20 Oct | Logistic regression | Binary outcomes such as purchase or churn, odds ratios, model fit and classification |
+| 4 | Tue 27 Oct | ARIMA | Trend, seasonality and autocorrelation; ARIMA and ARIMAX forecasts as the sales baseline |
+| 5 | Tue 3 Nov | Advanced MMM tools | Bayesian MMM with PyMC-Marketing and Google Meridian; budget optimisation across channels and countries |
 
-Each session combines a concept lecture (60 min), a guided lab in Positron (90 min) and a team exercise on the project data (60 min), followed by a debrief. A short online quiz opens after each of Sessions 1 to 4 (Wednesday 9 am to Monday 11:59 pm).
+Each session combines a concept lecture (60 min), a guided lab in Positron (90 min) and a team exercise (60 min). A short online quiz after each session shows you what to revise; it is not graded. Between sessions you read the assigned materials, work on the DataCamp courses and coding exercises, and write the case study report with your group. A guest speaker from industry joins one session **[to align]**.
 
-## Assessment **[to align]**
+## Assessment
 
 | Component | Weight | Format |
 |---|---|---|
-| Online certificates (Kaggle Learn Python, GitHub Skills) and installation check | 5 % | individual, before Session 2 |
-| Self-reflection | 5 % | individual, short written reflection after Session 5 |
-| Online quizzes after Sessions 1 to 4 | 4 × 5 % = 20 % | individual, closed book, 10 questions in 10 minutes |
-| Lab check-ins after Sessions 2 and 4 | 2 × 10 % = 20 % | individual Quarto notebook plus result files, auto-checked |
-| Group project: Alpenglow 2027 budget allocation | 40 % | group of 5: GitHub repository, Quarto report, pitch deck, 10-minute pitch |
-| Peer review | 10 % | peer rating form |
+| Online certificates | 4 × 5 % = 20 % | individual: four assigned DataCamp Python courses, each certificate uploaded on Canvas by its deadline |
+| Coding exercises | 4 × 5 % = 20 % | individual: apply the code of a guided lab to a similar task; Python or Quarto file submitted on Canvas |
+| Written exam | 30 % | individual: 60 minutes, paper and pencil, multiple-choice questions on all five sessions, closed book **[to align: date and room]** |
+| Group case study report | 30 % | groups of at most 4: Quarto report on Alpenglow's web shop, submitted on Canvas by Monday 30 November 2026, midnight |
 
-Grades follow the WU scale: 1 (≥ 90 %), 2 (80–89 %), 3 (70–79 %), 4 (60–69 %), 5 (< 60 %). Attendance of at least 80 % of sessions is required **[to align]**.
+Grades follow the WU scale: 1 Excellent (90 % and above), 2 Good (80 to 89 %), 3 Satisfactory (70 to 79 %), 4 Sufficient (60 to 69 %), 5 Fail (below 60 %). Attendance of at least 80 % of sessions is required **[to align]**.
 
-### Group project
+### Coding exercises
 
-Groups act as the analytics team of Alpenglow. Using the weekly panel for six countries, the German geo-lift test and the multi-market journey data, each group builds an MMM, forecasts the 2026 baseline, proposes how a fixed 2027 media budget should be split across countries and channels, and quantifies the expected gain and its uncertainty. Deliverables: a GitHub repository with a reproducible Quarto report (max. 12 pages) and a 10-minute pitch in Session 5. The brief and rubric are in `assignments/group-project/`.
+Each exercise takes the code from a guided lab and applies it to a similar task. The file must run from top to bottom. AI assistants are allowed; add a short prompt log at the end. This is individual work: discuss ideas, but write and check your own code. Deadlines are on Canvas.
+
+### Written exam
+
+The exam checks understanding, not coding: concepts, interpretation and reading model output. The non-graded online quizzes use the same question format. Prepare with the session materials, the readings and the Q&A forum on Canvas.
+
+### Group case study report
+
+The case study applies Sessions 1 to 4 to new data: Alpenglow's own web shop in Austria, Germany and Switzerland and its subscription club, the Alpenglow Club. Your group answers four questions from the Head of E-commerce:
+
+| Part | Question | Session | Points |
+|---|---|---|---:|
+| A | What drives weekly orders? Data check, first regression, model fit, assumptions | 1 | 15 |
+| B | How price-sensitive are customers in each country, and how does advertising work? Elasticities, temperature, adstock and saturation, moderation, mediation | 2 | 30 |
+| C | Which subscribers are about to cancel, and who should get a retention offer? Logistic regression, classification, offer threshold | 3 | 20 |
+| D | How many orders should Germany plan for in Q1 2026? ARIMA versus ARIMAX on a holdout, forecast with intervals | 4 | 20 |
+| E | Recommendations, limitations, reproducibility and presentation | all | 15 |
+| | **Total** | | **100** |
+
+Each of the 20 criteria is scored Excellent (90 to 100 % of its points), Good (75 to 89 %), Adequate (60 to 74 %) or Insufficient (below 60 %). For every regression you check a few basic assumptions with the plots and numbers statsmodels already gives you; no advanced tests are required.
+
+**What you submit.** One upload per group on Canvas, by **Monday 30 November 2026, midnight (23:59 Vienna time)**; the Canvas time stamp counts, and you can upload again until the deadline:
+
+- `report.qmd`: one Quarto file with all code and text, which renders without errors from a fresh copy of your project folder;
+- `report.html`: the rendered, self-contained report (no zip, no data).
+
+**Report rules.** At most 3,000 words of text, excluding code, tables, figure captions and the appendix. All data work with polars, figures with plotnine, tables with great_tables and models with statsmodels. Every number in the text is computed in the report (inline code). The appendix holds the AI prompt log and a contribution statement signed by all members. If `report.qmd` does not render, the reproducibility criterion scores 0; if a number in the text does not match the code, its criterion is capped at *Adequate*.
+
+**Working together.** Clone the course repository with GitHub Desktop and pull it for updates; copy the data and the template into your group's own project folder. How you combine your work is up to you: one member can keep the master file, or the group shares a private GitHub repository. Only the files uploaded to Canvas are assessed, not your commit history.
+
+The brief with all tasks and the full assessment criteria, the data and the report template are in `case-study/` and `data/case/` of the course repository. Questions about the brief go to the Q&A forum on Canvas, so that every group gets the same answer.
 
 ## Use of AI tools
 
-AI coding assistants (Positron Assistant, GitHub Copilot, Claude Code or similar) are expected and encouraged for all coding work. Rules:
+AI assistants (Posit Assistant with GitHub Copilot, or similar) are expected and encouraged for all coding work. Rules:
 
 1. You are responsible for every number you report. Verify outputs with the checks taught in class.
-2. Document the prompts that produced non-trivial code in your Quarto notebooks (a short "prompt log" section).
-3. Quizzes are closed-book and test understanding, not code.
+2. Document the prompts that produced non-trivial code (a short prompt log in coding exercises; the appendix of the case study report).
+3. The written exam is closed book and tests understanding, not code.
 4. Fabricated references or results are academic misconduct under WU rules.
 
 ## Reading
+
+Session 1 reading (on Canvas):
+
+- Fantini, F. and Narayandas, D. (2023). Analytics for marketers: When to rely on algorithms and when to trust your gut. *Harvard Business Review*, May–June 2023.
 
 Core:
 
@@ -97,28 +137,23 @@ Marketing mix modelling:
 
 - Chan, D. and Perry, M. (2017). Challenges and opportunities in media mix modeling. Google Research.
 - Jin, Y., Wang, Y., Sun, Y., Chan, D. and Koehler, J. (2017). Bayesian methods for media mix modeling with carryover and shape effects. Google Research.
-- Sun, Y., Wang, Y., Jin, Y., Chan, D. and Koehler, J. (2017). A hierarchical Bayesian approach to improve media mix models using category data. Google Research.
 - Hanssens, D. M., Parsons, L. J. and Schultz, R. L. (2001). *Market Response Models: Econometric and Time Series Analysis*. Kluwer. Chapters 1 to 3 as background.
-- PyMC Labs. *PyMC-Marketing documentation*: MMM example, budget allocation, multidimensional MMM.
+- Sethuraman, R., Tellis, G. J. and Briesch, R. A. (2011). How well does advertising work? Generalizations from meta-analysis of brand advertising elasticities. *Journal of Marketing Research*, 48(3), 457–471.
+- PyMC Labs. *PyMC-Marketing documentation*; Google. *Meridian documentation*.
 
-Experiments and attribution:
+Attribution and experiments:
 
 - Gordon, B. R., Zettelmeyer, F., Bhargava, N. and Chapsky, D. (2019). A comparison of approaches to advertising measurement: Evidence from big field experiments at Facebook. *Marketing Science*, 38(2), 193–225.
-- Meta Open Source (2022). *GeoLift* documentation and methodology.
+- Blake, T., Nosko, C. and Tadelis, S. (2015). Consumer heterogeneity and paid search effectiveness: A large-scale field experiment. *Econometrica*, 83(1), 155–174.
 - Li, H. and Kannan, P. K. (2014). Attributing conversions in a multichannel online marketing environment: An empirical model and a field experiment. *Journal of Marketing Research*, 51(1), 40–56.
-
-Supplementary:
-
-- Diaz-Bérrio, G. (2024). *Data Analytics for Marketing*. Packt.
-- Open-source MMM overviews and tool comparisons published by the PyMC Labs, Meta Robyn and Google Meridian teams.
 
 ## Course policies
 
-- Bring your laptop to every session with the environment installed (Session 1 includes a setup clinic).
-- Group work is submitted through GitHub; the commit history is part of the assessment.
-- Late submissions lose 10 percentage points per day unless agreed in advance.
+- Bring your laptop and charger to every session; Session 1 includes the set-up.
+- Coding exercises and the case study report are submitted on Canvas.
+- Late submissions lose 10 percentage points per day unless agreed in advance **[to align]**.
 - WU rules on academic integrity apply.
 
 ## Contact
 
-Dr. Arne Floh, Department of Global Business and Trade, WU Vienna. Office hours by appointment; questions during the course go to the GitHub Discussions board of the course repository.
+Dr Arne Floh, Institute for International Business, WU Vienna. Office hours: book online (link on Canvas). Questions about the course and the case study go to the Q&A forum on Canvas.
