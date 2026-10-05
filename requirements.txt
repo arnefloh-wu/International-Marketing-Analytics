@@ -1,5 +1,6 @@
 arviz==0.23.4
 causalpy==0.9.0
+great-tables==1.0.0
 ipykernel==7.4.0
 jupyter==1.1.1
 linearmodels==7.0
@@ -9,6 +10,9 @@ numpy==2.4.6
 openpyxl==3.1.5
 pandas==3.0.6
 plotly==7.1.0
+plotnine==0.15.8
+polars==1.44.2
+pyarrow==25.0.1
 pymc==5.28.5
 pymc-marketing==0.19.2
 pytest==9.1.1

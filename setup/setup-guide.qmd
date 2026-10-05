@@ -6,7 +6,14 @@ format:
     toc: true
 ---
 
-Complete this guide before Session 1. Budget 45 minutes. If you get stuck, bring your laptop to the setup clinic at the start of Session 1.
+We go through this guide together in Session 1; you do not need to install anything beforehand. Bring your laptop and charger, and know the password of your WU student e-mail account. The slides `slides/01a_setup-and-registration_WT26-27.pdf` show the same steps.
+
+## 0. Register your accounts
+
+1. **GitHub:** create a free account at <https://github.com/signup> with your WU student e-mail, pick a professional username (it appears on every commit) and turn on two-factor authentication.
+2. **GitHub Education:** apply for student benefits at <https://education.github.com/pack> (verified WU e-mail plus proof of enrolment). Approval can take a few days; the free Copilot Student plan becomes available once approved. Until then, Copilot Free works.
+3. **DataCamp:** join the course classroom through the invitation link on Canvas, using your WU e-mail. This gives you free access to the assigned courses.
+4. **Course organisation:** enter your GitHub username in the Canvas survey so we can add you to the course repositories.
 
 ## 1. Install Python with `uv`
 
@@ -57,6 +64,8 @@ uv venv
 uv pip install -r requirements.txt
 ```
 
+This installs everything the course uses, including `polars` (data wrangling), `plotnine` (charts), `great_tables` (tables), `statsmodels` (regression) and `pymc-marketing` (Bayesian MMM). The versions are pinned in `requirements.txt`, so everyone gets the same results.
+
 Then select the interpreter: in Positron's top-right interpreter selector choose the Python inside `.venv`. Test it by opening `sessions/01-foundations/lab.qmd` and running the first code cell with *Ctrl+Enter* (*Cmd+Enter* on macOS).
 
 ## 7. Set up an AI coding assistant
@@ -84,11 +93,10 @@ The course does not assume a specific assistant. What matters is that you can as
 Run in the Positron terminal:
 
 ```bash
-uv run python -c "import pandas, statsmodels, pymc_marketing; print('ready')"
-quarto --version
+uv run --no-project python setup/check_setup.py
 ```
 
-Both commands should print without errors. You are ready for Session 1.
+The script lists Python, each course package, Quarto and Git, and ends with `ready`. A line marked `!!` names what is still missing.
 
 ## Troubleshooting
 

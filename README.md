@@ -8,7 +8,7 @@ The course teaches marketing mix modelling (MMM), forecasting, experiments and a
 
 | You are | Go to |
 |---|---|
-| A student preparing for Session 1 | [`setup/setup-guide.qmd`](setup/setup-guide.qmd), then [`syllabus/syllabus.qmd`](syllabus/syllabus.qmd) |
+| A student setting up in Session 1 | [`setup/setup-guide.qmd`](setup/setup-guide.qmd), then [`syllabus/syllabus.qmd`](syllabus/syllabus.qmd) |
 | A student in a session | `sessions/0X-.../lab.qmd` |
 | A group working on the project | [`assignments/group-project/brief.qmd`](assignments/group-project/brief.qmd) |
 | The instructor | [`instructor/course_design.md`](instructor/course_design.md) (design spec, solutions, ground truth) |
