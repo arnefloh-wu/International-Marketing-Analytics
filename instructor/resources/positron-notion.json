@@ -1,7 +1,7 @@
 [
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Positron IDE (current release 2026.09.1-2, 4 September 2026)",
   "source": "Posit PBC, 2024-2026, software (desktop IDE; Elastic License 2.0, source-available, free for personal, academic and commercial use)",
   "link": "https://positron.posit.co/",
@@ -12,8 +12,8 @@
   "note": "Fork of VS Code (Code OSS) with first-class Python and R, Data Explorer, Variables pane, Plots pane, Connections pane, native Quarto and a Jupyter notebook editor (GA since 2026.07.0, 6 July 2026). Monthly date-stamped releases (there is no \"1.0\"; GA was declared with 2025.08.0 in August 2025). macOS, Windows and Linux. Only restriction: you may not host it as a service for third parties without P"
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Posit Assistant (in Positron 2026.07+, RStudio 2026.04+, terminal TUI)",
   "source": "Posit PBC, 2026, software (AI coding agent for data science; preview from Positron 2026.04.0, default since 2026.07; Posit AI Pass GA April 2026)",
   "link": "https://positron.posit.co/assistant.html",
@@ -24,8 +24,8 @@
   "note": "The agent sees the live Python or R session (data frames, variables, plots, console history), runs code, has plan mode, skills, MCP servers, an `AGENTS.md` memory file and three permission modes. Bring your own key: providers listed on the getting-started page are Posit AI Pass, Anthropic, OpenAI, GitHub Copilot (preview), Amazon Bedrock, Microsoft Foundry, Snowflake Cortex, Databricks, DeepSeek, "
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Positron Assistant (legacy, June 2025 to June 2026)",
   "source": "Posit PBC, 2025, software (deprecated from Positron 2026.07)",
   "link": "https://github.com/posit-dev/positron/discussions/7931",
@@ -36,8 +36,8 @@
   "note": "The announcement thread (3 June 2025, Tom Mock) documents the original design: Anthropic Claude for chat via API key only (no Claude Pro OAuth, see discussion #10418), GitHub Copilot for completions, ask / edit / agent modes, and early user complaints about token cost. Useful for reading older blog posts and videos correctly."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Databot (legacy exploratory data analysis agent)",
   "source": "Posit PBC (Joe Cheng), 2025, software (deprecated from Positron 2026.07, folded into Posit Assistant)",
   "link": "https://positron.posit.co/databot.html",
@@ -48,8 +48,8 @@
   "note": "Short-turn EDA loop (question, code, run, show output, suggest next question) that is the design ancestor of Posit Assistant's iterative data exploration; the \"A brief and biased history\" post below explains the lineage."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "GitHub Copilot in Positron",
   "source": "GitHub / Posit, 2025-2026, software (completions, Next Edit Suggestions and chat provider inside Posit Assistant; status \"Preview\")",
   "link": "https://positron.posit.co/assistant-completions.html",
@@ -60,8 +60,8 @@
   "note": "Sign in via the Accounts menu; ghost-text completions in Python, R and Quarto, and Copilot can be selected as the chat model provider so students with a Copilot account avoid paying for API credits. Copilot Free gives 2,000 completions a month; the GitHub Student Developer Pack's free Copilot Student plan paused new sign-ups in April 2026 and reopened gradually from 17 June 2026 (check current sta"
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Claude Code in the Positron terminal",
   "source": "Anthropic, 2025-2026, software (terminal agent; requires Claude Pro/Max or API billing)",
   "link": "https://opensource.posit.co/blog/2026-06-08_comparing-posit-assistant-and-claude-code/",
@@ -72,8 +72,8 @@
   "note": "Runs unchanged in Positron's integrated terminal, and the Claude Code VS Code extension also installs in Positron (Sharon Machlis, October 2025). Posit's own comparison (8 June 2026) is honest: Claude Code edits files and runs scripts but cannot see the live session unless you add the `btw` package's MCP server, whereas Posit Assistant has session access built in. Issue #13603 (May 2026, milestone"
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "OpenAI Codex CLI",
   "source": "OpenAI, 2025-2026, software (open-source terminal agent, Apache 2.0, released 16 April 2025; IDE extension for VS Code forks)",
   "link": "https://github.com/openai/codex",
@@ -84,8 +84,8 @@
   "note": "The OpenAI equivalent of Claude Code; sandboxed command execution with suggest / auto-edit / full-auto approval modes. Works in Positron's terminal like any CLI. Needs a ChatGPT Plus/Pro or API account."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Posit AI Pass",
   "source": "Posit PBC, 2026, software/subscription (invite-only beta January 2026, early release March 2026, GA April 2026; \"Posit AI is Now Available to All\", 5 May 2026)",
   "link": "https://posit.ai/",
@@ -96,8 +96,8 @@
   "note": "The one-login route to Posit Assistant and Next Edit Suggestions with a monthly credit allowance; the FAQ is the clearest statement of what leaves the machine (prompts, session info, variable names and types, schema via tool calls, row-level data only if you ask for it) and of zero-data-retention agreements with model providers."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "ellmer (R) and chatlas (Python)",
   "source": "Posit PBC (Hadley Wickham; Carson Sievert), 2024-2026, software (ellmer 0.5.0 on CRAN 4 September 2026; chatlas on PyPI)",
   "link": "https://ellmer.tidyverse.org/",
@@ -108,8 +108,8 @@
   "note": "Identical interfaces for calling LLMs from code (OpenAI, Anthropic, Gemini, Bedrock, Azure, Ollama and more), with tool calling and structured data extraction into typed objects. This is the \"use an LLM inside your analysis\" layer (for example classifying open-ended survey answers), distinct from the assistant that writes your code."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Visual Studio Code with the Python Data Science extension pack and Copilot",
   "source": "Microsoft, 2024-2026, software (free; Python, Jupyter, Data Wrangler, Copilot)",
   "link": "https://marketplace.visualstudio.com/items?itemName=ms-toolsai.datawrangler",
@@ -120,8 +120,8 @@
   "note": "The mainstream comparison point. Data Wrangler gives a Data-Explorer-like grid with Copilot-generated pandas code; Copilot Chat has an agent mode. What it lacks is Positron's language-aware console, Variables pane and R support. Positron's own migration guide (https://positron.posit.co/migrate-vscode.html) lists the differences."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "JupyterLab 4.6 with Jupyter AI 3.x",
   "source": "Project Jupyter, 2026, software (open source; Jupyter AI 3.0 released 31 March 2026)",
   "link": "https://jupyter-ai.readthedocs.io/",
@@ -132,8 +132,8 @@
   "note": "Jupyter AI 3 stopped building its own agent and instead hosts Claude Code, Codex, Gemini and others via the Agent Client Protocol inside JupyterLab, with multi-user chats saved as files. Relevant if the school's JupyterHub is the only sanctioned platform; note Positron Server can also be launched from JupyterHub (see Real-world examples)."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Cursor",
   "source": "Anysphere, 2023-2026, software (VS Code fork with built-in agent; Hobby free, Pro USD 20/month)",
   "link": "https://cursor.com/",
@@ -144,8 +144,8 @@
   "note": "The most-used \"AI-native\" editor among software developers, but no data science panes and no R. The free one-year student Pro offer closed to new sign-ups on 25 June 2026; students now get the Hobby tier only."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "RStudio 2026.04+ with Posit Assistant, ellmer and chattr",
   "source": "Posit PBC, 2026, software (open source IDE; Posit Assistant private beta January 2026, public 5 March 2026)",
   "link": "https://docs.posit.co/ide/user/ide/guide/tools/posit-ai.html",
@@ -156,8 +156,8 @@
   "note": "The same assistant now lives in RStudio, so R-side colleagues are not left behind; chattr (Shiny gadget for prompting from RStudio) and ellmer remain the package-level routes. Confirms that Positron is not a forced migration for R users."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Google Colab with Gemini Data Science Agent",
   "source": "Google, 2025-2026, software (free tier for users 18+ in supported countries; Pro from USD 9.99/month)",
   "link": "https://colab.research.google.com/",
@@ -168,8 +168,8 @@
   "note": "Describe an analysis in the Gemini side panel and it generates a complete notebook (launched March 2025). Zero install, which is tempting for a first-session fallback, but no local files, no Quarto, no Git integration and session time-outs on the free tier."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Deepnote",
   "source": "Deepnote, 2020-2026, software (cloud notebook; free Education plan for verified students and teachers)",
   "link": "https://deepnote.com/docs/edu-verification",
@@ -180,8 +180,8 @@
   "note": "Collaborative notebook with SQL, Python and R blocks and a Deepnote Agent that is aware of the workspace; the free Education plan excludes Deepnote AI, so the AI angle costs money. Good illustration of the \"AI in a hosted notebook\" model versus Positron's local IDE."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Posit Cloud with Positron (preview)",
   "source": "Posit PBC, 2026, software (hosted; Free plan 25 project hours/month, Student plan USD 5/month with 75 hours)",
   "link": "https://posit.co/blog/positron-now-available-posit-cloud-preview",
@@ -192,8 +192,8 @@
   "note": "Browser-based Positron so nobody loses the first session to laptop troubleshooting; every plan including Free can open Positron. Posit Cloud does not bundle AI, but a student with their own Posit AI Pass can sign in inside the session (relevant for exam rules, see the forum thread under Real-world examples)."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Positron Server on JupyterHub and Positron Pro on Posit Workbench (institutional)",
   "source": "Posit PBC, 2026, software (free 12-month education licence for qualifying institutions; `jupyter-positron-server` on PyPI)",
   "link": "https://positron.posit.co/education.html",
@@ -204,8 +204,8 @@
   "note": "If WU already runs JupyterHub, Positron can be added as a launcher next to JupyterLab with a free education licence (request via academic-licenses@posit.co); Workbench 2026.04.0 adds Posit Assistant with institution-controlled BYOK providers. This is the route to a uniform, admin-controlled AI set-up for 30 students."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Software",
+  "section": "Software",
   "title": "Student pricing summary (as of October 2026)",
   "source": "compiled from vendor pages, 2026, software/pricing",
   "link": "https://education.github.com/pack",
@@ -216,8 +216,8 @@
   "note": "Cheapest working combination for a student: Positron (free) + GitHub Education (Copilot Student plan when open, otherwise Copilot Free) as the Posit Assistant provider. Alternatives: Posit AI Pass USD 20/month (USD 5 first month); Anthropic API pay-as-you-go (an Anthropic console key; Claude Pro does not work in Posit Assistant but does power Claude Code in the terminal); Claude for Education is i"
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "Positron documentation: Python in Positron, Data Explorer, Connections, Quarto",
   "source": "Posit PBC, 2024-2026, website (official docs, source on GitHub at posit-dev/positron-website)",
   "link": "https://positron.posit.co/guide-python.html",
@@ -228,8 +228,8 @@
   "note": "Concise, screenshot-led pages; the Python guide covers venv, uv, conda and interpreter selection, which is where beginners get stuck. The Data Explorer page is the best two-minute explanation of filter, sort and summary statistics without code."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "Posit Assistant documentation (positron.posit.co and assistant.posit.co)",
   "source": "Posit PBC, 2026, website",
   "link": "https://positron.posit.co/assistant.html",
@@ -240,8 +240,8 @@
   "note": "Defines the modes, permission levels, `/plan` and `/savememory` commands, skills and the `AGENTS.md` memory file; the providers page is the authoritative list of what students can sign in with. The permission-mode section is directly usable as course rules (\"approve every code change in lab 1 and 2\")."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "Tutorial: \"Collaborate with AI on a Python analysis\"",
   "source": "Posit PBC, 2026, website (step-by-step tutorial in the Positron docs)",
   "link": "https://positron.posit.co/tutorial-ai-notebooks.html",
@@ -252,8 +252,8 @@
   "note": "The closest thing to a ready-made lab for this course: clone a repo, inspect `retail_sales.xlsx` (about 9,800 orders) in the Data Explorer, set up a venv, ask Posit Assistant for quarterly sales aggregation and a chart, export the chat to a notebook, use one-click error fixes and ghost cells, convert to Quarto and publish a dashboard."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"Your first Python project in Positron\" (Sara Altman)",
   "source": "Posit blog, March 2026, article with companion video",
   "link": "https://posit.co/blog/first-python-project-in-positron",
@@ -264,8 +264,8 @@
   "note": "Folder, virtual environment, Git init, install pandas and matplotlib, Quarto document, commit, push, deploy. Written by a former Stanford data science instructor for beginners; matches the course's Positron + Quarto + GitHub stack exactly."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"A brief and biased history of Posit data science agents\"",
   "source": "Posit Open Source blog, 11 June 2026, article",
   "link": "https://opensource.posit.co/blog/2026-06-11_history-of-posit-data-science-agents/",
@@ -276,8 +276,8 @@
   "note": "Explains why Positron Assistant, Databot and Posit Assistant exist, which ideas survived (short turns, human approval, session context) and why the first two were retired. Essential for reading anything older than April 2026."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"Posit Assistant is specialized for data work\" (Posit Assistant versus Claude Code)",
   "source": "Posit Open Source blog (Sara Altman, Simon Couch), 8 June 2026, article (companion to the 13 April 2026 video)",
   "link": "https://opensource.posit.co/blog/2026-06-08_comparing-posit-assistant-and-claude-code/",
@@ -288,8 +288,8 @@
   "note": "Three concrete differences: built-in session access, iterative exploration with summaries, and plot handling; fair about where Claude Code is stronger (multi-file projects, package development). Good basis for a class discussion on \"assistant that explores with me\" versus \"agent that ships code\"."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"Positron Assistant: GitHub Copilot and Claude-Powered Agentic Coding in R\" (Stephen Turner)",
   "source": "Stephen D. Turner, Paired Ends (Substack), September 2025, article (reposted on R-bloggers)",
   "link": "https://blog.stephenturner.us/p/positron-assistant-copilot-chat-agent",
@@ -300,8 +300,8 @@
   "note": "An independent bioinformatician's hands-on test of agent mode with Copilot and Claude, including what it got wrong. R examples, but the workflow and cautions transfer. Describes the legacy assistant; read with the history post."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"Posit Assistant: Is it worth the switch?\" (Jumping Rivers)",
   "source": "Jumping Rivers (UK training company), August 2026, article (also on R-bloggers)",
   "link": "https://www.jumpingrivers.com/blog/posit-assistant-is-it-worth-the-switch/",
@@ -312,8 +312,8 @@
   "note": "Independent review of the new assistant: it answers by writing and running code, which makes its reasoning auditable; the authors compare it with running the Claude Code extension in Positron and note that session context arrives with zero configuration. Grew out of their \"Improving Your Workflow with Positron and Claude\" workshop at AI in Production 2026."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"RStudio vs VS Code vs Positron: Best R IDE\" and \"Positron vs RStudio: Should You Switch?\"",
   "source": "r-statistics.co, March 2026, articles",
   "link": "https://r-statistics.co/RStudio-vs-VSCode-vs-Positron.html",
@@ -324,8 +324,8 @@
   "note": "Plain-language comparison with a one-line verdict (R only: RStudio; Python only: VS Code or Jupyter; both: Positron) and performance notes (large files, Data Explorer with 100k+ rows). Also https://www.datanovia.com/learn/programming/setup/choosing-an-ide for a four-way comparison that includes Jupyter."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "Positron migration guides (from RStudio, from VS Code)",
   "source": "Posit PBC, 2025-2026, website and blog",
   "link": "https://posit.co/blog/positron-migration-guides",
@@ -336,8 +336,8 @@
   "note": "Side-by-side tables of what is the same, what moved and what is missing; in-product walkthroughs exist too. Students who already know VS Code from a bachelor course can read the VS Code page in ten minutes."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"Privacy and AI Assistants\" and the Posit AI FAQ",
   "source": "Posit blog (2025) and docs.posit.co (2026), article and website",
   "link": "https://posit.co/blog/trust-llm-tools",
@@ -348,8 +348,8 @@
   "note": "States plainly that the assistant can execute arbitrary code and read files, that Posit does not store queries, and that the trust relationship is with the model provider. The FAQ lists exactly what context is sent (variable names and types, schemas, and row-level values only if prompted). The GitHub discussion \"Handling Sensitive Data with Positron Assistant\" (#9508) adds user questions."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"Responsible by Design: Building AI That Works With You\"",
   "source": "Posit blog (Nick Rohrbaugh), August 2025, article",
   "link": "https://posit.co/blog/positron-ai-product-announcement-aug-2025",
@@ -360,8 +360,8 @@
   "note": "Posit's design principles for AI in the IDE: correct, transparent, reproducible; a human expert who can read the code must stay in the loop. A one-page statement that doubles as a course value statement on AI-assisted analysis."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "Whitepaper \"A guide to Positron: the data science code editor\"",
   "source": "Posit PBC, 2025, report (PDF, free with form; mirror PDF on bookdown.org)",
   "link": "https://posit.co/whitepaper/a-guide-to-positron-the-data-science-code-editor",
@@ -372,8 +372,8 @@
   "note": "The single most complete written overview: four-pane workflow, polyglot sessions, Data Explorer, Connections, Quarto, AI, Workbench. Marketing tone but accurate."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "Positron for Education (institutional options)",
   "source": "Posit PBC, 2026, website",
   "link": "https://positron.posit.co/education.html",
@@ -384,8 +384,8 @@
   "note": "Lays out the three ways to run Positron for a class (desktop, Positron Server on JupyterHub, Positron Pro on Workbench), the free 12-month education licence, eligibility rider and the e-mail to request a key."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"10 tips for getting better R code from your AI coding agent\" (Sharon Machlis)",
   "source": "InfoWorld, 17 June 2026, article",
   "link": "https://www.infoworld.com/article/4184642/10-tips-for-getting-better-r-code-from-your-ai-coding-agent.html",
@@ -396,8 +396,8 @@
   "note": "Covers Claude Code, Codex and Posit Assistant alike: knowledge files (`CLAUDE.md`, `AGENTS.md`), skills, plan mode before coding, having the agent write tests, and budget management with local models. R-flavoured but every tip applies to Python in Positron."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"Posit's AI Packages Explained: A Decision Map for R and Python Developers\" (Appsilon)",
   "source": "Appsilon (Vedha Viyash), 9 April 2026, article",
   "link": "https://www.appsilon.com/post/posits-ai-packages-explained-a-decision-map-for-r-and-python-developers",
@@ -408,8 +408,8 @@
   "note": "Sorts ellmer, chatlas, querychat, shinychat, ragnar, vitals, mcptools and the assistants into \"which do I need for what\". Saves a confused hour."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "Community reviews: Kasey Zapatka (2025), Andrew Heiss (2024), Peter Hahn (Medium), Erik Gahner (2024), Posit Community thread \"Moving from Python development to Positron\"",
   "source": "independent academics and practitioners, 2024-2026, blog posts and forum thread",
   "link": "https://www.kaseyzapatka.com/blog/2025/positron/",
@@ -420,8 +420,8 @@
   "note": "Honest first-person accounts from social scientists and analysts; Zapatka on mixed R/Python academic work with multiple consoles, Heiss on what RStudio users gain, Gahner the sceptic (2024: \"if you already use VS Code you gain little\"). Pre-2026 posts predate the notebook editor and Posit Assistant."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Websites / Blogs",
+  "section": "Websites, documentation and blogs",
   "title": "\"Customize Positron with these community-curated resources\"",
   "source": "Posit Open Source blog, 28 April 2026, article",
   "link": "https://opensource.posit.co/blog/2026-04-28_positron-community-resources/",
@@ -432,8 +432,8 @@
   "note": "Curated list of settings, keybindings, themes and workflow posts (including Andrew Heiss's \"Switching to Positron full-time\" thread); a shortcut to a sane default configuration for a classroom."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"A quick tour of Positron\" (Sara Altman)",
   "source": "Posit, 28 July 2025, video (6 min)",
   "link": "https://www.youtube.com/watch?v=4Ir_HX4riHw",
@@ -444,8 +444,8 @@
   "note": "The six-minute orientation: editor, console, Variables, Data Explorer, Plots, Help, R and Python side by side. Short enough to play in class."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Getting Started with Positron: A Quick Tour\"",
   "source": "Posit, 24 September 2025, video",
   "link": "https://www.youtube.com/watch?v=mru9z50IOhI",
@@ -456,8 +456,8 @@
   "note": "Set-up and layout walkthrough aimed at first-time users; complements the six-minute tour with interpreter selection and settings."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Introducing Posit AI for Positron and RStudio\" (Tom Mock)",
   "source": "Posit live demo, 29 April 2026, video (29 min)",
   "link": "https://posit.co/workflow-demo/introducing-posit-ai-positron-and-rstudio",
@@ -468,8 +468,8 @@
   "note": "The official first demo of Posit Assistant with live session context: debugging, reshaping data, explaining code, in both IDEs. Current product, current UI."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Comparing Posit Assistant and Claude Code\" (Sara Altman, Simon Couch)",
   "source": "Posit, 13 April 2026, video (21 min)",
   "link": "https://www.youtube.com/watch?v=7GI6-4J0AXA",
@@ -480,8 +480,8 @@
   "note": "Same task done with both tools; shows the `btw::btw_mcp_session()` workaround for Claude Code and the assistant's iterative exploration style. Pairs with the June blog post."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Comparing Posit Assistant and Positron Assistant\"",
   "source": "Posit, 21 May 2026, video (23 min)",
   "link": "https://www.youtube.com/watch?v=Y9P2nlFXKnQ",
@@ -492,8 +492,8 @@
   "note": "Explains tool coverage, built-in skills, OS-level sandboxing and cache efficiency of the new assistant; the clearest explanation of why the old one was retired."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Building Posit Assistant: An AI Agent for Data Science and Analysis\" (The Test Set)",
   "source": "Posit (Michael Chow with Simon Couch, George Stagg, Sara Altman, Winston Chang), 24 April 2026, video (8 min)",
   "link": "https://www.youtube.com/watch?v=A2samrgWZyo",
@@ -504,8 +504,8 @@
   "note": "Engineers on thinking effort, the terminal UI, predictive modelling and image data extraction; a short peek under the bonnet that demystifies \"the agent\" for non-programmers."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Data analysis with Posit AI-assistants\" (Data Science Lab)",
   "source": "Posit Data Science Lab (Libby Heeren with Sara Altman and Simon Couch), 12 March 2026, video (54 min)",
   "link": "https://opensource.posit.co/resources/videos/2026-03-12_data-analysis-with-posit-ai-assistants-sara-altman-simon-couch-data-science-lab/",
@@ -516,8 +516,8 @@
   "note": "Long-form live analysis with the assistants plus a demo of the `reviewer` package (AI code review); shows what a realistic hour of AI-assisted EDA looks like, including dead ends."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Positron: The First Five Minutes\" (Isabella Velásquez, posit::conf 2025)",
   "source": "Posit, posit::conf(2025), published 7 November 2025, video (44 min)",
   "link": "https://www.youtube.com/watch?v=MOpJYbhLgyc",
@@ -528,8 +528,8 @@
   "note": "What to do in the first five minutes of opening a project in Positron, by a developer-relations lead; good for the \"set-up anxiety\" of beginners. The full posit::conf(2025) playlist is https://www.youtube.com/playlist?list=PL9HYL-VRX0oTixlfDPCS5RW_F1pccERRe (Stephen Turner's curated index: https://blog.stephenturner.us/p/posit-conf-2025-youtube-playlist)."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Introducing Positron, a new data science IDE\" (posit::conf 2024)",
   "source": "Posit (Julia Silge, Isabel Zimmerman, Tom Mock, Jonathan McPherson, Lionel Henry, Davis Vaughan, Jenny Bryan), posit::conf(2024), video",
   "link": "https://www.youtube.com/watch?v=8uRcB34Hhsw",
@@ -540,8 +540,8 @@
   "note": "The design rationale from the team that built it: why a VS Code fork, why a dedicated console and Data Explorer, what should feel familiar from RStudio. Dated UI, timeless reasoning."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"A First Look at Positron and Posit Assistant\" (Jumping Rivers webinar, Kia Mack)",
   "source": "Jumping Rivers, 13 August 2026, video (recorded webinar)",
   "link": "https://www.youtube.com/watch?v=7tBlsBjpEBI",
@@ -552,8 +552,8 @@
   "note": "Independent, European (Newcastle) trainer demonstrating Positron versus RStudio, R and Python side by side and Posit Assistant on everyday tasks, live rather than scripted."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"AI-Powered Data Science in Positron\" (Ryan Johnson)",
   "source": "Posit, 2025-2026, video",
   "link": "https://www.youtube.com/watch?v=Ve7cNChzq5Q",
@@ -564,8 +564,8 @@
   "note": "Marketing-level overview of Positron as an \"AI-ready\" IDE with Posit Assistant and Next Edit Suggestions; useful as a two-minute motivator, not as a tutorial."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "Posit Academy: \"Introduction to Positron\" path and \"Positron AI Workshop\"",
   "source": "Posit Academy, 2025-2026, online courses (Navigating the Positron Interface 28 min; Working with Data in Positron 25 min; Running and Managing Code in Positron 24 min; Positron AI Workshop 20 min; on-demand, free account)",
   "link": "https://academy.posit.co/path/introduction-to-positron",
@@ -576,8 +576,8 @@
   "note": "Short self-paced modules with a hosted Positron on Workbench, so students can practise before installing. The AI workshop repo has R and Python scripts, notebooks and Quarto files on a happiness dataset plus a pharma example; it still names Positron Assistant and Databot, so expect UI differences."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Modern R Workflow (ft. Positron and AI)\" (Hadley Wickham, Jenny Bryan; posit::conf 2026 workshop)",
   "source": "Posit, September 2026, one-day workshop materials (CC-BY 4.0; recordings expected on YouTube per Posit's practice)",
   "link": "https://github.com/posit-conf-2026/modern-r-workflow",
@@ -588,8 +588,8 @@
   "note": "The two most influential R educators teaching functions, testing and Claude Code and Positron Assistant skills together; the repo includes ready-made assistant skill files. R, but the \"how to work with an agent responsibly\" material is language-neutral."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Human-in-the-Loop AI: Using Posit Assistant in Positron\" (Garrett Grolemund, R/Pharma 2026)",
   "source": "Posit (Garrett Grolemund, Director of Learning), 28 September 2026, 3-hour workshop materials",
   "link": "https://github.com/posit-dev/human-in-the-loop-ai-r-pharma-2026",
@@ -600,8 +600,8 @@
   "note": "Workshop built around approving every line the model proposes, keeping data local and setting methodology yourself; slides (PDF), specs and a house style guide are in the repo. The structure is a template for a regulated-industry-grade AI lab."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "Julia Silge on Positron (The Test Set podcast; SuperDataScience 817; \"A first look at Positron\")",
   "source": "Posit / SuperDataScience, 2024-2025, videos and podcast",
   "link": "https://www.youtube.com/watch?v=8E2p5o07-EI",
@@ -612,8 +612,8 @@
   "note": "The engineering manager explaining why data science needs an IDE that is not a software-engineering IDE; good listening for the instructor and for curious students."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "\"Exploratory Data Analysis with R in Positron\" (Mine Çetinkaya-Rundel)",
   "source": "Mine Çetinkaya-Rundel (Duke), 2025, video",
   "link": "https://www.youtube.com/watch?v=ndq2Mm3Dju8",
@@ -624,8 +624,8 @@
   "note": "A leading statistics educator doing EDA in Positron the way she teaches it; R, but the console-plus-Quarto rhythm is exactly what the course wants in Python."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "(Video-) Tutorials",
+  "section": "Video tutorials and courses",
   "title": "Udemy: \"Créer un site web personnel avec Quarto, Positron et GitHub\" (French)",
   "source": "Savoir-faire Digital, 2025-2026, online course (paid, about 75 enrolled, 4.5 rating; free YouTube summary at https://www.youtube.com/watch?v=DphbTu5jovU)",
   "link": "https://www.udemy.com/course/creer-un-site-web-personnel-avec-quarto-positron-et-github/",
@@ -636,8 +636,8 @@
   "note": "One of very few third-party courses built on Positron; the Quarto website plus GitHub Pages workflow is the same one a student portfolio or course project site would use."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "Cornell INFO 4940 / INFO 5001 (Benjamin Soltoff): Positron, Quarto and GitHub as the course workflow",
   "source": "Cornell University, Bowers CIS, 2025-2026, course websites (case)",
   "link": "https://info4940.infosci.cornell.edu/hw/hw-05.html",
@@ -648,8 +648,8 @@
   "note": "Students clone homework repos into Positron workspaces, write in Quarto, render, commit and push with meaningful messages; HW 00 is a \"hello\" computing-workflow assignment. A working template for assessment logistics in a Positron + GitHub course."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "positron.tutorials and Kane's free Data Science Course (David Kane, formerly Harvard)",
   "source": "David Kane, 2025-2026, CRAN package (v0.2.1, May 2026) and free 8-week online course (case)",
   "link": "https://ppbds.github.io/positron.tutorials/",
@@ -660,8 +660,8 @@
   "note": "Tutorials for Positron, Quarto, Git, GitHub and \"using AI\" written for absolute beginners; the r4ds.tutorials maintainers now tell teachers to use Positron rather than RStudio. The summer course (next cohort from 15 June 2026) promises that beginners will \"use generative AI to do data science\" by week 8. R-based, but the only documented beginner curriculum built on Positron plus AI."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "\"Getting Started with Positron\" short course at SDSS 2026 (Mine Çetinkaya-Rundel)",
   "source": "American Statistical Association SDSS 2026, half-day short course (case)",
   "link": "https://ww2.amstat.org/meetings/sdss/2026/shortcourses.cfm",
@@ -672,8 +672,8 @@
   "note": "A leading data science educator teaching Positron to statisticians coming from both RStudio and VS Code; signals that Positron is now the IDE statistics educators train each other on."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "Universities deploying Positron Server through JupyterHub",
   "source": "Jupyter blog / Posit, 2026, article (case)",
   "link": "https://blog.jupyter.org/positron-server-available-for-academic-use-via-jupyterhub-ae4e406f9444",
@@ -684,8 +684,8 @@
   "note": "Describes the institution-level pattern: Positron appears as a launcher next to JupyterLab, students log in with their usual JupyterHub account, shared environments are pre-loaded, no laptop installs. Free education licence by e-mail."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "NHS Strategy Unit: \"Positron for Product Owners\" (Claire Welsh)",
   "source": "Posit blog / NHS-R Community, 2026, article (case)",
   "link": "https://posit.co/blog/positron-for-product-owners",
@@ -696,8 +696,8 @@
   "note": "Lead data scientist of an internal NHS consultancy on using Positron for backlog reviews, Quarto documentation, test debugging and fast project switching; a non-coder-manager perspective that business students will recognise."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "Pharma analysts: R/Pharma 2026 workshop on Posit Assistant with clinical data (ADaM, SDTM)",
   "source": "Posit (Garrett Grolemund), 28 September 2026, workshop (case)",
   "link": "https://github.com/posit-dev/human-in-the-loop-ai-r-pharma-2026",
@@ -708,8 +708,8 @@
   "note": "Documents how a regulated industry is being taught to use an in-IDE agent: approved model providers, data never leaves the machine, every line approved. Governance template for a course policy on client or survey data."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "Practitioner testimonials on the Positron product page (Pfizer, Bath & Body Works, Memorial Sloan Kettering)",
   "source": "Posit PBC, 2025-2026, website (vendor-curated quotes)",
   "link": "https://posit.co/products/ide/positron",
@@ -720,8 +720,8 @@
   "note": "Sam Parmar (statistical data scientist, Pfizer), Jeffrey Sumner (Bath & Body Works, a retailer) and Meghan Harris (MSKCC) on switching between R and Python and on the AI assistant. Vendor-selected, so treat as colour, not evidence."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "Alex Zajichek: \"Trying AI-assisted development in the Positron IDE\"",
   "source": "Alex Zajichek (independent biostatistician), 29 October 2025, blog case",
   "link": "https://www.zajichekstats.com/post/ai-assisted-shiny-development-in-positron/",
@@ -732,8 +732,8 @@
   "note": "Step-by-step record of adding features to a Shiny app with the (legacy) assistant, including what had to be corrected; a realistic log of human-AI collaboration that could serve as an example \"prompt log\" for assessment."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "Raymond Hunter: \"An Introduction to Positron Assistant\"",
   "source": "Raymond Hunter (environmental data scientist), 30 October 2025, blog case",
   "link": "https://ramhunte.github.io/blogs/positron_assitant/",
@@ -744,8 +744,8 @@
   "note": "Beginner-friendly walkthrough of setting up Claude and Copilot providers and using chat and inline completions for an analysis; written by a recent graduate for peers."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "Instructor concern: \"Academic integrity with Posit's AI integration in Posit Cloud\" (Posit Community)",
   "source": "Posit Community forum thread with Posit staff reply, 2026, case",
   "link": "https://forum.posit.co/t/academic-integrity-with-posits-ai-integration-in-posit-cloud/211566",
@@ -756,8 +756,8 @@
   "note": "An intro-R instructor asks whether AI can be disabled for exams; Posit's answer is that Cloud does not bundle AI but cannot stop a student signing into their own Posit AI subscription. Concrete evidence for designing assessment that assumes AI is available rather than trying to block it."
  },
  {
-  "category": "",
-  "section": "",
+  "category": "Praxisbeispiele",
+  "section": "Real-world examples",
   "title": "Andrew Heiss (Georgia State): \"Switching to Positron full-time\" and \"Fun with Positron\"",
   "source": "Andrew Heiss, 2024-2026, blog and GitHub discussion (case)",
   "link": "https://www.andrewheiss.com/blog/2024/07/08/fun-with-positron/",

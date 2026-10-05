@@ -67,8 +67,8 @@ for part in parts:
     section, sub = "", ""
     cur = None
     for line in text.splitlines():
-        if line.startswith("## "):
-            section, sub = line[3:].strip(), ""
+        if re.match(r"^#{1,2} ", line) and not line.startswith("# Part") and line.lstrip("#").strip().lower() not in ("", TITLES[topic].lower()):
+            section, sub = line.lstrip("#").strip(), ""
             cur = None
         elif line.startswith("### ") and not re.match(r"^### \d[a-z]?\.", line):
             cat = category_for(section)
