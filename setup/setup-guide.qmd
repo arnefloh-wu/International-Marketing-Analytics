@@ -4,6 +4,18 @@ subtitle: "International Marketing Analytics · WU Vienna"
 format:
   html:
     toc: true
+    embed-resources: true
+    include-in-header:
+      text: |
+        <style>
+        @media print {
+          h1, h2, h3, h4 { break-after: avoid; page-break-after: avoid; break-inside: avoid; }
+          p, li { orphans: 3; widows: 3; }
+          tr, .callout, pre, figure, .sourceCode { break-inside: avoid; page-break-inside: avoid; }
+          pre, pre code { white-space: pre-wrap !important; overflow: visible !important; word-break: break-word; }
+          .code-copy-button { display: none !important; }
+        }
+        </style>
 ---
 
 We go through this guide together in Session 1; you do not need to install anything beforehand. Bring your laptop and charger, and know the password of your WU student e-mail account. The slides `slides/01a_setup-and-registration_WT26-27.pdf` show the same steps.
