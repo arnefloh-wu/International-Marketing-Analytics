@@ -43,9 +43,9 @@ If the cell above prints two version numbers, your environment works. If it repo
 
 Positron is an IDE for data science made by Posit. Everything you need for this course is in one window. The screenshots are described in words so that the tour works on any screen and in any colour theme.
 
-**Screenshot 1: the whole window.** Imagine four regions. On the left, a narrow vertical bar with icons (Explorer, Search, Source Control, Extensions, and the Assistant). Next to it, the file explorer showing the course folder: `assets`, `data`, `sessions`, `syllabus`. The large centre region holds the editor with `lab.qmd` open. The right-hand third is split in two: the **Variables** pane on top, the **Plots** pane below. At the bottom runs the **Console**, where code results appear, with tabs for **Terminal** and **Problems** beside it.
+**Screenshot 1: the whole window.** Imagine four regions. On the left, a narrow vertical bar with icons (Explorer, Search, Source Control, Extensions, and the Assistant). Next to it, the file explorer showing the course folder: `assets`, `data`, `sessions`, `setup`. The large centre region holds the editor with `lab.qmd` open. The right-hand third is split in two: the **Variables** pane on top, the **Plots** pane below. At the bottom runs the **Console**, where code results appear, with tabs for **Terminal** and **Problems** beside it.
 
-**Screenshot 2: the Interpreter picker.** At the top right of the window a small label says something like `Python 3.14.8 (.venv)`. Clicking it lists every Python installation on your machine. The one you want ends in `.venv`. If it is missing, run *Python: Create Environment* from the Command Palette (Venv, Python 3.14, tick `requirements.txt`), as in the setup guide.
+**Screenshot 2: the Interpreter picker.** At the top right of the window a small label says something like `Python 3.14.8 (.venv)`. Clicking it lists every Python installation on your machine. The one you want ends in `.venv`. If it is missing, run *Python: Create Environment* from the Command Palette (Venv, Python 3.14, tick `requirements.txt`), as in Step 4 of the set-up slides.
 
 **Screenshot 3: running a cell.** In a `.qmd` file, code lives between lines with three backticks and `{python}`. Positron draws a faint "Run Cell" button above each one. Put your cursor anywhere inside the cell and press Ctrl+Enter. The code is sent to the console and the result appears there; any DataFrame you created appears in the Variables pane with its dimensions, for example `df  DataFrame [936 x 21]`.
 
@@ -53,7 +53,7 @@ Positron is an IDE for data science made by Posit. Everything you need for this 
 
 **Screenshot 5: the Plots pane.** Every `plt.show()` sends a figure here. Arrows at the top step back through earlier plots; a save icon exports PNG or SVG. Figures are also embedded in the rendered HTML when you click **Preview** (the small icon with a play symbol at the top right of the editor, or Ctrl+Shift+K).
 
-**Screenshot 6: the Assistant.** The sidebar icon with a speech bubble opens the chat. It can see the file you have open. A good first message is in Section 7. The two modes you will use are *Ask* (explain, propose) and *Edit* (change the code in the file). Always read a proposed change before you accept it.
+**Screenshot 6: Posit Assistant.** The Assistant icon in the Activity Bar (or *View: Show Posit Assistant* in the Command Palette) opens the chat. It sees your open files, the data and variables in your session, your plots and the console history. A good first message is in Section 7. Start bigger tasks with `/plan` so it proposes a plan before writing code, and keep the permission mode on *Normal* so it asks before it runs anything. When an error appears in the console, the **Fix** and **Explain** buttons send it to the assistant. Always read a proposed change before you accept it.
 
 ::: {.callout-tip title="Prompt pattern: getting oriented"}
 *"I am working in a Quarto notebook in Positron. The project helper module is in `../../assets/mma.py`. Read it and tell me in five lines what functions it provides and what `load_panel` returns."*
