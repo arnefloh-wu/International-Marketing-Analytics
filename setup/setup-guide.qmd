@@ -40,7 +40,7 @@ Download and install Quarto from <https://quarto.org/docs/get-started/>. Restart
 
 ## 4. Install GitHub Desktop
 
-Install GitHub Desktop from <https://desktop.github.com> and sign in with your GitHub account. It brings its own Git and gives you a point-and-click interface for clone, commit, pull and push.
+Install GitHub Desktop from <https://desktop.github.com> and sign in with your GitHub account. It brings its own Git and gives you a point-and-click interface to clone and pull the course repository (commit and push if your group shares a repository).
 
 ## 5. Clone the course repository
 
@@ -95,11 +95,10 @@ The rule for this course: the AI writes, you check. Run the code, read the outpu
 
 ## 8. The GitHub workflow you will use
 
-1. **Pull** before you start working (GitHub Desktop: *Fetch origin* then *Pull*).
-2. Work in your group's repository, one file per person where possible to avoid conflicts.
-3. **Commit** small, often, with a message that says what changed ("add TV adstock to German model").
-4. **Push** at the end of every working session.
-5. If GitHub Desktop reports a conflict, do not panic: ask your AI assistant to explain the conflict markers, keep the version you want, commit, push.
+1. **Pull** before every session (GitHub Desktop: *Fetch origin*, then *Pull origin*). This brings the latest course materials.
+2. **Do not edit inside the course repository.** Copy the files you want to change into your own folder; otherwise your edits clash with our updates when you pull.
+3. **Optional: a group repository.** If your group wants to share work through GitHub, one member publishes a project folder as a private repository (*Repository → Publish repository*) and invites the others (on github.com: *Settings → Collaborators*). Then: pull before you start, commit small steps with a message that says what changed ("add TV adstock to German model"), push when you stop, one file per person where possible. If GitHub Desktop reports a conflict, ask your AI assistant to explain the conflict markers, keep the version you want, commit, push.
+4. Sharing files another way is fine too: only what you upload to Canvas is assessed, not your commit history.
 
 ## 9. Check your installation
 

@@ -122,7 +122,7 @@ s = add_slide("Titel und Inhalt", "Three registrations",
               notes="All three are free for students. Use the WU e-mail address everywhere, so the student benefits apply.")
 progress(s, 0)
 tw3 = (9.0 - GAP * 2) / 3
-accounts = [("LuGithub", "GitHub", ["Stores code and its history; hosts the course and group repositories"],
+accounts = [("LuGithub", "GitHub", ["Stores code and its history; hosts the course repository"],
              ("github.com/signup", "https://github.com/signup")),
             ("LuGraduationCap", "GitHub Education", ["Free student benefits, including GitHub Copilot"],
              ("education.github.com/pack", "https://education.github.com/pack")),
@@ -149,7 +149,7 @@ numbered(s, 0.5, 1.95, 5.6, [
 card(s, 6.3, 1.95, 3.2, 3.4, "Why it matters", [
     "Your username appears on every commit you make",
     "A clean GitHub profile is part of your CV",
-    "You need it for the group repository of the case study",
+    "Optional: share your group's case study in a repository",
     "The free plan is all you need"], "LuIdCard", "GitHub why card", head_h=0.45)
 
 # 5  GitHub Education and Copilot
@@ -199,13 +199,13 @@ s = add_slide("Titel und Inhalt", "How the pieces fit together",
                     "Positron is where students work on that folder, using Python, Quarto and an AI assistant.")
 cloud = box(s, 3.25, 1.35, 3.5, 0.6, ACC, "GitHub box")
 icon(s, "LuCloud", "white", 3.4, 1.43, 0.44, "cloud")
-text(s, 3.95, 1.35, 2.75, 0.6, [[("GitHub.com", {"bold": True, "col": WHITE})], [("course and group repositories", {"col": WHITE, "size": 11})]],
+text(s, 3.95, 1.35, 2.75, 0.6, [[("GitHub.com", {"bold": True, "col": WHITE})], [("the course repository", {"col": WHITE, "size": 11})]],
      "GitHub text", anchor=MSO_ANCHOR.MIDDLE, space=0)
 arr = box(s, 4.82, 1.97, 0.36, 0.5, NAVY, "Sync arrow", shape=MSO_SHAPE.UP_DOWN_ARROW)
 box(s, 0.5, 2.5, 9.0, 2.85, LIGHT, "Laptop area")
 text(s, 0.65, 2.55, 3.0, 0.3, [[("Your laptop", {"bold": True, "col": NAVY, "size": 12})]], "Laptop label")
 bw = 2.6
-row1 = [("LuFolderGit2", "GitHub Desktop", "clone, pull and push"),
+row1 = [("LuFolderGit2", "GitHub Desktop", "clone and pull; push optional"),
         ("LuFolderOpen", "Course folder", "data, code, requirements.txt"),
         ("LuMonitor", "Positron", "where you write and run code")]
 xs = [0.75, 3.7, 6.65]
@@ -265,7 +265,7 @@ tools = [("LuMonitor", "Positron", "positron.posit.co/download", "https://positr
          ("LuFileText", "Quarto", "quarto.org/docs/get-started", "https://quarto.org/docs/get-started/",
           ["Turns text and code into reports and slides", "Check in a terminal: quarto --version"]),
          ("LuFolderGit2", "GitHub Desktop", "desktop.github.com", "https://desktop.github.com",
-          ["Clone, pull and push with clicks", "Installs Git for you", "Sign in with your GitHub account"])]
+          ["Clone and pull with clicks; push if your group shares a repository", "Installs Git for you", "Sign in with your GitHub account"])]
 for i, (ic, head, where, url, items) in enumerate(tools):
     x = 0.5 + i * (tw3 + GAP)
     card(s, x, 1.95, tw3, 3.0, head, items, ic, f"Tool card {i + 1}", head_h=0.45)
@@ -286,7 +286,7 @@ text(s, 0.5, 3.9, 4.4, 0.85, [("Folder: ", "e.g. C:\\Users\\anna\\wu\\ima or ~/w
                                            "OneDrive or iCloud folders.")], "Folder note", size=12)
 words = [("Clone", "your own copy of a repository; a public one needs no sign-in"),
          ("Pull", "get the latest materials; do it before every session"),
-         ("Commit and push", "save and upload your changes (group repository)")]
+         ("Commit and push", "optional: share work in a group repository")]
 for i, (w, d) in enumerate(words):
     y = 2.75 + i * 0.68
     box(s, 5.1, y, 4.4, 0.58, LIGHT, f"Git word {i + 1}")
@@ -580,7 +580,7 @@ callout(s, 4.7, 0.85, "LuShieldCheck", ("Privacy: ", "prompts, variable names an
                                                      "data only if you ask. Never paste personal data."), "Privacy")
 
 # ---------------------------------------------------------------- Part 4 -----
-divider("Work with GitHub Desktop", "Part 4 of 6" + NB + "·" + NB + "the window, the everyday workflow, your group project",
+divider("Work with GitHub Desktop", "Part 4 of 6" + NB + "·" + NB + "the window, the everyday workflow, working as a group",
         "GitHub Desktop is the bridge between the folder on the laptop and GitHub. Show it live with the course repository.")
 
 # 22  GitHub Desktop at a glance
@@ -635,43 +635,50 @@ for j, (a, b) in enumerate(legend):
     text(s, 6.95, y, 2.5, 0.55, [[(a, {"bold": True, "col": NAVY, "size": 11})], [(b, {"size": 10.5})]],
          f"GD legend text {j + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
 text(s, 0.5, 5.05, 9.0, 0.45, [[("Course repository: ", {"bold": True, "col": NAVY}),
-                               ("you only pull. Your own work goes in your files or in your group repository.", {})]],
+                               ("you only pull. Work in your own folder; a group repository is optional.", {})]],
      "GD note", size=12, anchor=MSO_ANCHOR.MIDDLE)
 
 # 23  The everyday workflow
 s = add_slide("Titel und Inhalt", "The everyday workflow",
-              notes="Pull before you start, commit small steps, push when you stop. A merge conflict happens when two people "
-                    "change the same lines; GitHub Desktop lists the files, and Posit Assistant can explain the markers.")
-stepper(s, 0.5, 1.35, 9.0, 0.6, ["Fetch, then\vPull origin", "Work in\vPositron", "Review\vChanges",
-                                 "Summary +\vCommit", "Push\vorigin"], "Flow steps", size=12)
+              notes="Required: pull the course repository before every session and work in your own folder, not inside the "
+                    "course repository, so your edits never clash with our updates. Optional: a group repository with "
+                    "commit and push. A merge conflict happens only there, when two people change the same lines; GitHub "
+                    "Desktop lists the files, and Posit Assistant can explain the markers.")
+stepper(s, 0.5, 1.35, 9.0, 0.6, ["Fetch, then\vPull origin", "Copy files into\vyour own folder", "Work in\vPositron",
+                                 "Optional:\vcommit, push"], "Flow steps", size=12)
 tw3 = (9.0 - GAP * 2) / 3
-flow = [("LuRefreshCw", "Course repository", ["Pull before every session", "Read-only for you: copy files into your own folder before editing"]),
-        ("LuUsers", "Group repository", ["Pull, work, commit, push", "One person per file where you can", "Push before others start"]),
-        ("LuGitBranch", "Good commits", ["Small steps, often", "Summary says what changed: “Add AT sales chart”",
+flow = [("LuRefreshCw", "Course repository", ["Required: pull before every session",
+                                              "Read-only for you: copy files into your own folder before editing"]),
+        ("LuUsers", "Group repository", ["Optional: one member publishes a private repository",
+                                         "Pull, work, commit, push", "One person per file where you can"]),
+        ("LuGitBranch", "Good commits", ["If you commit: small steps, often", "Summary says what changed: “Add AT sales chart”",
                                          "Push when you stop"])]
 for i, (ic, head, items) in enumerate(flow):
     card(s, 0.5 + i * (tw3 + GAP), 2.15, tw3, 2.45, head, items, ic, f"Flow card {i + 1}", head_h=0.45)
-callout(s, 4.75, 0.8, "LuTriangleAlert", ("Merge conflict? ", "Open the file, keep the lines you want, delete the conflict "
-                                                            "markers (<<< === >>>), then commit and push."), "Conflict",
+callout(s, 4.75, 0.8, "LuTriangleAlert", ("Merge conflict in a group repository? ", "Open the file, keep the lines you want, "
+                                                                                   "delete the markers (<<< === >>>), then "
+                                                                                   "commit and push."), "Conflict",
         dark=True)
 
 # 24  Group project
-s = add_slide("Titel und Inhalt", "Your case study as a shared project",
-              notes="GitHub in the browser is where the repository is created and the group is invited; GitHub Desktop "
-                    "keeps each laptop's copy in sync; Positron is where the work happens.")
-stepper(s, 0.5, 1.35, 9.0, 0.6, ["github.com:\vnew repository", "Invite\vthe group", "Desktop:\vclone",
-                                 "Positron:\vOpen Folder", "Create\v.venv"], "Group steps", size=12)
+s = add_slide("Titel und Inhalt", "Working on the case study together",
+              notes="Required for everyone: pull the course repository, copy the case material into the group's own project "
+                    "folder and create the environment there. Groups then choose how to combine their work: the simple way "
+                    "(one member keeps report.qmd, the others send code chunks and text) or a private GitHub repository "
+                    "published from GitHub Desktop. Only the two files uploaded to Canvas are assessed.")
+stepper(s, 0.5, 1.35, 9.0, 0.6, ["Pull course\vrepository", "Copy into\vyour folder", "Positron:\v.venv",
+                                 "Combine:\v2 ways", "Upload\vto Canvas"], "Group steps", size=12)
 tw3 = (9.0 - GAP * 2) / 3
-groups = [("LuGlobe", "github.com", ["One member creates the repository: Python .gitignore, README",
-                                                 "Settings → Collaborators: invite the group"]),
-          ("LuFolderGit2", "GitHub Desktop", ["Pull before you start", "Commit small steps with a clear message",
-                                              "Push when you stop"]),
-          ("LuMonitor", "Positron", ["Open the cloned folder", "Create Environment from requirements.txt (Step 4)",
-                                     "Work, save, then back to Desktop"])]
+groups = [("LuFolderOpen", "Project folder", ["Copy data/case, report.qmd and requirements.txt",
+                                              "report.qmd next to the data folder", "Create Environment from requirements.txt"]),
+          ("LuUsers", "Way 1: simple", ["One member keeps report.qmd", "The others send code chunks and text",
+                                        "Render the combined file every week"]),
+          ("LuFolderGit2", "Way 2: GitHub", ["Optional: Publish repository, private", "Invite on github.com: Collaborators",
+                                             "Pull, commit, push"])]
 for i, (ic, head, items) in enumerate(groups):
     card(s, 0.5 + i * (tw3 + GAP), 2.15, tw3, 2.45, head, items, ic, f"Group card {i + 1}", head_h=0.45)
-callout(s, 4.8, 0.75, "LuUsers", ("Fewer conflicts: ", "pull first, push often, and one person per file where you can."),
-        "Group rule", dark=True)
+callout(s, 4.8, 0.75, "LuUsers", ("Only Canvas counts: ", "upload report.qmd and report.html; your commit history is not "
+                                                         "assessed."), "Group rule", dark=True)
 
 # ---------------------------------------------------------------- Part 5 -----
 divider("Write reports with Quarto", "Part 5 of 6" + NB + "·" + NB + "how it works, the YAML header, code cells, output formats",

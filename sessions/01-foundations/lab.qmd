@@ -61,18 +61,23 @@ Positron is an IDE for data science made by Posit. Everything you need for this 
 **What to verify:** the assistant names `load_panel`, `add_fourier`, `geometric_adstock`, `hill`, `mape`, `rmse` and `contribution_table`. If it invents a function, ask it to quote the line where the function is defined.
 :::
 
-## 2. GitHub Desktop: clone, pull, commit, push
+## 2. GitHub Desktop: clone and pull (commit and push optional)
 
-You already cloned the course repository during setup. Your group repository works the same way. Four verbs are all you need this term.
+You already cloned the course repository during setup. Two verbs are all you need this term; two more are optional.
 
-1. **Clone** (once): in GitHub Desktop, *File → Clone repository → URL*, paste the address of your group repository, choose a folder without spaces, click *Clone*. Then *Repository → Open in Positron* (or open the folder from Positron).
-2. **Pull** (every time you start): click *Fetch origin* at the top. If the button changes to *Pull origin*, click it. This brings your teammates' changes to your machine. Never start work on a stale copy.
+1. **Clone** (once): in GitHub Desktop, *File → Clone repository → URL*, paste the address of the course repository, choose a folder without spaces, click *Clone*. Then *Repository → Open in Positron* (or open the folder from Positron).
+2. **Pull** (every time you start): click *Fetch origin* at the top. If the button changes to *Pull origin*, click it. This brings the latest course materials to your machine. Never start work on a stale copy.
+
+The course repository is read-only for you: copy the files you want to change into your own folder (for example `~/wu/ima-work`) and work there. Otherwise your edits clash with our updates the next time you pull.
+
+**Optional: a group repository.** If your group wants to share its work through GitHub, one member publishes a project folder from GitHub Desktop (*Repository → Publish repository*, keep *Keep this code private* ticked) and invites the others on github.com (*Settings → Collaborators*). Everyone clones it, and two more verbs come in:
+
 3. **Commit** (every time something works): GitHub Desktop lists changed files on the left. Tick the ones that belong together, write a one-line summary in the box at the bottom left (good: "add Polish elasticity table", bad: "changes"), click *Commit to main*.
 4. **Push** (every time you stop): click *Push origin*. Until you push, the commit exists only on your laptop.
 
-Try it now: create a file `sessions/01-foundations/notes_YOURNAME.md` in your group repository, write one line, commit with the message "first commit from <name>", push, and check on github.com that the file is there. This is the Session 1 deliverable for the group repository.
+Sharing files by e-mail or a shared drive works too: only the files you upload to Canvas are assessed, not your commit history.
 
-If GitHub Desktop reports a **conflict** after pulling, open the file in Positron. You will see blocks marked `<<<<<<<`, `=======` and `>>>>>>>`. Keep the version you want, delete the markers, save, commit, push. Your assistant can explain any conflict if you paste the block.
+If you use a group repository and GitHub Desktop reports a **conflict** after pulling, open the file in Positron. You will see blocks marked `<<<<<<<`, `=======` and `>>>>>>>`. Keep the version you want, delete the markers, save, commit, push. Your assistant can explain any conflict if you paste the block.
 
 ::: {.callout-tip title="Prompt pattern: Git trouble"}
 *"GitHub Desktop says: 'This branch has conflicts that must be resolved' in file `lab.qmd`. Here is the block with the markers: [paste]. Explain which part is mine, which part is my colleague's, and how to keep both."*
@@ -535,13 +540,13 @@ pd.DataFrame({"elasticity": [e, lo, hi, -3.0],
 
 ## 6. Your turn
 
-Team exercise (60 minutes). Work in your group repository; one notebook per person, one commit each.
+Team exercise (60 minutes). Work in your own folder or your group repository; one notebook per person.
 
 1. **Promotion elasticity by country.** Convert the promotion coefficients from Section 4.5 into "percent units per 10 points of promo share" and chart them with 95 % intervals. Which two countries differ significantly?
 2. **Add distribution.** Add `np.log(distribution)` to `FULL` and re-estimate the six elasticities. Which country's price elasticity moves most, and why would you expect that country?
 3. **Germany versus Poland.** Using the pooled model, make Germany the reference category and test whether Poland's elasticity differs from Germany's. Do you get the same p-value as in Section 4.6?
 4. **Chocolate brand 1.** Load `../../data/legacy/chocolate_dataset.xlsx` (68 weeks, four brands) and estimate brand 1's own-price elasticity and its cross-price elasticities with respect to brands 2 to 4. Which brand is the closest substitute?
-5. **The one-slide answer.** Write five sentences answering "Is our price too high in Poland?" with numbers, an interval, a recommendation and one caveat. Commit it as `poland_answer.md`.
+5. **The one-slide answer.** Write five sentences answering "Is our price too high in Poland?" with numbers, an interval, a recommendation and one caveat. Save it as `poland_answer.md`.
 
 Details and hints are in `exercises.qmd`.
 
