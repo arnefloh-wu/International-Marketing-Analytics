@@ -344,41 +344,41 @@ callout(s, 5.05, 0.5, "LuPlay", ("Next: ", "the full test with test_stack.qmd (n
 
 # 13  The stack test: test_stack.qmd
 s = add_slide("Titel und Inhalt", "Step 5: test the whole stack",
-              notes="test_stack.qmd sits at the top of the course repository. Open it and press Preview: Quarto runs the "
-                    "three cells with the project's .venv and shows a report with a table, a chart and the regression "
-                    "coefficients. The text under it says the model explains 43 % of the weekly variation.")
-code_block(s, 0.5, 1.35, 4.5, 3.05, """# polars: sum 2025 revenue by country
+              notes="test_stack.qmd is a single file: it installs the packages, loads them and reads the data from the "
+                    "course repository on GitHub, so it also works outside the course folder (internet needed). Run cell 1 "
+                    "once with Ctrl/Cmd + Enter, because Quarto cannot install its own helpers (jupyter) while it renders; "
+                    "pyarrow lets polars hand data to plotnine and statsmodels. Then press Preview: a table, a chart and the "
+                    "regression coefficients appear, and the text says the model explains 43 % of the weekly variation.")
+code_block(s, 0.5, 1.35, 4.5, 1.85, """# 1 Install: run once with Ctrl/Cmd + Enter
+%pip install polars plotnine great-tables \\
+    statsmodels pyarrow jupyter
+# 2 Load
 import polars as pl
-
-sales = pl.read_csv(
-    "data/mmm/alpenglow_weekly.csv",
-    try_parse_dates=True)
-summary = (
-    sales
-    .filter(pl.col("week").dt.year() == 2025)
-    .group_by("country")
-    .agg(pl.col("revenue_eur_k").sum())
-    .sort("revenue_eur_k", descending=True)
-)
-summary""", "Test polars", size=10, caption="test_stack.qmd · cell 1")
-code_block(s, 5.15, 1.35, 4.35, 1.55, """# plotnine: weekly sales, AT and DE
-from plotnine import ggplot, aes, geom_line
+import statsmodels.formula.api as smf
+from great_tables import GT
+from plotnine import ggplot, aes, geom_line""", "Test install", size=10, caption="test_stack.qmd · cells 1 and 2")
+code_block(s, 0.5, 3.3, 4.5, 1.7, """# 3-4 polars and great_tables
+sales = pl.read_csv(URL, try_parse_dates=True)
+summary = (sales
+  .filter(pl.col("week").dt.year() == 2025)
+  .group_by("country")
+  .agg(pl.col("revenue_eur_k").sum()))
+GT(summary)""", "Test polars", size=10, caption="cells 3 and 4")
+code_block(s, 5.15, 1.35, 4.35, 1.55, """# 5 plotnine: weekly sales, AT and DE
 two = sales.filter(
     pl.col("country").is_in(["AT", "DE"]))
 ggplot(two, aes("week", "sales_units_k",
-                color="country")) + geom_line()""", "Test plotnine", size=10, caption="cell 2")
-code_block(s, 5.15, 3.0, 4.35, 2.0, """# statsmodels: regression for Austria
-import statsmodels.formula.api as smf
-at = (sales.filter(pl.col("country") == "AT")
-      .to_pandas())
-model = smf.ols(
-    "sales_units_k ~ price_eur + spend_tv_k"
-    " + spend_paid_search_k", data=at).fit()
-model.params.round(2)""", "Test statsmodels", size=10, caption="cell 3")
-box(s, 0.5, 4.5, 4.5, 0.5, LIGHT, "Test result box")
-text(s, 0.65, 4.5, 4.3, 0.5, [("Result: ", "a table, a chart and four coefficients")], "Test result", size=12,
+                color="country")) + geom_line()""", "Test plotnine", size=10, caption="cell 5")
+code_block(s, 5.15, 3.0, 4.35, 1.5, """# 6 statsmodels: regression for Austria
+at = sales.filter(
+    pl.col("country") == "AT").to_pandas()
+model = smf.ols("sales_units_k ~ price_eur"
+    " + spend_tv_k + spend_paid_search_k",
+    data=at).fit()""", "Test statsmodels", size=10, caption="cell 6")
+box(s, 5.15, 4.6, 4.35, 0.4, LIGHT, "Test result box")
+text(s, 5.3, 4.6, 4.15, 0.4, [("Result: ", "a table, a chart, the coefficients")], "Test result", size=12,
      anchor=MSO_ANCHOR.MIDDLE)
-callout(s, 5.1, 0.45, "LuPlay", ("Run it: ", "open test_stack.qmd in Positron and press Preview (Ctrl/Cmd + Shift + K)."),
+callout(s, 5.1, 0.45, "LuPlay", ("Run it: ", "cell 1 once with Ctrl/Cmd + Enter, then Preview (Ctrl/Cmd + Shift + K)."),
         "Test run")
 
 # 14  AI assistant

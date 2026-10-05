@@ -110,7 +110,7 @@ Run in the Positron console:
 
 or open `setup/check_setup.py` and press *Run*. The script lists Python, each course package, Quarto and Git, and ends with `ready`. A line marked `!!` names what is still missing.
 
-Then test the whole stack: open `test_stack.qmd` and press *Preview* (Ctrl/Cmd + Shift + K). It loads the Alpenglow data with polars, draws a chart with plotnine, fits a regression with statsmodels and renders the result with Quarto. If the report appears, you are ready for Session 1.
+Then test the whole stack with `test_stack.qmd`, a single file that also works outside the course folder (it reads the data from GitHub, so you need internet). Open it in Positron, run its first cell once with Ctrl/Cmd + Enter (it installs polars, plotnine, great_tables, statsmodels, pyarrow and jupyter), then press *Preview* (Ctrl/Cmd + Shift + K). A table, a chart and regression results appear: you are ready for Session 1.
 
 ## Troubleshooting
 
