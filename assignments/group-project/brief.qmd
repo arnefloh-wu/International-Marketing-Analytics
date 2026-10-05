@@ -32,7 +32,7 @@ format:
 | **Weight** | 30 % of the final grade |
 | **Submit** | `report.qmd` **and** the rendered `report.html`, one upload per group on Canvas (see *Submission*) |
 | **Deadline** | **Monday 30 November 2026, midnight (23:59 Vienna time)** |
-| **Tools** | Python with **polars**, **plotnine**, **great_tables** and **statsmodels** (plus numpy, which comes with them). No other packages are needed. |
+| **Tools** | Python with **polars**, **plotnine**, **great_tables** and **statsmodels**. They need numpy, pandas and pyarrow in the background; `requirements.txt` installs all of them. No other packages are needed. |
 | **Data** | `data/case/` in the course repository: weekly web-shop data for Austria, Germany and Switzerland, a file of Alpenglow Club subscribers, and the Q1 2026 plan |
 :::
 
@@ -119,7 +119,7 @@ def adstock(x, decay, max_lag=10):
     return out
 ```
 
-Apply `adstock()` **within each country**, sorted by week (the template shows how). Use polars for all data work, convert with `.to_pandas()` only when you pass data to statsmodels, plotnine for every figure and great_tables for every table in the report.
+Apply `adstock()` **within each country**, sorted by week (the template shows how). Use polars for all data work, plotnine for every figure and great_tables for every table in the report. Pass polars data frames to plotnine and great_tables as they are; add `.to_pandas()` when you pass data to statsmodels.
 
 # Tasks
 
@@ -133,23 +133,23 @@ For every regression you check a few basic assumptions, with plots and numbers t
 |---|---|---|
 | Linear regression (Parts A and B) | the relationship is roughly linear and the spread of the errors is roughly constant | plot residuals against fitted values (`model.fittedvalues`, `model.resid`); look for curves or a funnel |
 | | the errors are roughly normal | histogram of the residuals (`geom_histogram`) |
-| | the errors of neighbouring weeks are not related | Durbin-Watson in `model.summary()`: close to 2 is fine, well below 2 means related errors |
-| | the explanatory variables are not too similar | variance inflation factors (`variance_inflation_factor` from `statsmodels.stats.outliers_influence`); above 10 is a warning |
+| | the errors of neighbouring weeks are not related | Durbin-Watson in `model.summary()`, or `durbin_watson(model.resid)` from `statsmodels.stats.stattools`: close to 2 is fine, well below 2 means related errors. Keep the rows sorted by country, then week. |
+| | the explanatory variables are not too similar | variance inflation factors: `variance_inflation_factor(model.model.exog, i)` from `statsmodels.stats.outliers_influence`, for each position `i` in `model.model.exog_names` except the Intercept; above 10 is a warning. Country dummies, interactions and squared terms are high by construction: comment on the other variables. |
 | Logistic regression (Part C) | each customer appears once, enough churners, no very similar variables | count rows and unique `customer_id`; at least 10 churners per coefficient; VIF |
-| ARIMA (Part D) | the forecast errors are not related any more | autocorrelation of the residuals (`acf(result.resid)`), and Prob(Q) (Ljung-Box) in `result.summary()`: above 0.05 is fine |
+| ARIMA (Part D) | the forecast errors are not related any more | autocorrelation of the residuals: `acf(result.resid[1:], nlags=26)` from `statsmodels.tsa.stattools` (drop the first residual, which is just the first value of the series; the result starts at lag 0, plot lags 1 to 26 with `geom_col`), and Prob(Q) (Ljung-Box) in `result.summary()`: above 0.05 is fine |
 
 ## Part A: What drives weekly orders? (Session 1)
 
-**A1 Data check.** Load both data files with polars (`try_parse_dates=True`). Report the number of rows per country, the first and last week, and the number of missing values. Add `month` (`pl.col("week").dt.month()`) and `t`, a week counter that starts at 0 in each country.
+**A1 Data check.** Load the three data files with polars (`try_parse_dates=True`). Report the number of rows per country, the first and last week, and the number of missing values. Add `month` (`pl.col("week").dt.month()`) and `t`, a week counter that starts at 0 in each country.
 *Output:* **Table A1**: one row per country with average weekly orders, average price, average branded search index and total media spend per channel in 2025.
 
 **A2 First look.** *Output:* **Figure A1**: weekly orders over time, one panel per country (`facet_wrap`, `scales="free_y"`). **Figure A2**: orders against average price, coloured by whether a discount ran (`discount_pct > 0`). Describe trend, seasonality and holiday peaks in three sentences.
 
 **A3 First regression.** Estimate with statsmodels OLS:
 `orders ~ avg_price_eur + discount_pct + free_shipping + xmas + black_friday + C(country)`.
-*Output:* **Table A2**: coefficients with 95 % confidence intervals. Interpret the coefficients of `avg_price_eur`, `free_shipping` and `xmas`, and explain what the country coefficients compare.
+*Output:* **Table A2**: coefficients with 95 % confidence intervals. Interpret the coefficients of `avg_price_eur`, `free_shipping` and `xmas`, and explain what the country coefficients compare. This first model is deliberately simple: if a sign surprises you, say what might be missing from the model. Part B adds it.
 
-**A4 Model fit.** Report R², adjusted R² and the root mean squared error (RMSE). Add `t` and the other holiday dummies, and compare the fit of the two models in a small table.
+**A4 Model fit.** Report R², adjusted R² (`model.rsquared`, `model.rsquared_adj`) and the root mean squared error, RMSE = `np.sqrt(np.mean(model.resid**2))`. Add `t` and the other holiday dummies, and compare the fit of the two models in a small table.
 
 **A5 Assumptions.** Check the better model from A4 as described above. *Output:* **Figure A3**: residuals against fitted values; **Figure A4**: histogram of the residuals; the Durbin-Watson value and the VIFs in **Table A3**. What looks fine, what does not, and what could help in Part B?
 
@@ -160,20 +160,22 @@ From here on the outcome is the log of orders. Unless a task says otherwise, eve
 **B1 Price elasticities.** Estimate `np.log(orders) ~ C(country):np.log(avg_price_eur) + controls`, which gives one price elasticity per country.
 *Output:* **Table B1**: the three elasticities with 95 % confidence intervals. Interpret each as "1 % higher prices change orders by ... %". Do the intervals overlap? What does that mean for pricing in Switzerland compared with Germany?
 
-**B2 A non-linear effect: temperature.** Add `temperature_c + I(temperature_c**2)`. *Output:* **Figure B1**: the predicted effect of temperature on log orders from 0 to 30 °C (compute it from the two coefficients). At which temperature are orders highest, and how much lower are they in a hot week of 28 °C?
+**B2 A non-linear effect: temperature.** Add `temperature_c + I(temperature_c**2)`. *Output:* **Figure B1**: the predicted effect of temperature on log orders from 0 to 30 °C (compute it from the two coefficients; print `model.params` to see their exact names). At which temperature are orders highest, and how much lower are they in a hot week of 28 °C?
 
-**B3 Adstock and saturation.** Create adstocked spend for all four channels with a decay of 0.3. For TV, also try the decays 0.1, 0.5 and 0.7, and keep the one with the highest R². Add the channels to the B2 model as `np.log1p(...)` of the adstocked spend: the logarithm makes each extra euro add less (saturation).
-*Output:* **Table B2**: R² for the four TV decays; **Figure B2**: the estimated effect of weekly paid-search spend on orders, from 0 to the 2025 maximum. Explain carryover and saturation in your own words, with your numbers.
+**B3 Adstock and saturation.** Create adstocked spend for all four channels with a decay of 0.3. For TV, also try the decays 0.1, 0.5 and 0.7 (compute them in the same loop over countries as in the template), and keep the one with the highest R². Add the channels to the B2 model as `np.log1p(...)` of the adstocked spend: the logarithm makes each extra euro add less (saturation).
+*Output:* **Table B2**: R² for the four TV decays; **Figure B2**: the response curve of paid search: the % change in weekly orders, `np.exp(b * np.log1p(x)) - 1` with `b` the paid-search coefficient, for a steady weekly spend `x` from 0 to the largest weekly paid-search spend in 2025. Explain carryover and saturation in your own words, with your numbers.
 
-**B4 Moderation.** Does paid social work better in weeks with free shipping? Add `free_shipping` and the interaction `np.log1p(social_adstock):free_shipping`. *Output:* **Table B3** with the paid-social main effect, the free-shipping effect and the interaction. Interpret the interaction for the marketing team.
+**B4 Moderation.** Does paid social work better in weeks with free shipping? Add to the B3 model (with your chosen TV decay) `free_shipping` and the interaction `np.log1p(social_adstock):free_shipping`. *Output:* **Table B3** with the paid-social main effect, the free-shipping effect and the interaction. Interpret the interaction for the marketing team.
 
-**B5 Mediation.** For Austria and Germany (Switzerland has no TV), does TV work by making people search for Alpenglow? Estimate three regressions with the B1 controls plus price:
-(1) `np.log(orders) ~ np.log1p(tv_adstock) + controls` (the total effect of TV);
-(2) `branded_search_index ~ np.log1p(tv_adstock) + controls` (does TV raise branded search?);
-(3) `np.log(orders) ~ np.log1p(tv_adstock) + np.log(branded_search_index) + controls` (the direct effect of TV once branded search is in the model).
+**B5 Mediation.** For Austria and Germany (Switzerland has no TV), does TV work by making people search for Alpenglow? Estimate three regressions with the controls plus `np.log(avg_price_eur)` (one price effect for both countries) and TV adstock with your chosen decay:
+
+- (1) `np.log(orders) ~ np.log1p(tv_adstock) + controls` (the total effect of TV);
+- (2) `branded_search_index ~ np.log1p(tv_adstock) + controls` (does TV raise branded search?);
+- (3) `np.log(orders) ~ np.log1p(tv_adstock) + np.log(branded_search_index) + controls` (the direct effect of TV once branded search is in the model).
+
 *Output:* **Table B4**: the TV coefficient in (1), (2) and (3) and the branded-search coefficient in (3). What happens to the TV coefficient when branded search is added? What should the media team conclude?
 
-**B6 Assumptions.** Check your final Part B model as in A5. *Output:* **Table B5** and **Figure B3** (residuals against fitted values). Compare with A5: what improved, and what problem is left?
+**B6 Assumptions.** Check your final Part B model (the B4 model) as in A5. *Output:* **Table B5** and **Figure B3** (residuals against fitted values). Compare with A5: what improved, and what problem is left?
 
 ## Part C: Which subscribers will cancel? (Session 3)
 
@@ -184,7 +186,7 @@ From here on the outcome is the log of orders. Unless a task says otherwise, eve
 
 **C3 Logistic regression.** Estimate with `smf.logit`:
 `churned_6m ~ tenure_months + C(plan) * late_deliveries_6m + signup_discount + complaints_6m + satisfaction + email_open_rate + app_user + C(acquisition_channel)`.
-*Output:* **Table C2**: odds ratios with 95 % confidence intervals (`np.exp(model.params)` and `np.exp(model.conf_int())`). Interpret the odds ratios of satisfaction and signup discount, and explain in words what the interaction between plan and late deliveries means.
+*Output:* **Table C2**: odds ratios with 95 % confidence intervals (`np.exp(model.params)` and `np.exp(model.conf_int())`). The monthly plan is the reference, so the interaction appears as `C(plan)[T.quarterly]:late_deliveries_6m`. Interpret the odds ratios of satisfaction and signup discount, and explain in words what the interaction between plan and late deliveries means.
 
 **C4 Model fit.** Report McFadden's pseudo R² (`model.prsquared`). Estimate the model without the interaction and compare the two with AIC. Which one do you keep?
 
@@ -192,23 +194,27 @@ From here on the outcome is the log of orders. Unless a task says otherwise, eve
 
 **C6 Classification.** Predict churn probabilities for the test customers. With polars, count true and false positives and negatives at the threshold 0.5, and compute accuracy, precision and recall. Repeat for the threshold 0.3. *Output:* **Table C4**. Which threshold finds more churners, and what is the price of that?
 
-**C7 Who gets a retention offer?** An offer (a free box) costs EUR 5 per customer. It keeps 40 % of the churners who receive it, and each kept customer is worth EUR 80 in margin. Customers who would not have churned anyway also receive the offer if they are above the threshold, so they only cost money. For thresholds from 0.1 to 0.9 (steps of 0.05), compute the expected profit of sending the offer to all test customers above the threshold. *Output:* **Figure C2**: profit by threshold. Recommend a threshold and say how many customers would get the offer.
+**C7 Who gets a retention offer?** An offer (a free box) costs EUR 5 per customer. It keeps 40 % of the churners who receive it, and each kept customer is worth EUR 80 in margin. Customers who would not have churned anyway also receive the offer if they are above the threshold, so they only cost money. For thresholds from 0.1 to 0.9 in steps of 0.05 (`np.round(np.arange(0.10, 0.91, 0.05), 2)`), compute the profit of sending the offer to all test customers above the threshold: profit = 0.4 × 80 × (churners above the threshold) − 5 × (customers above the threshold), counting the churners with `churned_6m`. *Output:* **Figure C2**: profit by threshold. Recommend a threshold and say how many customers would get the offer.
 
 ## Part D: The Q1 2026 baseline for Germany (Session 4)
 
 Work with German weekly orders on the log scale and statsmodels' `SARIMAX` (`from statsmodels.tsa.statespace.sarimax import SARIMAX`).
 
-**D1 The series.** *Output:* **Figure D1**: the autocorrelation of log orders for lags 1 to 26 (`statsmodels.tsa.stattools.acf`, plotted with plotnine). Describe trend, seasonality and autocorrelation in three sentences.
+**D1 The series.** *Output:* **Figure D1**: the autocorrelation of log orders for lags 1 to 26 (`acf(y, nlags=26)` from `statsmodels.tsa.stattools`, plotted with plotnine). Describe trend, seasonality and autocorrelation in three sentences.
 
-**D2 Compare three forecasts.** Use the weeks up to the end of September 2025 for training and the last 13 weeks of 2025 for testing:
-(i) seasonal naive: each test week gets the orders of the same week one year earlier;
-(ii) ARIMA: `SARIMAX(y, order=(1, 1, 1))`;
-(iii) ARIMAX: the same with explanatory variables (`exog=`): holiday dummies, `free_shipping`, the log of the price and month dummies (`to_dummies()` in polars, drop one month).
-*Output:* **Table D1**: the mean absolute percentage error (MAPE) of the three forecasts on the 13 test weeks. Why does the ARIMA without explanatory variables struggle in this period?
+**D2 Compare three forecasts.** Use the 143 weeks up to the week of 22 September 2025 for training and the 13 weeks from 29 September to 22 December 2025 for testing:
 
-**D3 Residual check.** For the ARIMAX, plot the autocorrelation of the residuals and report Prob(Q) from `result.summary()`. Are the errors still related?
+- (i) seasonal naive: each test week gets the orders of the same week one year earlier;
+- (ii) ARIMA: `SARIMAX(y, order=(1, 1, 1))`;
+- (iii) ARIMAX: the same with explanatory variables (`exog=`): holiday dummies, `free_shipping`, the log of the price and month dummies for February to December, made the same way for history and plan: `*[(pl.col("month") == m).cast(pl.Int8).alias(f"m{m}") for m in range(2, 13)]`.
 
-**D4 Forecast Q1 2026.** Refit the ARIMAX on all 156 weeks and forecast the 13 weeks in `plan_q1_2026.csv` for Germany, using the planned values as `exog`. Use `result.get_forecast(13, exog=...)`, then `.predicted_mean` and `.conf_int(alpha=0.05)`, and transform back with `np.exp`. *Output:* **Figure D2**: the last year of orders and the forecast with its 95 % interval (`geom_ribbon`); **Table D2**: the forecast per week with its interval, and the quarter total.
+Fit both models with `.fit(disp=False, maxiter=200)`.
+
+*Output:* **Table D1**: the mean absolute percentage error of the three forecasts on the 13 test weeks, MAPE = mean(|actual − forecast| / actual) × 100, with orders transformed back with `np.exp`. Why does the ARIMA without explanatory variables struggle in this period?
+
+**D3 Residual check.** For the ARIMAX, plot the autocorrelation of the residuals (as in the assumptions table) and report Prob(Q) from `result.summary()`. Are the errors still related?
+
+**D4 Forecast Q1 2026.** Refit the ARIMAX on all 156 weeks and forecast the 13 weeks in `plan_q1_2026.csv` for Germany, using the planned values as `exog` (the same columns in the same order as in the fit). Use `result.get_forecast(13, exog=...)`, then `.predicted_mean` and `.conf_int(alpha=0.05)`, and transform back with `np.exp`. *Output:* **Figure D2**: the last year of orders and the forecast with its 95 % interval (`geom_ribbon`); **Table D2**: the forecast per week with its interval, and the quarter total (the sum of the 13 point forecasts; the weekly intervals cannot be added up).
 
 **D5 Read the forecast.** In four sentences: what baseline should Germany plan for, how uncertain is it, and which assumptions in the plan matter most?
 
@@ -227,7 +233,7 @@ Work with German weekly orders on the log scale and statsmodels' `SARIMAX` (`fro
 - One Quarto file `report.qmd` that renders without errors from a fresh copy of your project folder, with `report.qmd` next to `data/case/` (`quarto render report.qmd`), to a single, self-contained `report.html`. Use the YAML header of the template: `embed-resources: true`, `code-fold: true`, `toc: true`.
 - All tables with great_tables, all figures with plotnine, all data work with polars, all models with statsmodels.
 - Length: at most 3 000 words of text, excluding code, tables, figure captions and the appendix. Short and precise beats long.
-- Every number in the text is computed in the report (inline code, for example `` `{python} f"{elasticity_de:.2f}"` ``), not typed in by hand.
+- Every number in the text is computed in the report (inline code, for example `` `{python} f"{elasticity_de:.2f}"` ``), not typed in by hand. Inline code runs from top to bottom, so compute the numbers you quote in the executive summary in the `key-results` chunk of the template, above the summary.
 
 # Submission
 

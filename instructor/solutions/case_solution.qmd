@@ -1,0 +1,890 @@
+---
+title: "Alpenglow's web shop: orders, prices, advertising, churn and the Q1 2026 baseline"
+subtitle: "Group case study · instructor reference solution · International Marketing Analytics · WU Vienna · WT 2026/27"
+author:
+  - "Instructor reference solution (Dr Arne Floh)"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: true
+    code-summary: "Code"
+    embed-resources: true
+execute:
+  warning: false
+---
+
+<!--
+Instructor reference solution. Written and rendered in a clean Python 3.14 environment that contains
+only polars, plotnine, great_tables and statsmodels (plus their dependencies) and the Jupyter packages
+Quarto needs (ipykernel, nbformat, nbclient, pyyaml). No pyarrow: polars' .to_pandas() needs pyarrow,
+so the helper to_pd() below builds the pandas DataFrame column by column instead.
+Paths are relative to instructor/solutions/.
+Figure and table labels deliberately have no fig-/tbl- prefix: with the prefix Quarto would print
+"Figure 1: Figure A1: ...".
+-->
+
+```{python}
+#| label: setup
+#| code-summary: "Set-up: packages, data and helpers"
+import json
+
+import numpy as np
+import pandas as pd  # not installed separately: it comes with statsmodels and plotnine
+import polars as pl
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from great_tables import GT, md
+from plotnine import (aes, annotate, facet_wrap, geom_col, geom_hline, geom_histogram,
+                      geom_line, geom_point, geom_ribbon, geom_segment, geom_vline, ggplot,
+                      labs, scale_color_manual, scale_fill_manual, scale_x_continuous,
+                      scale_y_continuous, theme, theme_minimal)
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.stats.stattools import durbin_watson
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from statsmodels.tsa.stattools import acf
+
+BLUE, ORANGE, GREY = "#0096D3", "#E07B00", "#7F7F7F"
+
+shop = pl.read_csv("../../data/case/alpenglow_shop_weekly.csv", try_parse_dates=True)
+club = pl.read_csv("../../data/case/alpenglow_club_customers.csv")
+plan = pl.read_csv("../../data/case/plan_q1_2026.csv", try_parse_dates=True)
+missing = {name: df.null_count().sum_horizontal().item()
+           for name, df in [("shop", shop), ("club", club), ("plan", plan)]}
+
+
+def to_pd(df):
+    """polars -> pandas without pyarrow (df.to_pandas() would need pyarrow)."""
+    return pd.DataFrame({c: df[c].to_numpy() for c in df.columns})
+
+
+def adstock(x, decay, max_lag=10):
+    """Geometric adstock: this week's spend plus a decaying share of past weeks' spend."""
+    w = decay ** np.arange(max_lag + 1)
+    w = w / w.sum()
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    for lag, wl in enumerate(w):
+        out[lag:] += wl * x[: len(x) - lag]
+    return out
+
+
+def vif_table(model):
+    """VIF for every column of the design matrix except the intercept."""
+    X = model.model.exog
+    names = model.model.exog_names
+    return pl.DataFrame({
+        "term": [n for n in names if n != "Intercept"],
+        "VIF": [variance_inflation_factor(X, i) for i, n in enumerate(names) if n != "Intercept"],
+    })
+
+
+def coef_table(model, terms=None, exp=False):
+    """Coefficients with 95 % confidence intervals as a polars DataFrame."""
+    ci = model.conf_int()
+    out = pl.DataFrame({
+        "term": list(model.params.index),
+        "coef": model.params.to_numpy(),
+        "low": ci.iloc[:, 0].to_numpy(),
+        "high": ci.iloc[:, 1].to_numpy(),
+        "p": model.pvalues.to_numpy(),
+    })
+    if exp:
+        out = out.with_columns(pl.col("coef", "low", "high").exp())
+    if terms is not None:
+        out = out.filter(pl.col("term").is_in(terms))
+    return out
+
+
+# Week counter t, month and adstocked spend (decay 0.3; TV also 0.1, 0.5, 0.7), within each country
+CHANNELS = ["tv", "online_video", "paid_search", "paid_social"]
+TV_DECAYS = [0.1, 0.3, 0.5, 0.7]
+parts = []
+for country in ["AT", "DE", "CH"]:
+    d = shop.filter(pl.col("country") == country).sort("week")
+    d = d.with_columns(
+        pl.int_range(pl.len()).alias("t"),
+        pl.col("week").dt.month().alias("month"),
+        *[pl.Series(f"{ch}_adstock", adstock(d[f"spend_{ch}_k"], 0.3)) for ch in CHANNELS],
+        *[pl.Series(f"tv_adstock_{int(dec * 10):02d}", adstock(d["spend_tv_k"], dec)) for dec in TV_DECAYS],
+    )
+    parts.append(d)
+shop = pl.concat(parts)  # sorted by country, then week: needed for Durbin-Watson
+shop_pd = to_pd(shop)
+```
+
+# Executive summary {.unnumbered}
+
+```{python}
+#| label: key-results
+#| code-summary: "Key results for the executive summary (each is computed again, step by step, in its part below)"
+# Quarto evaluates inline code from top to bottom, so the numbers quoted in the summary
+# must exist before the summary. They are checked against the detailed results at the end.
+CONTROLS = "C(country) + C(country):t + C(month) + xmas + black_friday + valentine + easter + mothers_day"
+B2_RHS = f"C(country):np.log(avg_price_eur) + temperature_c + I(temperature_c**2) + {CONTROLS}"
+OTHER_MEDIA = "np.log1p(online_video_adstock) + np.log1p(paid_search_adstock) + np.log1p(paid_social_adstock)"
+INTERACTION = "np.log1p(paid_social_adstock):free_shipping"
+
+es_r2_a3 = smf.ols("orders ~ avg_price_eur + discount_pct + free_shipping + xmas + black_friday + C(country)",
+                   data=shop_pd).fit().rsquared
+es_b1 = smf.ols(f"np.log(orders) ~ C(country):np.log(avg_price_eur) + {CONTROLS}", data=shop_pd).fit()
+es_elast = {c: es_b1.params[f"C(country)[{c}]:np.log(avg_price_eur)"] for c in ["AT", "DE", "CH"]}
+es_r2_tv = {tv: smf.ols(f"np.log(orders) ~ {B2_RHS} + np.log1p({tv}) + {OTHER_MEDIA}", data=shop_pd).fit().rsquared
+            for tv in ["tv_adstock_01", "tv_adstock_03", "tv_adstock_05", "tv_adstock_07"]}
+es_tv = max(es_r2_tv, key=es_r2_tv.get)
+es_b4 = smf.ols(f"np.log(orders) ~ {B2_RHS} + np.log1p({es_tv}) + {OTHER_MEDIA} + free_shipping + {INTERACTION}",
+                data=shop_pd).fit()
+es_attv = to_pd(shop.filter(pl.col("country") != "CH"))
+es_tv_total = smf.ols(f"np.log(orders) ~ np.log1p({es_tv}) + C(country):np.log(avg_price_eur) + {CONTROLS}",
+                      data=es_attv).fit().params[f"np.log1p({es_tv})"]
+es_tv_direct = smf.ols(f"np.log(orders) ~ np.log1p({es_tv}) + np.log(branded_search_index)"
+                       f" + C(country):np.log(avg_price_eur) + {CONTROLS}", data=es_attv).fit().params[f"np.log1p({es_tv})"]
+
+es_club = club.with_columns(pl.Series("u", np.random.default_rng(42).random(club.height)))
+es_logit = smf.logit("churned_6m ~ tenure_months + C(plan) * late_deliveries_6m + signup_discount + complaints_6m"
+                     " + satisfaction + email_open_rate + app_user + C(acquisition_channel)",
+                     data=to_pd(es_club.filter(pl.col("u") < 0.75))).fit(disp=0)
+es_test = es_club.filter(pl.col("u") >= 0.75)
+es_test = es_test.with_columns(pl.Series("p", es_logit.predict(to_pd(es_test)).to_numpy()))
+es_c7 = pl.concat([es_test.filter(pl.col("p") >= thr).select(
+    pl.lit(thr).alias("thr"), pl.len().alias("n"), (pl.col("churned_6m").sum() * 0.4 * 80 - pl.len() * 5).alias("profit"))
+    for thr in np.round(np.arange(0.10, 0.901, 0.05), 2)]).sort("profit", descending=True).row(0, named=True)
+
+es_de = shop.filter(pl.col("country") == "DE").sort("week")
+es_plan = plan.filter(pl.col("country") == "DE").sort("week").with_columns(pl.col("week").dt.month().alias("month"))
+
+
+def es_exog(df):
+    hol = df.select("xmas", "black_friday", "valentine", "easter", "mothers_day", "free_shipping",
+                    pl.col("avg_price_eur").log())
+    return hol.hstack([(df["month"] == m).cast(pl.Float64).alias(f"m{m}") for m in range(2, 13)]).to_numpy().astype(float)
+
+
+es_fc = (SARIMAX(np.log(es_de["orders"].to_numpy()), exog=es_exog(es_de), order=(1, 1, 1))
+         .fit(disp=False, maxiter=200).get_forecast(13, exog=es_exog(es_plan)))
+es_q1 = float(np.exp(es_fc.predicted_mean).sum())
+es_q1_width = float(np.mean((np.exp(es_fc.conf_int()[:, 1]) - np.exp(es_fc.conf_int()[:, 0])) / 2
+                            / np.exp(es_fc.predicted_mean)) * 100)
+```
+
+**What drives weekly orders?** Price, discounts, free shipping, holidays and a strong upward trend; the first OLS model explains R² = `{python} f"{es_r2_a3:.2f}"` of the variation in weekly orders, mainly through the country differences.
+**Price sensitivity.** A 1 % higher price changes orders by `{python} f"{es_elast['AT']:.2f}"` % in Austria, `{python} f"{es_elast['DE']:.2f}"` % in Germany and `{python} f"{es_elast['CH']:.2f}"` % in Switzerland (Table B1): Germany is clearly the most and Switzerland the least price-sensitive market.
+**TV and branded search.** Adding branded search shrinks the TV coefficient from `{python} f"{es_tv_total:.3f}"` to `{python} f"{es_tv_direct:.3f}"` (Table B4): TV works mainly by making people search for Alpenglow. **Paid social** works better in free-shipping weeks (interaction `{python} f"{es_b4.params[INTERACTION]:.3f}"`, p = `{python} f"{es_b4.pvalues[INTERACTION]:.3f}"`, Table B3).
+**Churn.** Monthly subscribers with late deliveries, low satisfaction and a sign-up discount are most at risk. Sending the retention offer to test customers with a predicted churn probability above `{python} f"{es_c7['thr']:.2f}"` maximises the profit (EUR `{python} f"{es_c7['profit']:,.0f}"` on `{python} f"{es_c7['n']}"` offers in the test data, Figure C2).
+**Q1 2026.** Germany should plan for about `{python} f"{es_q1:,.0f}"` orders in Q1 2026 (Table D2), with weekly 95 % intervals of roughly ±`{python} f"{es_q1_width:.0f}"` %.
+**Main limitation:** all effects are estimated from observational data, so they are associations that rest on the controls we chose, not tested causal effects.
+
+# Part A: What drives weekly orders?
+
+## A1 Data check
+
+```{python}
+#| label: a1-check
+checks = (
+    shop.group_by("country")
+    .agg(pl.len().alias("rows"), pl.col("week").min().alias("first_week"),
+         pl.col("week").max().alias("last_week"))
+    .sort("country")
+)
+GT(checks).cols_label(country="Country", rows="Rows", first_week="First week", last_week="Last week")
+```
+
+Each country has `{python} f"{checks['rows'][0]}"` weekly rows, from `{python} str(checks['first_week'][0])` to `{python} str(checks['last_week'][0])`. There are `{python} f"{missing['shop']}"` missing values in the shop file, `{python} f"{missing['club']}"` in the Club file and `{python} f"{missing['plan']}"` in the plan file.
+
+```{python}
+#| label: a1-table
+#| tbl-cap: "Table A1: The three markets in 2025"
+table_a1 = (
+    shop.filter(pl.col("week").dt.year() == 2025)
+    .group_by("country")
+    .agg(pl.col("orders").mean().alias("avg_weekly_orders"),
+         pl.col("avg_price_eur").mean().alias("avg_price_eur"),
+         pl.col("branded_search_index").mean().alias("avg_branded_search"),
+         *[pl.col(f"spend_{ch}_k").sum().alias(ch) for ch in CHANNELS])
+    .sort("country")
+)
+(GT(table_a1, rowname_col="country")
+ .tab_spanner("Media spend 2025, thousand EUR", columns=CHANNELS)
+ .cols_label(avg_weekly_orders="Orders per week", avg_price_eur="Price, EUR",
+             avg_branded_search="Branded search", tv="TV", online_video="Online video",
+             paid_search="Paid search", paid_social="Paid social")
+ .fmt_number(columns=["avg_weekly_orders"], decimals=0)
+ .fmt_number(columns=["avg_price_eur", "avg_branded_search"], decimals=1)
+ .fmt_number(columns=CHANNELS, decimals=0))
+```
+
+## A2 First look
+
+```{python}
+#| label: a2-fig1
+#| fig-cap: "Figure A1: Weekly orders by country"
+#| fig-height: 6
+(ggplot(shop_pd, aes("week", "orders"))
+ + geom_line(color=BLUE)
+ + facet_wrap("country", ncol=1, scales="free_y")
+ + labs(x="", y="Orders per week")
+ + theme_minimal())
+```
+
+```{python}
+#| label: a2-fig2
+#| fig-cap: "Figure A2: Orders against the average price paid"
+a2 = to_pd(shop.with_columns(
+    pl.when(pl.col("discount_pct") > 0).then(pl.lit("discount")).otherwise(pl.lit("no discount")).alias("discount")))
+(ggplot(a2, aes("avg_price_eur", "orders", color="discount"))
+ + geom_point(alpha=0.6)
+ + facet_wrap("country", scales="free_y")
+ + scale_color_manual(values=[ORANGE, BLUE])
+ + labs(x="Average price paid per box, EUR", y="Orders per week", color="")
+ + theme_minimal() + theme(legend_position="bottom"))
+```
+
+*Model answer:* Orders grow in all three markets, fastest in Switzerland. Every year they peak in the weeks before Black Friday and Christmas and are lowest in summer. Discount weeks have lower prices and more orders, so price and discounts move together.
+
+## A3 First regression
+
+```{python}
+#| label: a3-table
+#| tbl-cap: "Table A2: OLS regression of weekly orders (95 % confidence intervals)"
+a3_model = smf.ols(
+    "orders ~ avg_price_eur + discount_pct + free_shipping + xmas + black_friday + C(country)",
+    data=shop_pd).fit()
+a3 = coef_table(a3_model)
+(GT(a3).cols_label(term="", coef="Coefficient", low="95 % CI low", high="95 % CI high", p="p-value")
+ .fmt_number(columns=["coef", "low", "high"], decimals=1).fmt_number(columns="p", decimals=3))
+```
+
+```{python}
+#| label: a3-values
+b_a3 = a3_model.params
+```
+
+*Model answer:* Surprisingly, one euro higher average price goes with `{python} f"{b_a3['avg_price_eur']:+.0f}"` orders per week, holding the other variables constant. This is not a price effect we can believe: `avg_price_eur` is the price *after* discounts, so with `discount_pct` in the model the two variables carry almost the same information (Table A3: VIFs above 10), and prices also rise over time together with demand, which this model does not control for (see A4). Part B handles this with logs, trends and month effects. Free-shipping weeks have `{python} f"{b_a3['free_shipping']:.0f}"` more orders, Christmas weeks `{python} f"{b_a3['xmas']:.0f}"` more. The country coefficients compare Switzerland (`{python} f"{b_a3['C(country)[T.CH]']:.0f}"`) and Germany (`{python} f"{b_a3['C(country)[T.DE]']:.0f}"`) with Austria, the reference country, at the same price and promotions. The model forces one price effect in orders per euro on markets of very different size, which is one reason to move to logs in Part B.
+
+## A4 Model fit
+
+```{python}
+#| label: a4-table
+#| tbl-cap: "Table A2b: Fit of the two models"
+a4_model = smf.ols(
+    "orders ~ avg_price_eur + discount_pct + free_shipping + xmas + black_friday"
+    " + valentine + easter + mothers_day + t + C(country)",
+    data=shop_pd).fit()
+
+
+def rmse(model):
+    return float(np.sqrt(np.mean(model.resid ** 2)))
+
+
+fit_a4 = pl.DataFrame({
+    "model": ["A3: price, promotions, Xmas, Black Friday, country", "A4: + t and all holidays"],
+    "R2": [a3_model.rsquared, a4_model.rsquared],
+    "adj_R2": [a3_model.rsquared_adj, a4_model.rsquared_adj],
+    "RMSE": [rmse(a3_model), rmse(a4_model)],
+})
+(GT(fit_a4).cols_label(model="Model", R2="R²", adj_R2="Adjusted R²", RMSE="RMSE (orders)")
+ .fmt_number(columns=["R2", "adj_R2"], decimals=3).fmt_number(columns="RMSE", decimals=0))
+```
+
+*Model answer:* R² rises from `{python} f"{a3_model.rsquared:.3f}"` to `{python} f"{a4_model.rsquared:.3f}"` and the typical error (RMSE) falls from `{python} f"{rmse(a3_model):.0f}"` to `{python} f"{rmse(a4_model):.0f}"` orders per week. Adjusted R² rises too, so the extra variables are worth their degrees of freedom. With `t` in the model, the price coefficient is no longer significant (p = `{python} f"{a4_model.pvalues['avg_price_eur']:.2f}"`).
+
+## A5 Assumptions of the first regression
+
+```{python}
+#| label: a5-fig3
+#| fig-cap: "Figure A3: Residuals against fitted values (A4 model)"
+res_a4 = pl.DataFrame({"fitted": a4_model.fittedvalues.to_numpy(), "resid": a4_model.resid.to_numpy(),
+                       "country": shop["country"]})
+(ggplot(to_pd(res_a4), aes("fitted", "resid", color="country"))
+ + geom_point(alpha=0.6) + geom_hline(yintercept=0, linetype="dashed")
+ + labs(x="Fitted orders", y="Residual", color="Country")
+ + theme_minimal())
+```
+
+```{python}
+#| label: a5-fig4
+#| fig-cap: "Figure A4: Histogram of the residuals (A4 model)"
+(ggplot(to_pd(res_a4), aes("resid"))
+ + geom_histogram(bins=40, fill=BLUE, color="white")
+ + labs(x="Residual (orders)", y="Weeks")
+ + theme_minimal())
+```
+
+```{python}
+#| label: a5-table
+#| tbl-cap: "Table A3: Durbin-Watson and variance inflation factors (A4 model)"
+dw_a4 = durbin_watson(a4_model.resid)
+vif_a4 = vif_table(a4_model)
+(GT(vif_a4).cols_label(term="Variable", VIF="VIF").fmt_number(columns="VIF", decimals=2)
+ .tab_source_note(f"Durbin-Watson: {dw_a4:.2f}"))
+```
+
+*Model answer:* The residuals fan out with the fitted values (a funnel: German weeks have much larger errors than Austrian or Swiss weeks), and they are skewed to the right. Durbin-Watson is `{python} f"{dw_a4:.2f}"`, well below 2: errors of neighbouring weeks are related, so the standard errors are too small. The VIFs of the price (`{python} f"{vif_a4.filter(pl.col('term') == 'avg_price_eur')['VIF'][0]:.0f}"`), the discount (`{python} f"{vif_a4.filter(pl.col('term') == 'discount_pct')['VIF'][0]:.0f}"`) and the Swiss dummy (`{python} f"{vif_a4.filter(pl.col('term') == 'C(country)[T.CH]')['VIF'][0]:.0f}"`, Switzerland has the highest prices) are above 10: price and discount are too similar to separate, which explains the odd price coefficient. All other VIFs are low. Logs (orders proportional, not additive), country-specific trends and months should help in Part B.
+
+# Part B: Price, advertising and how it works
+
+```{python}
+#| label: b-controls
+CONTROLS = "C(country) + C(country):t + C(month) + xmas + black_friday + valentine + easter + mothers_day"
+```
+
+## B1 Price elasticities
+
+```{python}
+#| label: b1-table
+#| tbl-cap: "Table B1: Price elasticities by country (95 % confidence intervals)"
+b1_model = smf.ols(f"np.log(orders) ~ C(country):np.log(avg_price_eur) + {CONTROLS}", data=shop_pd).fit()
+b1 = (coef_table(b1_model)
+      .filter(pl.col("term").str.contains("avg_price"))
+      .with_columns(pl.col("term").str.extract(r"\[(\w+)\]").alias("country"))
+      .select("country", "coef", "low", "high", "p"))
+elast = dict(zip(b1["country"], b1["coef"]))
+(GT(b1).cols_label(country="Country", coef="Elasticity", low="95 % CI low", high="95 % CI high", p="p-value")
+ .fmt_number(columns=["coef", "low", "high"], decimals=2).fmt_number(columns="p", decimals=3))
+```
+
+*Model answer:* 1 % higher prices change orders by `{python} f"{elast['AT']:.2f}"` % in Austria, `{python} f"{elast['DE']:.2f}"` % in Germany and `{python} f"{elast['CH']:.2f}"` % in Switzerland. The intervals of Germany and Switzerland do not overlap, so Swiss customers are clearly less price-sensitive. Switzerland can carry higher prices (and needs discounts less), while in Germany discounts move many orders; with an elasticity of `{python} f"{elast['DE']:.2f}"`, a price cut raises German revenue, while a Swiss price cut (elasticity above -1) lowers it.
+
+## B2 A non-linear effect: temperature
+
+```{python}
+#| label: b2-model
+B2_RHS = f"C(country):np.log(avg_price_eur) + temperature_c + I(temperature_c**2) + {CONTROLS}"
+b2_model = smf.ols(f"np.log(orders) ~ {B2_RHS}", data=shop_pd).fit()
+b_t, b_t2 = b2_model.params["temperature_c"], b2_model.params["I(temperature_c ** 2)"]
+peak_temp = -b_t / (2 * b_t2)
+f_temp = lambda x: b_t * x + b_t2 * x ** 2
+hot_drop = (np.exp(f_temp(28) - f_temp(peak_temp)) - 1) * 100
+```
+
+```{python}
+#| label: b2-fig
+#| fig-cap: "Figure B1: Predicted effect of temperature on log orders, relative to 0 °C"
+temp = pl.DataFrame({"temperature": np.linspace(0, 30, 61)}).with_columns(
+    (b_t * pl.col("temperature") + b_t2 * pl.col("temperature") ** 2).alias("effect"))
+(ggplot(to_pd(temp), aes("temperature", "effect"))
+ + geom_line(color=BLUE, size=1.2)
+ + geom_vline(xintercept=peak_temp, linetype="dashed", color=GREY)
+ + annotate("text", x=peak_temp + 0.5, y=temp["effect"].min(), ha="left",
+            label=f"peak at {peak_temp:.1f} °C")
+ + labs(x="Average temperature, °C", y="Effect on log orders")
+ + theme_minimal())
+```
+
+*Model answer:* Orders are highest at about `{python} f"{peak_temp:.1f}"` °C. In a hot week of 28 °C they are about `{python} f"{-hot_drop:.0f}"` % lower than at the peak, other things equal (`exp` of the difference in the two predicted log effects).
+
+## B3 Adstock and saturation
+
+```{python}
+#| label: b3-table
+#| tbl-cap: "Table B2: R² for four TV decay rates (other channels decay 0.3)"
+OTHER_MEDIA = "np.log1p(online_video_adstock) + np.log1p(paid_search_adstock) + np.log1p(paid_social_adstock)"
+r2_tv = []
+for dec in TV_DECAYS:
+    m = smf.ols(f"np.log(orders) ~ {B2_RHS} + np.log1p(tv_adstock_{int(dec * 10):02d}) + {OTHER_MEDIA}",
+                data=shop_pd).fit()
+    r2_tv.append(m.rsquared)
+b2_tab = pl.DataFrame({"tv_decay": TV_DECAYS, "R2": r2_tv})
+best_decay = b2_tab.sort("R2", descending=True)["tv_decay"][0]
+TV = f"tv_adstock_{int(best_decay * 10):02d}"
+B3_RHS = f"{B2_RHS} + np.log1p({TV}) + {OTHER_MEDIA}"
+b3_model = smf.ols(f"np.log(orders) ~ {B3_RHS}", data=shop_pd).fit()
+(GT(b2_tab).cols_label(tv_decay="TV decay", R2="R²").fmt_number(columns="R2", decimals=4)
+ .tab_source_note(f"Chosen TV decay: {best_decay}"))
+```
+
+```{python}
+#| label: b3-fig
+#| fig-cap: "Figure B2: Estimated effect of weekly paid-search spend on orders (steady state)"
+b_search = b3_model.params["np.log1p(paid_search_adstock)"]
+max_search = shop.filter(pl.col("week").dt.year() == 2025)["spend_paid_search_k"].max()
+curve = pl.DataFrame({"spend": np.linspace(0, max_search, 100)}).with_columns(
+    ((np.exp(b_search * np.log1p(pl.col("spend"))) - 1) * 100).alias("pct"))
+(ggplot(to_pd(curve), aes("spend", "pct"))
+ + geom_line(color=BLUE, size=1.2)
+ + labs(x="Weekly paid-search spend, thousand EUR", y="Orders compared with no paid search, %")
+ + theme_minimal())
+```
+
+```{python}
+#| label: b3-values
+lift = lambda x: (np.exp(b_search * np.log1p(x)) - 1) * 100
+```
+
+*Model answer:* TV fits best with a decay of `{python} f"{best_decay}"` (the TV R² differences are small). Carryover: with decay 0.3, a euro spent this week still works in the next weeks, with weights shrinking by 70 % per week. Saturation: the paid-search coefficient is `{python} f"{b_search:.3f}"` on `log(1 + spend)`; going from 0 to 5 thousand EUR per week raises orders by `{python} f"{lift(5):.0f}"` %, but going from 5 to 10 thousand adds only `{python} f"{lift(10) - lift(5):.0f}"` percentage points more, up to `{python} f"{lift(max_search):.0f}"` % at the 2025 maximum of `{python} f"{max_search:.1f}"` thousand EUR.
+
+## B4 Moderation: paid social and free shipping
+
+```{python}
+#| label: b4-table
+#| tbl-cap: "Table B3: Paid social, free shipping and their interaction"
+b4_model = smf.ols(
+    f"np.log(orders) ~ {B3_RHS} + free_shipping + np.log1p(paid_social_adstock):free_shipping",
+    data=shop_pd).fit()
+B4_TERMS = ["np.log1p(paid_social_adstock)", "free_shipping", "np.log1p(paid_social_adstock):free_shipping"]
+b4 = coef_table(b4_model, B4_TERMS)
+b4_int = b4_model.params[B4_TERMS[2]]
+b4_int_p = b4_model.pvalues[B4_TERMS[2]]
+b4_social = b4_model.params[B4_TERMS[0]]
+(GT(b4).cols_label(term="", coef="Coefficient", low="95 % CI low", high="95 % CI high", p="p-value")
+ .fmt_number(columns=["coef", "low", "high"], decimals=3).fmt_number(columns="p", decimals=3))
+```
+
+*Model answer:* In weeks without free shipping, a 10 % increase in (1 + adstocked) paid-social spend goes with about `{python} f"{b4_social * 10:.1f}"` % more orders; in free-shipping weeks the coefficient is `{python} f"{b4_social + b4_int:.3f}"` instead of `{python} f"{b4_social:.3f}"` (interaction `{python} f"{b4_int:.3f}"`, p = `{python} f"{b4_int_p:.3f}"`). The marketing team should concentrate paid-social spend in free-shipping weeks: the ad brings people to the shop, free shipping converts them.
+
+```{python}
+#| label: b4-sensitivity
+b4_03 = smf.ols(
+    f"np.log(orders) ~ {B2_RHS} + np.log1p(tv_adstock) + {OTHER_MEDIA}"
+    " + free_shipping + np.log1p(paid_social_adstock):free_shipping", data=shop_pd).fit()
+```
+
+*Instructor note:* with TV at decay 0.3 instead of the chosen `{python} f"{best_decay}"`, the interaction is `{python} f"{b4_03.params[B4_TERMS[2]]:.3f}"` with p = `{python} f"{b4_03.pvalues[B4_TERMS[2]]:.3f}"`; accept both.
+
+## B5 Mediation: TV and branded search
+
+```{python}
+#| label: b5-table
+#| tbl-cap: "Table B4: TV, branded search and orders (Austria and Germany)"
+attv = to_pd(shop.filter(pl.col("country") != "CH"))
+B5_CTRL = f"C(country):np.log(avg_price_eur) + {CONTROLS}"
+m1 = smf.ols(f"np.log(orders) ~ np.log1p({TV}) + {B5_CTRL}", data=attv).fit()
+m2 = smf.ols(f"branded_search_index ~ np.log1p({TV}) + {B5_CTRL}", data=attv).fit()
+m3 = smf.ols(f"np.log(orders) ~ np.log1p({TV}) + np.log(branded_search_index) + {B5_CTRL}", data=attv).fit()
+tv_term = f"np.log1p({TV})"
+b5 = pl.DataFrame({
+    "regression": ["(1) log orders: total effect of TV", "(2) branded search index",
+                   "(3) log orders: direct effect of TV", "(3) log orders: branded search (log)"],
+    "coef": [m1.params[tv_term], m2.params[tv_term], m3.params[tv_term], m3.params["np.log(branded_search_index)"]],
+    "se": [m1.bse[tv_term], m2.bse[tv_term], m3.bse[tv_term], m3.bse["np.log(branded_search_index)"]],
+    "p": [m1.pvalues[tv_term], m2.pvalues[tv_term], m3.pvalues[tv_term], m3.pvalues["np.log(branded_search_index)"]],
+})
+tv_total, tv_direct, tv_search = m1.params[tv_term], m3.params[tv_term], m2.params[tv_term]
+(GT(b5).cols_label(regression="", coef="Coefficient", se="Std. error", p="p-value")
+ .fmt_number(columns=["coef", "se"], decimals=3).fmt_number(columns="p", decimals=3))
+```
+
+*Model answer:* TV raises branded search (`{python} f"{tv_search:.2f}"` index points per unit of `log(1 + adstock)`), and branded search goes with more orders. Once branded search is in the model, the TV coefficient falls from `{python} f"{tv_total:.3f}"` to `{python} f"{tv_direct:.3f}"` (p = `{python} f"{m3.pvalues[tv_term]:.2f}"`): most of TV's effect runs through search. The media team should judge TV by the searches it creates, keep paid search running in TV weeks to catch them, and not cut TV because last-click data credit the orders to search.
+
+## B6 Assumptions of the final model
+
+```{python}
+#| label: b6-table
+#| tbl-cap: "Table B5: Durbin-Watson and variance inflation factors (B4 model)"
+dw_b4 = durbin_watson(b4_model.resid)
+vif_b4 = vif_table(b4_model)
+(GT(vif_b4).cols_label(term="Variable", VIF="VIF").fmt_number(columns="VIF", decimals=1)
+ .tab_source_note(f"Durbin-Watson: {dw_b4:.2f}"))
+```
+
+```{python}
+#| label: b6-fig
+#| fig-cap: "Figure B3: Residuals against fitted values (B4 model)"
+res_b4 = pl.DataFrame({"fitted": b4_model.fittedvalues.to_numpy(), "resid": b4_model.resid.to_numpy(),
+                       "country": shop["country"]})
+(ggplot(to_pd(res_b4), aes("fitted", "resid", color="country"))
+ + geom_point(alpha=0.6) + geom_hline(yintercept=0, linetype="dashed")
+ + labs(x="Fitted log orders", y="Residual", color="Country")
+ + theme_minimal())
+```
+
+```{python}
+#| label: b6-values
+vif_b4_media = vif_b4.filter(pl.col("term").str.contains("adstock|temperature|price"))
+n_vif_high = vif_b4.filter(pl.col("VIF") > 10).height
+```
+
+*Model answer:* On the log scale the funnel is gone and the residuals of the three countries have a similar spread. Durbin-Watson rises from `{python} f"{dw_a4:.2f}"` to `{python} f"{dw_b4:.2f}"`, but it is still below 2: the weekly errors remain related, so the standard errors are somewhat too small (a time-series model, Part D, handles this). `{python} f"{n_vif_high}"` terms have a VIF above 10: the country dummies and the three country-specific log prices (each country's log price is almost constant around its own level, so it is nearly the same as the country dummy; a VIF in the thousands is built into this specification and does not affect the elasticities' meaning, only their precision) and temperature with its square (a squared term is always related to its linear term, and both move with the months). The media variables have VIFs of at most `{python} f"{vif_b4.filter(pl.col('term').str.contains('adstock'))['VIF'].max():.1f}"`.
+
+## B7 Holdout check
+
+*The brief has no task B7 (the template heading is a leftover). Not answered.*
+
+# Part C: Which subscribers will cancel?
+
+## C1 Explore
+
+```{python}
+#| label: c1-table
+#| tbl-cap: "Table C1: Churn rate by plan and by acquisition channel"
+c1 = pl.concat([
+    club.group_by("plan").agg(pl.len().alias("customers"), pl.col("churned_6m").mean().alias("churn_rate"))
+        .rename({"plan": "group"}).with_columns(pl.lit("Plan").alias("by")).sort("group"),
+    club.group_by("acquisition_channel").agg(pl.len().alias("customers"), pl.col("churned_6m").mean().alias("churn_rate"))
+        .rename({"acquisition_channel": "group"}).with_columns(pl.lit("Acquisition channel").alias("by")).sort("group"),
+]).select("by", "group", "customers", "churn_rate")
+churn_all = club["churned_6m"].mean()
+(GT(c1, rowname_col="group", groupname_col="by")
+ .cols_label(customers="Customers", churn_rate="Churn rate")
+ .fmt_percent(columns="churn_rate", decimals=1).fmt_integer(columns="customers"))
+```
+
+```{python}
+#| label: c1-fig
+#| fig-cap: "Figure C1: Churn rate by number of late deliveries and plan"
+c1f = (club.with_columns(
+            pl.when(pl.col("late_deliveries_6m") >= 3).then(pl.lit("3+"))
+            .otherwise(pl.col("late_deliveries_6m").cast(pl.String)).alias("late"))
+       .group_by("plan", "late").agg(pl.col("churned_6m").mean().alias("churn_rate"), pl.len().alias("n"))
+       .sort("plan", "late"))
+(ggplot(to_pd(c1f), aes("late", "churn_rate", fill="plan"))
+ + geom_col(position="dodge")
+ + scale_fill_manual(values=[BLUE, ORANGE])
+ + scale_y_continuous(labels=lambda v: [f"{x:.0%}" for x in v])
+ + labs(x="Late deliveries in the last six months", y="Churn rate", fill="Plan")
+ + theme_minimal())
+```
+
+*Model answer:* `{python} f"{churn_all:.1%}"` of all subscribers cancel within six months. Churn rises with late deliveries, and more steeply for monthly than for quarterly boxes.
+
+## C2 Split
+
+```{python}
+#| label: c2-split
+club = club.with_columns(pl.Series("u", np.random.default_rng(42).random(club.height)))
+train = club.filter(pl.col("u") < 0.75)
+test = club.filter(pl.col("u") >= 0.75)
+train_pd, test_pd = to_pd(train), to_pd(test)
+```
+
+The training data have `{python} f"{train.height:,}"` customers, the test data `{python} f"{test.height:,}"`.
+
+## C3 Logistic regression
+
+```{python}
+#| label: c3-table
+#| tbl-cap: "Table C2: Odds ratios of churn with 95 % confidence intervals (training data)"
+C3_FORMULA = ("churned_6m ~ tenure_months + C(plan) * late_deliveries_6m + signup_discount + complaints_6m"
+              " + satisfaction + email_open_rate + app_user + C(acquisition_channel)")
+c3_model = smf.logit(C3_FORMULA, data=train_pd).fit(disp=0)
+c3 = coef_table(c3_model, exp=True).filter(pl.col("term") != "Intercept")
+odds = dict(zip(c3["term"], c3["coef"]))
+INT = "C(plan)[T.quarterly]:late_deliveries_6m"
+(GT(c3).cols_label(term="", coef="Odds ratio", low="95 % CI low", high="95 % CI high", p="p-value")
+ .fmt_number(columns=["coef", "low", "high"], decimals=2).fmt_number(columns="p", decimals=3))
+```
+
+*Model answer:* Each extra point of satisfaction multiplies the odds of churn by `{python} f"{odds['satisfaction']:.2f}"` (about `{python} f"{(1 - odds['satisfaction']) * 100:.0f}"` % lower odds). Customers who joined with a sign-up discount have `{python} f"{odds['signup_discount']:.2f}"` times the odds of churning. The reference plan is monthly: each late delivery multiplies the odds by `{python} f"{odds['late_deliveries_6m']:.2f}"` for monthly subscribers, but only by `{python} f"{odds['late_deliveries_6m'] * odds[INT]:.2f}"` (= `{python} f"{odds['late_deliveries_6m']:.2f}"` × `{python} f"{odds[INT]:.2f}"`) for quarterly subscribers: late deliveries hurt monthly boxes more.
+
+## C4 Model fit
+
+```{python}
+#| label: c4-table
+#| tbl-cap: "Table C2b: Fit of the logistic regressions"
+c4_model = smf.logit(C3_FORMULA.replace("C(plan) * late_deliveries_6m", "C(plan) + late_deliveries_6m"),
+                     data=train_pd).fit(disp=0)
+c4 = pl.DataFrame({"model": ["with plan × late deliveries", "without interaction"],
+                   "pseudo_R2": [c3_model.prsquared, c4_model.prsquared],
+                   "AIC": [c3_model.aic, c4_model.aic]})
+(GT(c4).cols_label(model="Model", pseudo_R2="McFadden pseudo R²", AIC="AIC")
+ .fmt_number(columns="pseudo_R2", decimals=3).fmt_number(columns="AIC", decimals=1))
+```
+
+*Model answer:* McFadden's pseudo R² is `{python} f"{c3_model.prsquared:.3f}"`, typical for churn data. The AIC is `{python} f"{c3_model.aic:.1f}"` with and `{python} f"{c4_model.aic:.1f}"` without the interaction; `{python} "the model with the interaction has the lower AIC, so we keep it" if c3_model.aic < c4_model.aic else "the model without the interaction has the lower AIC"`.
+
+## C5 Assumptions of the logistic regression
+
+```{python}
+#| label: c5-table
+#| tbl-cap: "Table C3: Checks of the logistic regression"
+n_coef = len(c3_model.params)
+n_churn_train = int(train["churned_6m"].sum())
+vif_c3 = vif_table(c3_model)
+c5 = pl.DataFrame({
+    "check": ["Rows (all customers)", "Unique customer_id", "Churners in training data",
+              "Coefficients (incl. intercept)", "Churners per coefficient", "Largest VIF",
+              "Variable with the largest VIF"],
+    "value": [f"{club.height:,}", f"{club['customer_id'].n_unique():,}", f"{n_churn_train:,}", f"{n_coef}",
+              f"{n_churn_train / n_coef:.0f}", f"{vif_c3['VIF'].max():.1f}",
+              vif_c3.sort("VIF", descending=True)["term"][0]],
+})
+GT(c5).cols_label(check="Check", value="Value")
+```
+
+*Model answer:* Every customer appears once, and with `{python} f"{n_churn_train / n_coef:.0f}"` churners per coefficient there are far more than the 10 we need. All VIFs are below `{python} f"{vif_c3['VIF'].max():.1f}"`, far from 10: the explanatory variables are not too similar, not even late deliveries and its interaction with the plan.
+
+## C6 Classification
+
+```{python}
+#| label: c6-table
+#| tbl-cap: "Table C4: Classification of the test customers at two thresholds"
+test = test.with_columns(pl.Series("p_churn", c3_model.predict(test_pd).to_numpy()))
+
+
+def classify(df, thr):
+    pred = pl.col("p_churn") >= thr
+    y = pl.col("churned_6m") == 1
+    c = df.select(
+        (pred & y).sum().alias("TP"), (pred & ~y).sum().alias("FP"),
+        (~pred & ~y).sum().alias("TN"), (~pred & y).sum().alias("FN"))
+    return c.with_columns(
+        pl.lit(thr).alias("threshold"),
+        ((pl.col("TP") + pl.col("TN")) / df.height).alias("accuracy"),
+        (pl.col("TP") / (pl.col("TP") + pl.col("FP"))).alias("precision"),
+        (pl.col("TP") / (pl.col("TP") + pl.col("FN"))).alias("recall"),
+    ).select("threshold", "TP", "FP", "TN", "FN", "accuracy", "precision", "recall")
+
+
+c6 = pl.concat([classify(test, 0.5), classify(test, 0.3)])
+(GT(c6).fmt_number(columns="threshold", decimals=1)
+ .fmt_percent(columns=["accuracy", "precision", "recall"], decimals=1)
+ .cols_label(threshold="Threshold", accuracy="Accuracy", precision="Precision", recall="Recall"))
+```
+
+*Model answer:* The threshold 0.3 finds more churners (recall `{python} f"{c6['recall'][1]:.0%}"` instead of `{python} f"{c6['recall'][0]:.0%}"`), but more of the flagged customers would have stayed anyway (precision `{python} f"{c6['precision'][1]:.0%}"` instead of `{python} f"{c6['precision'][0]:.0%}"`) and accuracy falls from `{python} f"{c6['accuracy'][0]:.1%}"` to `{python} f"{c6['accuracy'][1]:.1%}"`.
+
+## C7 Who gets a retention offer?
+
+```{python}
+#| label: c7-fig
+#| fig-cap: "Figure C2: Profit of the retention offer by threshold (test customers)"
+COST, SAVE_RATE, MARGIN = 5, 0.40, 80
+thresholds = np.round(np.arange(0.10, 0.901, 0.05), 2)
+c7 = pl.concat([
+    test.filter(pl.col("p_churn") >= thr).select(
+        pl.lit(thr).alias("threshold"),
+        pl.len().alias("offers"),
+        pl.col("churned_6m").sum().alias("churners_reached"),
+        (pl.col("churned_6m").sum() * SAVE_RATE * MARGIN - pl.len() * COST).alias("profit"),
+        (pl.col("p_churn").sum() * SAVE_RATE * MARGIN - pl.len() * COST).alias("expected_profit"),
+    ) for thr in thresholds
+])
+best = c7.sort("profit", descending=True).row(0, named=True)
+best_thr, best_profit, best_n = best["threshold"], best["profit"], best["offers"]
+best_exp = c7.sort("expected_profit", descending=True).row(0, named=True)
+c7_long = pl.concat([
+    c7.select("threshold", pl.col("profit").alias("eur"), pl.lit("with the observed churn").alias("profit")),
+    c7.select("threshold", pl.col("expected_profit").alias("eur"), pl.lit("with predicted probabilities").alias("profit")),
+])
+(ggplot(to_pd(c7_long), aes("threshold", "eur", color="profit"))
+ + geom_line(size=1) + geom_point()
+ + geom_vline(xintercept=COST / (SAVE_RATE * MARGIN), linetype="dashed", color=GREY)
+ + scale_color_manual(values=[ORANGE, BLUE])
+ + labs(x="Threshold (predicted churn probability)", y="Profit, EUR", color="Profit")
+ + theme_minimal() + theme(legend_position="bottom"))
+```
+
+*Model answer:* An offer pays off for a customer whose churn probability is above 5 / (0.4 × 80) = `{python} f"{COST / (SAVE_RATE * MARGIN):.3f}"` (dashed line). With the observed churn of the test customers, the profit is highest at the threshold `{python} f"{best_thr:.2f}"`: `{python} f"{best_n}"` of the `{python} f"{test.height:,}"` test customers get the offer, for a profit of EUR `{python} f"{best_profit:,.0f}"`. With the predicted probabilities instead, the best threshold is `{python} f"{best_exp['threshold']:.2f}"`.
+
+# Part D: The Q1 2026 baseline for Germany
+
+```{python}
+#| label: d-data
+de = shop.filter(pl.col("country") == "DE").sort("week").with_columns(
+    pl.col("orders").log().alias("log_orders"), pl.col("avg_price_eur").log().alias("log_price"))
+```
+
+## D1 The series
+
+```{python}
+#| label: d1-fig
+#| fig-cap: "Figure D1: Autocorrelation of German log orders, lags 1 to 26"
+def acf_frame(x, nlags=26):
+    r = acf(np.asarray(x), nlags=nlags)
+    return pl.DataFrame({"lag": np.arange(1, nlags + 1), "acf": r[1:]})
+
+
+def acf_plot(frame, n):
+    band = 1.96 / np.sqrt(n)
+    return (ggplot(to_pd(frame), aes("lag", "acf"))
+            + geom_segment(aes(xend="lag", yend=0), color=BLUE, size=1.2)
+            + geom_hline(yintercept=0)
+            + geom_hline(yintercept=[band, -band], linetype="dashed", color=GREY)
+            + labs(x="Lag (weeks)", y="Autocorrelation")
+            + theme_minimal())
+
+
+d1 = acf_frame(de["log_orders"])
+acf_plot(d1, de.height)
+```
+
+*Model answer:* The autocorrelation starts at `{python} f"{d1['acf'][0]:.2f}"` at lag 1 and falls only slowly, which together with the rising level in Figure A1 points to a trend. It turns negative after about three months and reaches `{python} f"{d1['acf'].min():.2f}"` around half a year: weeks half a year apart lie on opposite sides of the yearly cycle (high in Q4, low in summer), the sign of seasonality. Orders in one week are closely related to orders in the previous weeks, so a forecast must use this memory.
+
+## D2 Model comparison on a holdout
+
+```{python}
+#| label: d2-table
+#| tbl-cap: "Table D1: Forecast errors on the 13 test weeks (29 Sep to 22 Dec 2025)"
+HOLIDAYS = ["xmas", "black_friday", "valentine", "easter", "mothers_day"]
+MONTHS = [f"month_{m}" for m in range(2, 13)]
+
+
+def month_dummies(df):
+    """Month dummies for months 2 to 12 (January is the reference).
+    to_dummies() only creates columns for months that occur, so we add the missing ones."""
+    dum = df.select(pl.col("month").cast(pl.String)).to_dummies()
+    return dum.with_columns(*[pl.lit(0, dtype=pl.UInt8).alias(m) for m in MONTHS if m not in dum.columns]).select(MONTHS)
+
+
+def exog(df):
+    return (df.select(*HOLIDAYS, "free_shipping", pl.col("avg_price_eur").log().alias("log_price"))
+            .hstack(month_dummies(df)).cast(pl.Float64))
+
+
+test_start = de["week"][-13]
+de_train = de.filter(pl.col("week") < test_start)
+de_test = de.filter(pl.col("week") >= test_start)
+
+
+def mape(actual, forecast):
+    actual, forecast = np.asarray(actual, dtype=float), np.asarray(forecast, dtype=float)
+    return float(np.mean(np.abs(actual - forecast) / actual) * 100)
+
+
+# (i) seasonal naive: the same week one year (52 weeks) earlier
+naive = de["orders"].shift(52).tail(13).to_numpy()
+# (ii) ARIMA(1,1,1) on log orders
+arima = SARIMAX(de_train["log_orders"].to_numpy(), order=(1, 1, 1)).fit(disp=False, maxiter=200)
+f_arima = np.exp(arima.get_forecast(13).predicted_mean)
+# maxiter=200: with the default (50) the ARIMAX does not converge, and warning: false hides that
+# (iii) ARIMAX with holidays, free shipping, log price and month dummies
+arimax = SARIMAX(de_train["log_orders"].to_numpy(), exog=exog(de_train).to_numpy(), order=(1, 1, 1)).fit(disp=False, maxiter=200)
+f_arimax = np.exp(arimax.get_forecast(13, exog=exog(de_test).to_numpy()).predicted_mean)
+
+d2 = pl.DataFrame({
+    "forecast": ["(i) Seasonal naive", "(ii) ARIMA(1,1,1)", "(iii) ARIMAX(1,1,1)"],
+    "MAPE": [mape(de_test["orders"], naive), mape(de_test["orders"], f_arima), mape(de_test["orders"], f_arimax)],
+})
+mapes = dict(zip(["naive", "arima", "arimax"], d2["MAPE"]))
+GT(d2).cols_label(forecast="Forecast", MAPE="MAPE, %").fmt_number(columns="MAPE", decimals=1)
+```
+
+```{python}
+#| label: d2-fig
+#| fig-cap: "Figure D1b: The three forecasts in the test weeks"
+d2f = pl.concat([
+    de.filter(pl.col("week") >= pl.date(2025, 6, 1)).select("week", pl.col("orders").cast(pl.Float64), pl.lit("actual").alias("series")),
+    de_test.select("week", pl.Series("orders", naive, dtype=pl.Float64), pl.lit("seasonal naive").alias("series")),
+    de_test.select("week", pl.Series("orders", f_arima), pl.lit("ARIMA").alias("series")),
+    de_test.select("week", pl.Series("orders", f_arimax), pl.lit("ARIMAX").alias("series")),
+])
+(ggplot(to_pd(d2f), aes("week", "orders", color="series"))
+ + geom_line(size=1)
+ + scale_color_manual(values=[ORANGE, GREY, "black", BLUE])
+ + labs(x="", y="Orders per week (Germany)", color="")
+ + theme_minimal() + theme(legend_position="bottom"))
+```
+
+*Model answer:* Training uses the `{python} f"{de_train.height}"` weeks up to `{python} str(de_train['week'][-1])`, testing the 13 weeks from `{python} str(test_start)`. The MAPE is `{python} f"{mapes['naive']:.1f}"` % for the seasonal naive forecast, `{python} f"{mapes['arima']:.1f}"` % for the ARIMA and `{python} f"{mapes['arimax']:.1f}"` % for the ARIMAX. The plain ARIMA only extrapolates the recent level: it has no idea that Black Friday and Christmas are coming, so it misses the Q4 peak completely; the holiday and month dummies in the ARIMAX supply exactly that information.
+
+## D3 Residual checks
+
+```{python}
+#| label: d3-fig
+#| fig-cap: "Figure D2a: Autocorrelation of the ARIMAX residuals (training data, first residual dropped)"
+resid_x = arimax.resid[1:]  # the first residual of a model with d = 1 is the unforecastable first level
+lb = arimax.test_serial_correlation("ljungbox", lags=1)
+prob_q = float(lb[0, 1, 0])
+r_resid = acf_frame(resid_x)
+n_outside = int((r_resid["acf"].abs() > 1.96 / np.sqrt(len(resid_x))).sum())
+acf_plot(r_resid, len(resid_x))
+```
+
+*Model answer:* Prob(Q) in `arimax.summary()` (Ljung-Box at lag 1) is `{python} f"{prob_q:.2f}"`, above 0.05. Of the 26 residual autocorrelations, `{python} f"{n_outside}"` lie (slightly) outside the dashed bands, the largest `{python} f"{r_resid['acf'][int(np.argmax(np.abs(r_resid['acf'].to_numpy())))]:.2f}"` at lag `{python} f"{int(np.argmax(np.abs(r_resid['acf'].to_numpy()))) + 1}"`: the ARIMAX errors are at most weakly related, much less than the orders themselves (Figure D1).
+
+## D4 Forecast Q1 2026
+
+```{python}
+#| label: d4-model
+plan_de = plan.filter(pl.col("country") == "DE").sort("week").with_columns(pl.col("week").dt.month().alias("month"))
+arimax_all = SARIMAX(de["log_orders"].to_numpy(), exog=exog(de).to_numpy(), order=(1, 1, 1)).fit(disp=False, maxiter=200)
+fc = arimax_all.get_forecast(13, exog=exog(plan_de).to_numpy())
+ci = fc.conf_int(alpha=0.05)
+d4 = plan_de.select("week").with_columns(
+    pl.Series("forecast", np.exp(fc.predicted_mean)),
+    pl.Series("low", np.exp(ci[:, 0])),
+    pl.Series("high", np.exp(ci[:, 1])),
+)
+q1_total = d4["forecast"].sum()
+q1_rel_width = float(((d4["high"] - d4["low"]) / 2 / d4["forecast"]).mean() * 100)
+```
+
+```{python}
+#| label: d4-fig
+#| fig-cap: "Figure D2: German weekly orders in 2025 and the Q1 2026 forecast with its 95 % interval"
+hist = de.filter(pl.col("week") >= pl.date(2025, 1, 1)).select("week", pl.col("orders").cast(pl.Float64))
+(ggplot()
+ + geom_ribbon(to_pd(d4), aes("week", ymin="low", ymax="high"), fill=BLUE, alpha=0.25)
+ + geom_line(to_pd(hist), aes("week", "orders"), color="black")
+ + geom_line(to_pd(d4), aes("week", "forecast"), color=BLUE, size=1.2)
+ + labs(x="", y="Orders per week (Germany)")
+ + theme_minimal())
+```
+
+```{python}
+#| label: d4-table
+#| tbl-cap: "Table D2: Forecast of German weekly orders, Q1 2026"
+d4_tab = pl.concat([
+    d4.with_columns(pl.col("week").cast(pl.String)),
+    pl.DataFrame({"week": ["Quarter total"], "forecast": [q1_total], "low": [None], "high": [None]},
+                 schema=d4.with_columns(pl.col("week").cast(pl.String)).schema),
+])
+(GT(d4_tab).cols_label(week="Week", forecast="Forecast", low="95 % low", high="95 % high")
+ .fmt_number(columns=["forecast", "low", "high"], decimals=0).sub_missing(missing_text="")
+ .tab_source_note("The weekly intervals cannot be added up to an interval for the quarter."))
+```
+
+## D5 Reading the forecast
+
+*Model answer:* Germany should plan for a baseline of about `{python} f"{q1_total:,.0f}"` orders in Q1 2026, `{python} f"{d4['forecast'].mean():,.0f}"` per week. The weekly 95 % intervals are about ±`{python} f"{q1_rel_width:.0f}"` % around the forecast and widen the further we look ahead. The forecast assumes that the planned prices, discounts and free-shipping weeks are actually carried out: the price (through the elasticity) and the free-shipping weeks matter most, and media spend and temperature are not in the ARIMAX at all. Values on the original scale are `exp` of the log forecast, i.e. a median rather than a mean, so the total is slightly conservative.
+
+# Part E: Recommendations and limitations
+
+## E2 Recommendations
+
+*Model answer (abridged):* (1) Pricing: avoid deep discounts in Switzerland, use them selectively in Germany (Table B1). (2) Judge TV by the branded search it creates and keep paid search on in TV weeks (Table B4). (3) Bundle paid social with free-shipping weeks (Table B3). (4) Send the retention offer above a churn probability of `{python} f"{best_thr:.2f}"` (Figure C2). (5) Plan Germany's Q1 2026 at about `{python} f"{q1_total:,.0f}"` orders (Table D2).
+
+## E3 Limitations and what to test next
+
+*Model answer (abridged):* Observational data (prices, discounts and media are set by managers who anticipate demand), omitted variables (competitors, distribution), related weekly errors, synthetic data. Next tests: a geo test of TV (switch TV off in some German regions) and a randomised retention offer.
+
+# Instructor check against the ground truth {.unnumbered}
+
+```{python}
+#| label: summary-consistency
+# The numbers in the executive summary must equal the detailed results (render fails otherwise)
+assert np.isclose(es_r2_a3, a3_model.rsquared)
+assert all(np.isclose(es_elast[c], elast[c]) for c in elast)
+assert es_tv == TV and np.isclose(es_tv_total, tv_total) and np.isclose(es_tv_direct, tv_direct)
+assert np.isclose(es_b4.params[INTERACTION], b4_int) and np.isclose(es_b4.pvalues[INTERACTION], b4_int_p)
+assert es_c7["thr"] == best_thr and es_c7["n"] == best_n and np.isclose(es_c7["profit"], best_profit)
+assert np.isclose(es_q1, q1_total) and np.isclose(es_q1_width, q1_rel_width)
+```
+
+```{python}
+#| label: truth
+#| tbl-cap: "Estimates compared with the values used to simulate the data"
+truth = json.load(open("../ground_truth/case_truth.json"))
+holdout = pl.read_csv("../ground_truth/case_shop_holdout.csv", try_parse_dates=True).filter(pl.col("country") == "DE")
+q1_actual = holdout["orders"].sum()
+chk = pl.DataFrame({
+    "quantity": ["Price elasticity AT", "Price elasticity DE", "Price elasticity CH", "Temperature optimum, °C",
+                 "Quadratic temperature term", "Branded search (log) coefficient",
+                 "Best TV decay", "Q1 2026 orders DE (total)", "Q1 2026 MAPE of the forecast, %"],
+    "estimate": [elast["AT"], elast["DE"], elast["CH"], peak_temp, b_t2,
+                 m3.params["np.log(branded_search_index)"], best_decay, q1_total, mape(holdout["orders"], d4["forecast"])],
+    "truth": [truth["shop"]["price_elasticity"]["AT"], truth["shop"]["price_elasticity"]["DE"],
+              truth["shop"]["price_elasticity"]["CH"], truth["shop"]["temperature"]["optimum_c"],
+              truth["shop"]["temperature"]["quadratic_log"],
+              truth["shop"]["branded_search_log_coefficient"], truth["shop"]["adstock_decay"]["tv"], float(q1_actual), None],
+})
+GT(chk).cols_label(quantity="", estimate="Estimate", truth="Truth / actual").fmt_number(columns=["estimate", "truth"], decimals=3).sub_missing(missing_text="")
+```
+
+# Appendix {.unnumbered}
+
+## AI prompt log {.unnumbered}
+
+| Part | Prompt (short) | What we kept | What we corrected and why |
+|---|---|---|---|
+| | | | |
+
+## Contribution statement {.unnumbered}
+
+| Member | Main parts | Also contributed to |
+|---|---|---|
+| | | |
+
+*All members confirm this statement by their names in the author field.*

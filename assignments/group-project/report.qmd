@@ -23,9 +23,6 @@ Delete these comments and the instructions in italics before you submit.
 Brief and assessment criteria: case-study/brief.pdf in the course repository.
 -->
 
-# Executive summary {.unnumbered}
-
-*At most 300 words: your answers to the four questions, with the key numbers, and one sentence on the main limitation.*
 
 ```{python}
 #| label: setup
@@ -67,12 +64,24 @@ for country in ["AT", "DE", "CH"]:
 shop = pl.concat(parts)
 ```
 
+```{python}
+#| label: key-results
+#| include: false
+# Inline code runs from top to bottom. Compute here the numbers you quote in the
+# executive summary (fill this in last; you may repeat code from the parts below),
+# for example: elasticity_de = ...
+```
+
+# Executive summary {.unnumbered}
+
+*At most 300 words: your answers to the four questions, with the key numbers, and one sentence on the main limitation.*
+
 # Part A: What drives weekly orders?
 
 ## A1 Data check
 
 ```{python}
-#| label: tbl-a1
+#| label: a1-table
 #| tbl-cap: "Table A1: The three markets in 2025"
 table_a1 = (
     shop.filter(pl.col("week").dt.year() == 2025)
@@ -89,7 +98,7 @@ GT(table_a1).fmt_number(columns=["avg_weekly_orders"], decimals=0).fmt_number(co
 ## A2 First look
 
 ```{python}
-#| label: fig-a1
+#| label: a2-fig1
 #| fig-cap: "Figure A1: Weekly orders by country"
 (ggplot(shop, aes("week", "orders"))
  + geom_line(color="#0096D3")
@@ -117,8 +126,6 @@ GT(table_a1).fmt_number(columns=["avg_weekly_orders"], decimals=0).fmt_number(co
 ## B5 Mediation: TV and branded search
 
 ## B6 Assumptions of the final model
-
-## B7 Holdout check
 
 # Part C: Which subscribers will cancel?
 
