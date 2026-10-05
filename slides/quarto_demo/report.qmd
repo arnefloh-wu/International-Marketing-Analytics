@@ -1,0 +1,31 @@
+---
+title: "Alpenglow: sales in Austria"
+author: "Anna Berger"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+  typst: default
+  docx: default
+  revealjs: default
+execute:
+  warning: false
+---
+
+## Weekly sales
+
+```{python}
+#| label: fig-sales
+#| fig-cap: "Weekly sales in Austria"
+import polars as pl
+from plotnine import ggplot, aes, geom_line
+
+sales = pl.read_csv("data/mmm/alpenglow_weekly.csv",
+                    try_parse_dates=True)
+at = sales.filter(pl.col("country") == "AT")
+ggplot(at, aes("week", "sales_units_k")) + geom_line()
+```
+
+Austria sold `{python} f"{at['sales_units_k'].sum():,.0f}"` thousand
+units in three years (@fig-sales).

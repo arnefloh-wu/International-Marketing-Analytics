@@ -5,10 +5,11 @@ Course decks on the WU template, built with the `polish-slides` and `add-instruc
 | File | Content |
 |---|---|
 | `00a_course-content-and-style_WT26-27.pptx` / `.pdf` | Course outline: welcome, instructor profile, module content, course roadmap, learning outcomes, methods, roadmap table, assessment strategy, software and set-up, online certificates, coding exercises, written exam, case study report, contact (16 slides) |
-| `01a_setup-and-registration_WT26-27.pptx` / `.pdf` | Session 1 set-up deck (37 slides): plan for the day; Part 1 registrations (GitHub, GitHub Education and Copilot, DataCamp); Part 2 installation (how the tools fit together, Python 3.14.8 from python.org, Positron 2026.09, Quarto, GitHub Desktop, cloning, the project .venv via Python: Create Environment, the check script and test report, connecting Posit Assistant); Part 3 Positron (panes, running code, projects, folder templates, the group project, Quarto, shortcuts, Posit Assistant); Part 4 packages (install three ways, the Packages pane, loading, polars, plotnine, Great Tables, statsmodels with code that runs on the course data); troubleshooting, checklist |
+| `01a_setup-and-registration_WT26-27.pptx` / `.pdf` | Session 1 set-up deck (45 slides, six parts): registrations; installation (Python 3.14.8, Positron 2026.09, Quarto, GitHub Desktop, the course repository, the project .venv, the check and the stack test `test_stack.qmd`, Posit Assistant); how Positron works (panes, projects, shortcuts, Posit Assistant); GitHub Desktop (the window, the everyday workflow, the group project); Quarto (how it works, the YAML header, code cells, output formats); Python packages (install, Packages pane, load, polars, plotnine, Great Tables, statsmodels); troubleshooting, checklist |
 | `build_course_outline.py` | Builds the outline deck on the skill's template with the design patterns in `polish-slides/references/design-patterns.md` (icon rows, grouped bands, two-card comparisons, steppers, stat rows, native chart, session card grid) |
 | `finish_profile_slides.py` | Adapts the instructor profile slides to this deck: 16 pt titles, 15 pt card headings, the two Module Convenor cards merged into one with an online office-hours link (the skill asset is unchanged) |
 | `build_setup_deck.py` | Builds the set-up deck |
+| `make_quarto_figures.py`, `quarto_demo/` | Renders the demo report to HTML, PDF (Typst), Word and reveal.js and saves the thumbnails for the Quarto slides |
 | `make_setup_figures.py` | Runs the package code shown on the set-up slides and saves the chart, table and numbers to `figures/` |
 | `wu_deck.py` | Shared helpers for both builders: deck from the template, boxes, text, cards, steppers, code blocks |
 | `icons/` | Lucide line icons as PNG in WU navy, blue and white; `render_icons.js` regenerates them |
@@ -24,6 +25,7 @@ python slides/finish_profile_slides.py slides/00a_course-content-and-style_WT26-
 python .claude/skills/polish-slides/scripts/check_deck.py slides/00a_course-content-and-style_WT26-27.pptx /tmp/qa
 
 python slides/make_setup_figures.py
+python slides/make_quarto_figures.py
 python slides/build_setup_deck.py .claude/skills/polish-slides/assets/template.pptx slides/01a_setup-and-registration_WT26-27.pptx
 python .claude/skills/polish-slides/scripts/check_deck.py slides/01a_setup-and-registration_WT26-27.pptx /tmp/qa-setup
 ```

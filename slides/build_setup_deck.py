@@ -16,7 +16,7 @@ from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import MSO_ANCHOR, PP_ALIGN
 from pptx.util import Emu, Pt
 
-from wu_deck import (A, ACC, BODY, FIG, GAP, HEAD, LIGHT, MONO, NAVY, NB, WHITE, Deck, I, box, card,
+from wu_deck import (A, ACC, BODY, FIG, GAP, HEAD, INK, LIGHT, MONO, NAVY, NB, WHITE, Deck, I, box, card,
                      code_block, color, icon, ph, set_runs, stepper, text)
 
 TEMPLATE, OUT = sys.argv[1:3]
@@ -114,7 +114,7 @@ callout(s, 4.8, 0.75, "LuCircleCheck", ("Goal: ", "by the end of today the check
         "Goal", dark=True)
 
 # ---------------------------------------------------------------- Part 1 -----
-divider("Register your accounts", "Part 1 of 4" + NB + "·" + NB + "GitHub, GitHub Education, DataCamp",
+divider("Register your accounts", "Part 1 of 6" + NB + "·" + NB + "GitHub, GitHub Education, DataCamp",
         "Accounts first: they need e-mail confirmations and, for GitHub Education, an approval that can take days.")
 
 # 3  The accounts
@@ -190,7 +190,7 @@ for i, (fig, lab) in enumerate(facts):
          f"DataCamp fact {i + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
 
 # ---------------------------------------------------------------- Part 2 -----
-divider("Install the tools", "Part 2 of 4" + NB + "·" + NB + "Python, Positron, Quarto, GitHub Desktop, the course repository",
+divider("Install the tools", "Part 2 of 6" + NB + "·" + NB + "Python, Positron, Quarto, GitHub Desktop, the course repository",
         "Show the overview first, so students know why each tool is there before they install it.")
 
 # 7  How the pieces fit together
@@ -239,7 +239,7 @@ cw2 = (9.0 - GAP) / 2
 for k, (osname, ic, steps, check) in enumerate([
         ("Windows", "LuMonitor",
          [[("Download: ", {"bold": True, "col": NAVY}), ("Python install manager", {})],
-          "Install it with a double-click", "Then in a terminal: py install 3.14"], "py -3.14 --version"),
+          "Install it with a double-click", "Start menu \u2192 Terminal: py install 3.14"], "py -3.14 --version"),
         ("macOS", "LuLaptop",
          [[("Download: ", {"bold": True, "col": NAVY}), ("macOS installer (Python 3.14.8)", {})],
           "Open the .pkg and click through", "Apple silicon and Intel"], "python3.14 --version")]):
@@ -278,11 +278,12 @@ s = add_slide("Titel und Inhalt", "Step 3: get the course repository",
               notes="The course repository is public: anyone can clone it without sign-in or access rights. Students pull "
                     "updates before each session. The cloned folder is the project they open in Positron.")
 progress(s, 2)
-stepper(s, 0.5, 1.95, 9.0, 0.6, ["Copy the URL\vfrom Canvas", "GitHub Desktop:\vClone repository", "Pick a folder\vwithout spaces",
+stepper(s, 0.5, 1.95, 9.0, 0.6, ["Copy the URL\v(below)", "GitHub Desktop:\vClone repository", "Pick a folder\vwithout spaces",
                                  "Positron:\vOpen Folder"], "Clone steps", size=12)
-code_block(s, 0.5, 2.75, 4.4, 1.05, "C:\\Users\\anna\\wu\\ima\n~/wu/ima", "Folder code", caption="Good folder names")
-text(s, 0.5, 3.9, 4.4, 0.85, [("Avoid ", "spaces, umlauts and cloud folders such as OneDrive or iCloud: they break "
-                                         "paths and syncing.")], "Folder note", size=12)
+code_block(s, 0.5, 2.75, 4.4, 1.05, "https://github.com/arnefloh-wu/\n  international-marketing-analytics-teaching",
+           "Repo URL code", size=10.5, caption="Course repository (public)")
+text(s, 0.5, 3.9, 4.4, 0.85, [("Folder: ", "e.g. C:\\Users\\anna\\wu\\ima or ~/wu/ima. Avoid spaces, umlauts and "
+                                           "OneDrive or iCloud folders.")], "Folder note", size=12)
 words = [("Clone", "your own copy of a repository; a public one needs no sign-in"),
          ("Pull", "get the latest materials; do it before every session"),
          ("Commit and push", "save and upload your changes (group repository)")]
@@ -321,7 +322,7 @@ callout(s, 4.95, 0.6, "LuRefreshCw", ("Once per project: ", "Positron remembers 
 
 # 12  The check
 s = add_slide("Titel und Inhalt", "Step 5: run the check",
-              notes="The script lives in setup/check_setup.py. Every line marked !! says what to fix. setup/test_stack.qmd "
+              notes="The script lives in setup/check_setup.py. Every line marked !! says what to fix. test_stack.qmd "
                     "then runs polars, plotnine and statsmodels on the course data and renders with Quarto. "
                     "Alternatively open the file and press the Run button at the top right of the editor.")
 progress(s, 4)
@@ -339,10 +340,48 @@ card(s, 6.3, 2.85, 3.2, 2.1, "Reading it", [
     "[ok]: in place",
     "[!!]: the line says what to fix",
     "Ends with \u201cready\u201d: done"], "LuCircleCheck", "Check card", head_h=0.45)
-callout(s, 5.05, 0.5, "LuPlay", ("Full test: ", "open setup/test_stack.qmd and press Preview (Ctrl/Cmd + Shift + K)."),
-        "Run button")
+callout(s, 5.05, 0.5, "LuPlay", ("Next: ", "the full test with test_stack.qmd (next slide)."), "Run button")
 
-# 13  AI assistant
+# 13  The stack test: test_stack.qmd
+s = add_slide("Titel und Inhalt", "Step 5: test the whole stack",
+              notes="test_stack.qmd sits at the top of the course repository. Open it and press Preview: Quarto runs the "
+                    "three cells with the project's .venv and shows a report with a table, a chart and the regression "
+                    "coefficients. The text under it says the model explains 43 % of the weekly variation.")
+code_block(s, 0.5, 1.35, 4.5, 3.05, """# polars: sum 2025 revenue by country
+import polars as pl
+
+sales = pl.read_csv(
+    "data/mmm/alpenglow_weekly.csv",
+    try_parse_dates=True)
+summary = (
+    sales
+    .filter(pl.col("week").dt.year() == 2025)
+    .group_by("country")
+    .agg(pl.col("revenue_eur_k").sum())
+    .sort("revenue_eur_k", descending=True)
+)
+summary""", "Test polars", size=10, caption="test_stack.qmd · cell 1")
+code_block(s, 5.15, 1.35, 4.35, 1.55, """# plotnine: weekly sales, AT and DE
+from plotnine import ggplot, aes, geom_line
+two = sales.filter(
+    pl.col("country").is_in(["AT", "DE"]))
+ggplot(two, aes("week", "sales_units_k",
+                color="country")) + geom_line()""", "Test plotnine", size=10, caption="cell 2")
+code_block(s, 5.15, 3.0, 4.35, 2.0, """# statsmodels: regression for Austria
+import statsmodels.formula.api as smf
+at = (sales.filter(pl.col("country") == "AT")
+      .to_pandas())
+model = smf.ols(
+    "sales_units_k ~ price_eur + spend_tv_k"
+    " + spend_paid_search_k", data=at).fit()
+model.params.round(2)""", "Test statsmodels", size=10, caption="cell 3")
+box(s, 0.5, 4.5, 4.5, 0.5, LIGHT, "Test result box")
+text(s, 0.65, 4.5, 4.3, 0.5, [("Result: ", "a table, a chart and four coefficients")], "Test result", size=12,
+     anchor=MSO_ANCHOR.MIDDLE)
+callout(s, 5.1, 0.45, "LuPlay", ("Run it: ", "open test_stack.qmd in Positron and press Preview (Ctrl/Cmd + Shift + K)."),
+        "Test run")
+
+# 14  AI assistant
 s = add_slide("Titel und Inhalt", "Step 6: connect your AI assistant",
               notes="Posit Assistant replaced Positron Assistant and Databot in Positron 2026.07; older videos show the "
                     "old menus. GitHub Copilot gives chat and code completions and is the cheapest provider for students; "
@@ -362,10 +401,10 @@ callout(s, 4.25, 1.2, "LuShieldCheck", ("Our rule: ", "the AI writes, you check.
                                                    "a short prompt log for each submission."), "AI rule", dark=True)
 
 # ---------------------------------------------------------------- Part 3 -----
-divider("How Positron works", "Part 3 of 4" + NB + "·" + NB + "panes, running code, projects, Quarto, Posit Assistant",
+divider("How Positron works", "Part 3 of 6" + NB + "·" + NB + "panes, running code, projects, shortcuts, Posit Assistant",
         "Positron 2026.09. A five-minute tour with the live application next to the slides works best.")
 
-# 14  Positron at a glance: a schematic window (names as in the Positron 2026.09 docs)
+# 15  Positron at a glance: a schematic window (names as in the Positron 2026.09 docs)
 s = add_slide("Titel und Inhalt", "Positron at a glance",
               notes="Names as in the Positron documentation: Activity Bar and Primary Side Bar on the left, Editor in "
                     "the middle with the Panel (Console, Terminal) below, Secondary Side Bar on the right with the "
@@ -403,7 +442,7 @@ pic = s.shapes.add_picture(str(FIGS / "plotnine_example.png"), I(6.79), I(4.18),
 pic.name = "Plot thumbnail"
 pic._element.nvPicPr.cNvPr.set("descr", "Example line chart of weekly sales for Austria and Germany")
 
-# 15  From code to result
+# 16  From code to result
 s = add_slide("Titel und Inhalt", "From code to result",
               notes="Show it live: write one line, press Ctrl+Enter, point at the console, the Variables pane and the plot. "
                     "%view df opens a table in the Data Explorer from the console.")
@@ -422,7 +461,7 @@ callout(s, 4.65, 0.9, "LuSquareTerminal", ("Console or terminal? ", "The console
                                                                   "your computer: pip, git and quarto commands go there."),
         "Console", dark=True)
 
-# 16  Projects: one folder for everything
+# 17  Projects: one folder for everything
 s = add_slide("Titel und Inhalt", "Projects in Positron: one folder for everything",
               notes="In Positron a project is simply a folder opened with File > Open Folder (a workspace). Positron finds "
                     "the .venv at the folder root and remembers the interpreter for that folder. Open folders, not single files.")
@@ -448,7 +487,7 @@ callout(s, 4.3, 1.25, "LuFolderGit2", (".venv stays on your laptop: ", ".gitigno
                                        "requirements.txt travels instead, so your group rebuilds the same environment "
                                        "with one command."), "Venv note", dark=True)
 
-# 17  New project from a template
+# 18  New project from a template
 s = add_slide("Titel und Inhalt", "Start a new project from a template",
               notes="New Folder from Template sets up the folder, a .venv, Git and a running session in one dialog. "
                     "Open it from the New menu (top left), the project switcher or the Command Palette "
@@ -468,56 +507,7 @@ text(s, 5.1, 3.55, 4.3, 0.9, [[("Line 1 installs packages, line 2 writes their v
 callout(s, 4.7, 0.85, "LuSearch", ("Where: ", "New ▾ (top left), the project switcher, or Command Palette → "
                                               "Workspaces: New Folder from Template."), "Template where")
 
-# 18  Group project
-s = add_slide("Titel und Inhalt", "Your case study as a shared project",
-              notes="GitHub in the browser is where the repository is created and the group is invited; GitHub Desktop "
-                    "keeps each laptop's copy in sync; Positron is where the work happens.")
-stepper(s, 0.5, 1.35, 9.0, 0.6, ["github.com:\vnew repository", "Invite\vthe group", "Desktop:\vclone",
-                                 "Positron:\vOpen Folder", "Create\v.venv"], "Group steps", size=12)
-tw3 = (9.0 - GAP * 2) / 3
-groups = [("LuGlobe", "github.com", ["One member creates the repository: Python .gitignore, README",
-                                                 "Settings → Collaborators: invite the group"]),
-          ("LuFolderGit2", "GitHub Desktop", ["Pull before you start", "Commit small steps with a clear message",
-                                              "Push when you stop"]),
-          ("LuMonitor", "Positron", ["Open the cloned folder", "Create Environment from requirements.txt (Step 4)",
-                                     "Work, save, then back to Desktop"])]
-for i, (ic, head, items) in enumerate(groups):
-    card(s, 0.5 + i * (tw3 + GAP), 2.15, tw3, 2.45, head, items, ic, f"Group card {i + 1}", head_h=0.45)
-callout(s, 4.8, 0.75, "LuUsers", ("Fewer conflicts: ", "pull first, push often, and one person per file where you can."),
-        "Group rule", dark=True)
-
-# 19  Quarto in Positron
-s = add_slide("Titel und Inhalt", "Quarto documents in Positron",
-              notes="All labs and the case study report are Quarto files. Text, code and results stay in one file, "
-                    "so the report can be rerun when the data change. Since 2026.08, output appears inline under each "
-                    "cell, with Fix and Explain buttons on errors.")
-qmd = """---
-title: "Sales by country"
-format: html
----
-
-## Revenue in 2025
-
-```{python}
-import polars as pl
-sales = pl.read_csv("data/mmm/alpenglow_weekly.csv")
-```
-
-Germany has the highest revenue."""
-code_block(s, 0.5, 1.35, 5.3, 3.25, qmd, "Qmd code", size=10.5, caption="report.qmd")
-qrows = [("LuFileText", ("Text ", "in Markdown: headings, bold, lists")),
-         ("LuCode", ("Code cells ", "run one by one; output shows below")),
-         ("LuEye", ("Preview: ", "Ctrl/Cmd + Shift + K shows the report next to your code")),
-         ("LuPresentation", ("Render ", "to HTML, PDF, Word or slides"))]
-for i, (ic, para) in enumerate(qrows):
-    y = 1.35 + i * (0.73 + 0.1)
-    box(s, 6.0, y, 3.5, 0.73, LIGHT, f"Quarto row {i + 1}")
-    icon(s, ic, "navy", 6.15, y + 0.16, 0.4, f"quarto {i + 1}")
-    text(s, 6.72, y, 2.7, 0.73, [para], f"Quarto text {i + 1}", size=12, anchor=MSO_ANCHOR.MIDDLE)
-callout(s, 4.8, 0.75, "LuNotebookPen", ("One file, rerun any time: ", "the labs and your case study report are Quarto "
-                                                                   "documents."), "Quarto use")
-
-# 20  Shortcuts
+# 19  Shortcuts
 s = add_slide("Titel und Tabelle", "Shortcuts worth knowing",
               notes="Positron-specific shortcuts from the Positron documentation, plus the Quarto preview. On macOS, Cmd "
                     "replaces Ctrl except where noted. The Command Palette finds every other command by name.")
@@ -547,7 +537,7 @@ for r_i, row in enumerate(rows):
                 r.font.name = MONO
         cell.margin_top = cell.margin_bottom = Emu(45000)
 
-# 21  Posit Assistant: what it is
+# 20  Posit Assistant: what it is
 s = add_slide("Titel und Inhalt", "Posit Assistant: the AI inside Positron",
               notes="Posit Assistant has been Positron's built-in AI since 2026.07, replacing Positron Assistant and "
                     "Databot. It uses session context (variable names and types, plots, console history). Permission "
@@ -568,7 +558,7 @@ text(s, 0.5, 4.95, 9.0, 0.6, [[("Memory: ", {"bold": True, "col": NAVY}),
                                ("an AGENTS.md file in your project tells it your conventions, for example "
                                 "“use polars and plotnine”.", {})]], "Memory note", size=12, anchor=MSO_ANCHOR.MIDDLE)
 
-# 22  Working with AI
+# 21  Working with AI
 s = add_slide("Titel und Inhalt", "Working with AI in Positron",
               notes="Export a conversation (Markdown) and attach it as the prompt log. Posit's FAQ: prompts and session "
                     "information such as variable names and types go to the model provider; row-level data only when "
@@ -590,10 +580,220 @@ callout(s, 4.7, 0.85, "LuShieldCheck", ("Privacy: ", "prompts, variable names an
                                                      "data only if you ask. Never paste personal data."), "Privacy")
 
 # ---------------------------------------------------------------- Part 4 -----
-divider("Python packages for this course", "Part 4 of 4" + NB + "·" + NB + "install and load; polars, plotnine, Great Tables, statsmodels",
+divider("Work with GitHub Desktop", "Part 4 of 6" + NB + "·" + NB + "the window, the everyday workflow, your group project",
+        "GitHub Desktop is the bridge between the folder on the laptop and GitHub. Show it live with the course repository.")
+
+# 22  GitHub Desktop at a glance
+s = add_slide("Titel und Inhalt", "GitHub Desktop at a glance",
+              notes="Names as in GitHub Desktop: the toolbar shows Current repository, Current branch and the sync button, "
+                    "which reads Fetch origin, Pull origin or Push origin depending on what is waiting. The Changes tab "
+                    "lists edited files; the diff on the right shows removed lines in red and added lines in green.")
+box(s, 0.5, 1.35, 5.8, 0.6, NAVY, "GD toolbar")
+segs = [(0.6, 2.35, "Current repository", "ima-teaching ▾"), (3.0, 1.5, "Current branch", "main ▾"),
+        (4.55, 1.7, "Fetch origin", "↻ now")]
+for j, (x, w, a, b) in enumerate(segs):
+    text(s, x + 0.35, 1.35, w - 0.35, 0.6, [[(a, {"col": WHITE, "size": 10.5})], [(b, {"col": WHITE, "bold": True, "size": 10.5})]],
+         f"GD seg {j + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
+    badge(s, x, 1.5, j + 1, f"GD badge {j + 1}", d=0.3, fill=ACC)
+box(s, 0.5, 2.0, 2.4, 2.95, LIGHT, "GD left")
+text(s, 0.95, 2.05, 1.9, 0.35, [[("Changes (2)", {"bold": True, "col": NAVY, "size": 11}), ("   History", {"size": 11})]],
+     "GD tabs", anchor=MSO_ANCHOR.MIDDLE)
+badge(s, 0.58, 2.07, 4, "GD badge 4", d=0.3, fill=ACC)
+for j, f in enumerate(["analysis.py", "report.qmd"]):
+    y = 2.5 + j * 0.38
+    box(s, 0.65, y + 0.07, 0.2, 0.2, ACC, f"GD check {j + 1}")
+    text(s, 0.95, y, 1.9, 0.34, [[(f, {"font": MONO, "col": NAVY, "size": 11})]], f"GD file {j + 1}", anchor=MSO_ANCHOR.MIDDLE)
+box(s, 0.6, 3.45, 2.2, 0.42, WHITE_BG, "GD summary")
+text(s, 0.68, 3.45, 2.1, 0.42, [[("Add Austria sales chart", {"size": 10.5})]], "GD summary text", anchor=MSO_ANCHOR.MIDDLE)
+btn = box(s, 0.6, 4.0, 2.2, 0.42, ACC, "GD commit", shape=MSO_SHAPE.ROUNDED_RECTANGLE)
+text(s, 0.6, 4.0, 2.2, 0.42, [[("Commit to main", {"bold": True, "col": WHITE, "size": 11})]], "GD commit text",
+     anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER)
+badge(s, 0.58, 4.5, 5, "GD badge 5", d=0.3, fill=ACC)
+text(s, 0.95, 4.45, 1.9, 0.4, [[("summary, then commit", {"size": 10.5})]], "GD commit note", anchor=MSO_ANCHOR.MIDDLE)
+box(s, 2.95, 2.0, 3.35, 2.95, WHITE_BG, "GD diff", line=ACC)
+badge(s, 3.03, 2.07, 6, "GD badge 6", d=0.3, fill=ACC)
+text(s, 3.4, 2.05, 2.8, 0.35, [[("report.qmd", {"font": MONO, "bold": True, "col": NAVY, "size": 11})]], "GD diff head",
+     anchor=MSO_ANCHOR.MIDDLE)
+for j, (sign, code, fill, ink) in enumerate([(" ", "at = sales.filter(...)", None, None),
+                                             ("-", "at.head()", "FBE3E3", "9F1D1D"),
+                                             ("+", "ggplot(at, aes(\"week\",", "E3F4E8", "146C2E"),
+                                             ("+", "  \"sales_units_k\"))", "E3F4E8", "146C2E"),
+                                             ("+", "  + geom_line()", "E3F4E8", "146C2E")]):
+    y = 2.55 + j * 0.36
+    if fill:
+        box(s, 3.0, y, 3.25, 0.34, fill, f"GD diff bg {j + 1}")
+    text(s, 3.08, y, 3.15, 0.34, [[(sign + " " + code, {"font": MONO, "size": 10.5, "col": ink or INK})]],
+         f"GD diff line {j + 1}", anchor=MSO_ANCHOR.MIDDLE)
+legend = [("Current repository", "which project you work on"), ("Current branch", "main is all we need"),
+          ("Fetch / Pull / Push origin", "sync with GitHub"),
+          ("Changes", "files edited since last commit"), ("Summary + Commit", "save a snapshot with a message"),
+          ("Diff", "red removed, green added")]
+for j, (a, b) in enumerate(legend):
+    y = 1.35 + j * 0.61
+    box(s, 6.45, y, 3.05, 0.55, LIGHT, f"GD legend {j + 1}")
+    badge(s, 6.55, y + 0.12, j + 1, f"GD legend badge {j + 1}", d=0.3, fill=ACC)
+    text(s, 6.95, y, 2.5, 0.55, [[(a, {"bold": True, "col": NAVY, "size": 11})], [(b, {"size": 10.5})]],
+         f"GD legend text {j + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
+text(s, 0.5, 5.05, 9.0, 0.45, [[("Course repository: ", {"bold": True, "col": NAVY}),
+                               ("you only pull. Your own work goes in your files or in your group repository.", {})]],
+     "GD note", size=12, anchor=MSO_ANCHOR.MIDDLE)
+
+# 23  The everyday workflow
+s = add_slide("Titel und Inhalt", "The everyday workflow",
+              notes="Pull before you start, commit small steps, push when you stop. A merge conflict happens when two people "
+                    "change the same lines; GitHub Desktop lists the files, and Posit Assistant can explain the markers.")
+stepper(s, 0.5, 1.35, 9.0, 0.6, ["Fetch, then\vPull origin", "Work in\vPositron", "Review\vChanges",
+                                 "Summary +\vCommit", "Push\vorigin"], "Flow steps", size=12)
+tw3 = (9.0 - GAP * 2) / 3
+flow = [("LuRefreshCw", "Course repository", ["Pull before every session", "Read-only for you: copy files into your own folder before editing"]),
+        ("LuUsers", "Group repository", ["Pull, work, commit, push", "One person per file where you can", "Push before others start"]),
+        ("LuGitBranch", "Good commits", ["Small steps, often", "Summary says what changed: “Add AT sales chart”",
+                                         "Push when you stop"])]
+for i, (ic, head, items) in enumerate(flow):
+    card(s, 0.5 + i * (tw3 + GAP), 2.15, tw3, 2.45, head, items, ic, f"Flow card {i + 1}", head_h=0.45)
+callout(s, 4.75, 0.8, "LuTriangleAlert", ("Merge conflict? ", "Open the file, keep the lines you want, delete the conflict "
+                                                            "markers (<<< === >>>), then commit and push."), "Conflict",
+        dark=True)
+
+# 24  Group project
+s = add_slide("Titel und Inhalt", "Your case study as a shared project",
+              notes="GitHub in the browser is where the repository is created and the group is invited; GitHub Desktop "
+                    "keeps each laptop's copy in sync; Positron is where the work happens.")
+stepper(s, 0.5, 1.35, 9.0, 0.6, ["github.com:\vnew repository", "Invite\vthe group", "Desktop:\vclone",
+                                 "Positron:\vOpen Folder", "Create\v.venv"], "Group steps", size=12)
+tw3 = (9.0 - GAP * 2) / 3
+groups = [("LuGlobe", "github.com", ["One member creates the repository: Python .gitignore, README",
+                                                 "Settings → Collaborators: invite the group"]),
+          ("LuFolderGit2", "GitHub Desktop", ["Pull before you start", "Commit small steps with a clear message",
+                                              "Push when you stop"]),
+          ("LuMonitor", "Positron", ["Open the cloned folder", "Create Environment from requirements.txt (Step 4)",
+                                     "Work, save, then back to Desktop"])]
+for i, (ic, head, items) in enumerate(groups):
+    card(s, 0.5 + i * (tw3 + GAP), 2.15, tw3, 2.45, head, items, ic, f"Group card {i + 1}", head_h=0.45)
+callout(s, 4.8, 0.75, "LuUsers", ("Fewer conflicts: ", "pull first, push often, and one person per file where you can."),
+        "Group rule", dark=True)
+
+# ---------------------------------------------------------------- Part 5 -----
+divider("Write reports with Quarto", "Part 5 of 6" + NB + "·" + NB + "how it works, the YAML header, code cells, output formats",
+        "All labs and the case study report are Quarto documents. One file holds text, code and results.")
+
+# 25  How Quarto works
+s = add_slide("Titel und Inhalt", "Quarto: text, code and results in one file",
+              notes="Quarto runs the Python cells through Jupyter, writes the results into Markdown and lets Pandoc turn it "
+                    "into HTML, PDF, Word or slides. Since Positron 2026.08 cell output also shows inline in the editor, "
+                    "with Fix and Explain buttons on errors.")
+stepper(s, 0.5, 1.35, 9.0, 0.6, ["report.qmd", "Python runs\vthe cells", "Markdown\v+ results", "Pandoc\vconverts",
+                                 "HTML, PDF,\vWord, slides"], "Quarto steps", size=12)
+code_block(s, 0.5, 2.1, 5.0, 2.85, """---
+title: "Alpenglow: sales in Austria"
+author: "Anna Berger"
+format: html
+---
+
+## Weekly sales
+
+```{python}
+at = sales.filter(pl.col("country") == "AT")
+at.head()
+```
+
+Austria is our smallest market.""", "Anatomy code", size=10, caption="report.qmd")
+parts = [("1  YAML header: ", "settings between the two --- lines"), ("2  Markdown: ", "headings (##), **bold**, lists, links"),
+         ("3  Code cells: ", "```{python} … ``` run Python; the output lands under the cell")]
+for i, para in enumerate(parts):
+    y = 2.1 + i * 0.98
+    box(s, 5.65, y, 3.85, 0.88, LIGHT, f"Anatomy row {i + 1}")
+    box(s, 5.65, y, 0.07, 0.88, ACC, f"Anatomy bar {i + 1}")
+    text(s, 5.85, y, 3.55, 0.88, [para], f"Anatomy text {i + 1}", size=12, anchor=MSO_ANCHOR.MIDDLE)
+callout(s, 5.05, 0.5, "LuEye", ("Preview: ", "Ctrl/Cmd + Shift + K in Positron.   Render: quarto render report.qmd"),
+        "Quarto preview")
+
+# 26  The YAML header
+s = add_slide("Titel und Inhalt", "The YAML header: settings for the whole document",
+              notes="YAML is key: value pairs. Nesting is done by indentation, two spaces per level, never tabs. Options for "
+                    "one format sit under that format's name.")
+code_block(s, 0.5, 1.35, 4.3, 3.35, """---
+title: "Alpenglow: sales in Austria"
+author: "Anna Berger"
+date: today
+format:
+  html:
+    toc: true
+    code-fold: true
+execute:
+  warning: false
+---""", "YAML code", size=11.5, caption="Top of report.qmd")
+keys = [("title, author", "shown at the top"), ("date: today", "the day you render"),
+        ("format: html", "the output; its options indented below"), ("toc: true", "table of contents"),
+        ("code-fold: true", "code hidden behind a “Code” button"), ("warning: false", "no warnings in the output")]
+for i, (k, v) in enumerate(keys):
+    y = 1.35 + i * 0.56
+    box(s, 4.95, y, 4.55, 0.5, LIGHT, f"YAML row {i + 1}")
+    text(s, 5.1, y, 2.15, 0.5, [[(k, {"font": MONO, "bold": True, "col": NAVY, "size": 11})]], f"YAML key {i + 1}",
+         anchor=MSO_ANCHOR.MIDDLE)
+    text(s, 7.25, y, 2.2, 0.5, [[(v, {"size": 11})]], f"YAML value {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
+callout(s, 4.85, 0.7, "LuTriangleAlert", ("Indentation matters: ", "two spaces per level, no tabs, and a space after "
+                                                                 "every colon."), "YAML rule", dark=True)
+
+# 27  Code cells
+s = add_slide("Titel und Inhalt", "Code cells: options and numbers in the text",
+              notes="Cell options start with #| at the top of a cell. A label starting with fig- makes the chart a numbered "
+                    "figure that @fig-sales refers to. Inline code puts a computed number into the sentence, so the text "
+                    "updates when the data change.")
+code_block(s, 0.5, 1.35, 5.3, 2.75, """```{python}
+#| label: fig-sales
+#| fig-cap: "Weekly sales in Austria"
+#| echo: false
+ggplot(at, aes("week", "sales_units_k")) + geom_line()
+```
+
+The chart covers `{python} at.height` weeks (@fig-sales).""", "Cell code", size=10.5, caption="Inside report.qmd")
+opts = [("#| label: fig-sales", "names the cell; fig- makes it a figure"), ("#| fig-cap:", "the caption under the chart"),
+        ("#| echo: false", "show the result, hide the code"), ("`{python} …`", "a computed number in the text"),
+        ("@fig-sales", "“Figure 1”, with a link")]
+for i, (k, v) in enumerate(opts):
+    y = 1.35 + i * 0.56
+    box(s, 5.95, y, 3.55, 0.5, LIGHT, f"Opt row {i + 1}")
+    text(s, 6.08, y, 3.4, 0.5, [[(k, {"font": MONO, "bold": True, "col": NAVY, "size": 10.5})], [(v, {"size": 10.5})]],
+         f"Opt text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
+callout(s, 4.3, 1.2, "LuLightbulb", ("Why it matters: ", "when the data change, you render again and every chart, table "
+                                                       "and number in the text updates. No copy and paste into Word."),
+        "Cell why", dark=True)
+
+# 28  Output formats
+s = add_slide("Titel und Inhalt", "One source, many output formats",
+              notes="The four pictures are the same report.qmd rendered four ways (slides/quarto_demo/report.qmd). Typst "
+                    "makes PDFs without installing LaTeX. Positron's Preview shows the first format listed.")
+thumbs = [("html", 1500 / 1125, "html", "web page (default)"), ("revealjs", 1500 / 938, "revealjs", "slides in the browser"),
+          ("pdf", 680 / 880, "typst", "PDF, no LaTeX needed"), ("docx", 680 / 880, "docx", "Word, to edit further")]
+th = 1.8
+widths = [th * r for _, r, _, _ in thumbs]
+gap = (9.0 - sum(widths)) / 3
+x = 0.5
+for f, r, key, desc in thumbs:
+    w = th * r
+    pic = s.shapes.add_picture(str(FIGS / f"quarto_{f}.png"), I(x), I(1.35), I(w), I(th))
+    pic.name = f"Quarto {key} thumbnail"
+    pic.line.color.theme_color = ACC
+    pic.line.width = Pt(0.75)
+    pic._element.nvPicPr.cNvPr.set("descr", f"The demo report rendered as {desc}")
+    text(s, x, 3.2, w + 0.1, 0.5, [[(key, {"font": MONO, "bold": True, "col": NAVY, "size": 11})], [(desc, {"size": 10.5})]],
+         f"Quarto {key} label", space=0)
+    x += w + gap
+code_block(s, 0.5, 3.85, 4.4, 1.7, """format:
+  html: default
+  revealjs: default
+  typst: default
+  docx: default""", "Formats code", size=11, caption="YAML: several formats")
+code_block(s, 5.05, 3.85, 4.45, 1.7, """quarto render report.qmd
+quarto render report.qmd --to docx""", "Render code", size=11, caption="Terminal: all formats, or one")
+text(s, 5.2, 4.9, 4.2, 0.6, [[("Also: pptx, dashboard, pdf (LaTeX)", {"col": WHITE, "size": 11})]], "Formats also")
+
+# ---------------------------------------------------------------- Part 6 -----
+divider("Python packages for this course", "Part 6 of 6" + NB + "·" + NB + "install and load; polars, plotnine, Great Tables, statsmodels",
         "Install and load first, then one slide per package with code that runs on the course data.")
 
-# 23  Install packages: code for Windows and macOS
+# 29  Install packages: code for Windows and macOS
 s = add_slide("Titel und Inhalt", "Install packages: three ways",
               notes="All three install into the course .venv. The terminal lines call the Python inside .venv directly, "
                     "so no activation is needed. %pip in the Positron console installs into the running session; "
@@ -613,7 +813,7 @@ callout(s, 4.35, 1.2, "LuPackage", ("Install name and import name can differ: ",
                                     "pip install great-tables → import great_tables; scikit-learn → sklearn; "
                                     "pymc-marketing → pymc_marketing."), "Names")
 
-# 24  Packages pane
+# 30  Packages pane
 s = add_slide("Titel und Inhalt", "The Packages pane: install without code",
               notes="The Packages pane arrived in Positron 2026.07. It works on the active session's environment, uses the "
                     "workspace requirements.txt to keep versions consistent, flags outdated packages and known security "
@@ -638,7 +838,7 @@ card(s, 5.05, 2.15, 4.45, 3.4, "What else it does", [
     "Keeps versions in line with requirements.txt",
     "Offers to install a missing package after an error"], "LuPackage", "Pane card", head_h=0.45)
 
-# 25  Load packages
+# 31  Load packages
 s = add_slide("Titel und Inhalt", "Load packages: import at the top of every file",
               notes="Loading is the same on Windows and macOS. Installing happens once per laptop; importing in every "
                     "file and every new session.")
@@ -658,7 +858,7 @@ callout(s, 4.35, 1.2, "LuTriangleAlert", ("ModuleNotFoundError? ", "Either the w
                                                                  "in .venv) or the package is missing: %pip install it."),
         "Error", dark=True)
 
-# 26  Toolkit map
+# 32  Toolkit map
 s = add_slide("Titel und Inhalt", "Your toolkit, from data to report",
               notes="The four stages repeat in every lab and in the case study.")
 tw4 = (9.0 - GAP * 3) / 4
@@ -684,7 +884,7 @@ for i, (fig, lab) in enumerate(fact):
 callout(s, 4.75, 0.8, "LuBookOpen", ("Online you will also meet pandas and matplotlib: ", "older but common; "
                                                                                     "the ideas carry over."), "Older tools")
 
-# 27  polars
+# 33  polars
 s = add_slide("Titel und Inhalt", "polars: data wrangling",
               notes="Read the chain top to bottom: keep 2025, group by country, sum two columns, sort. "
                     "statsmodels and PyMC expect pandas, so convert at the end with .to_pandas().")
@@ -712,7 +912,7 @@ for i, para in enumerate(prow):
 callout(s, 4.6, 0.95, "LuTable", ("Result: ", "six rows, one per country. Germany leads with about EUR" + NB + "131" + NB +
                                   "million revenue in 2025. Need pandas? Add .to_pandas()."), "Polars result")
 
-# 28  plotnine
+# 34  plotnine
 s = add_slide("Titel und Inhalt", "plotnine: charts with the grammar of graphics",
               notes="Same grammar as ggplot2 in R, so R tutorials transfer almost one to one. Each + adds one layer.")
 code_block(s, 0.5, 1.35, 4.6, 2.6, '''(ggplot(sales.filter(
@@ -740,7 +940,7 @@ for i, (a, b) in enumerate(gram):
 text(s, 0.5, 5.1, 9.0, 0.45, [[("Data + mapping + marks + panels + theme: ", {"bold": True, "col": NAVY}),
                                ("each + adds one layer.", {})]], "Grammar note", anchor=MSO_ANCHOR.MIDDLE)
 
-# 29  Great Tables
+# 35  Great Tables
 s = add_slide("Titel und Inhalt", "Great Tables: tables for reports",
               notes="GT takes the polars summary from the polars slide directly. In a Quarto HTML report the table "
                     "renders by itself; .save() writes a PNG.")
@@ -765,7 +965,7 @@ for i, para in enumerate(gtrows):
     box(s, 0.5, y, 0.07, 0.58, ACC, f"GT bar {i + 1}")
     text(s, 0.72, y, 4.9, 0.58, [para], f"GT text {i + 1}", size=12, anchor=MSO_ANCHOR.MIDDLE)
 
-# 30  statsmodels
+# 36  statsmodels
 s = add_slide("Titel und Inhalt", "statsmodels: regression",
               notes="A first look only: Sessions 1 and 2 explain how to read, check and improve such a model. "
                     "The formula reads: sales explained by price, TV spend and paid search spend.")
@@ -794,7 +994,7 @@ text(s, 0.5, 4.9, 9.0, 0.65, [[("Later in the course: ", {"bold": True, "col": N
      "Later note", anchor=MSO_ANCHOR.MIDDLE)
 
 # ---------------------------------------------------------------- wrap-up ----
-# 31  Troubleshooting
+# 37  Troubleshooting
 s = add_slide("Titel und Tabelle", "When something goes wrong",
               notes="Most problems are an old terminal window or the wrong interpreter.")
 rows = [("Problem", "Fix"),
@@ -821,7 +1021,7 @@ for r_i, row in enumerate(rows):
                 r.font.bold = True
         cell.margin_top = cell.margin_bottom = Emu(54000)
 
-# 32  Checklist
+# 38  Checklist
 s = add_slide("Titel und Inhalt", "Checklist: before you leave today",
               notes="Students tick these off. Anything still open goes to the Q&A forum on Canvas before Session 2.")
 cw2 = (9.0 - GAP) / 2
@@ -844,7 +1044,7 @@ for k, (head, ic, items) in enumerate([
 callout(s, 4.95, 0.6, "LuLifeBuoy", ("Not ready yet? ", "Post the failing step in the Q&A forum on Canvas before Session 2."),
         "Help", dark=True)
 
-# 33  Closing contact card
+# 39  Closing contact card
 add_slide("Abschlussfolie Kontakt", notes="Questions? Contact details on the card.")
 
 deck.save(OUT)
