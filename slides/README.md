@@ -1,16 +1,22 @@
 # Slides
 
-Course decks on the WU template, built and polished with the `polish-slides` skill (`.claude/skills/polish-slides`).
+Course decks on the WU template, built with the `polish-slides` and `add-instructor-slide` skills (`.claude/skills/`).
 
 | File | Content |
 |---|---|
-| `00a_course-content-and-style_WT26-27.pptx` / `.pdf` | Course outline: content, learning outcomes, methods, roadmap, assessment, certificates, quizzes and check-ins, group project, peer rating |
-| `build_course_outline.py` | Rebuilds the outline deck from the skill's template and the WT 25/26 deck in `old-slides/` (pictures are carried over) |
+| `00a_course-content-and-style_WT26-27.pptx` / `.pdf` | Course outline: welcome, instructor profile, module content, five sessions, learning outcomes, methods, roadmap, assessment, certificates, quizzes and check-ins, group project, peer rating, contact |
+| `build_course_outline.py` | Builds the outline deck on the skill's template with the design patterns in `polish-slides/references/design-patterns.md` (icon rows, grouped bands, two-card comparisons, steppers, stat rows, native chart, session card grid) |
+| `finish_profile_slides.py` | Applies the deck's type sizes (16 pt titles, 15 pt card headings) to the instructor profile slides |
+| `icons/` | Lucide line icons as PNG in WU navy, blue and white; `render_icons.js` regenerates them |
+
+Type sizes: 13 pt text, 15 pt table and card headings, 16 pt slide titles, 28 pt figures.
 
 Rebuild and check:
 
 ```bash
-python slides/build_course_outline.py .claude/skills/polish-slides/assets/template.pptx "old-slides/00a_Course Content & Style_WT25-26.pptx" slides/00a_course-content-and-style_WT26-27.pptx
+python slides/build_course_outline.py .claude/skills/polish-slides/assets/template.pptx "old-slides/00a_Course Content & Style_WT25-26.pptx" /tmp/outline.pptx
+python .claude/skills/add-instructor-slide/scripts/add_instructor_slides.py /tmp/outline.pptx -o slides/00a_course-content-and-style_WT26-27.pptx --after 2
+python slides/finish_profile_slides.py slides/00a_course-content-and-style_WT26-27.pptx
 python .claude/skills/polish-slides/scripts/check_deck.py slides/00a_course-content-and-style_WT26-27.pptx /tmp/qa
 ```
 
