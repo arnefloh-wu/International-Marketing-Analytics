@@ -24,7 +24,7 @@ FIGS = Path(__file__).resolve().parent / "figures"
 FOOTER = "International Marketing Analytics" + NB + "·" + NB + "WT" + NB + "2026/27"
 deck = Deck(TEMPLATE, FOOTER)
 add_slide, L = deck.add_slide, deck.L
-STEPS = ["Accounts", "Tools", "Repo", "Packages", "Check", "AI"]
+STEPS = ["Accounts", "Tools", "Repo", "Project", "Check", "AI"]
 WHITE_BG = "FFFFFF"
 
 
@@ -228,28 +228,29 @@ for i, (ic, head, sub) in enumerate(row2):
          f"Inside text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
 
 # 8  Python from python.org
-PY = "3.13.16"
-PY_URL = "https://www.python.org/downloads/release/python-31316/"
-s = add_slide("Titel und Inhalt", "Step 2: download and install Python " + PY,
-              notes="Python 3.13.16 (30 September 2026) is the last full maintenance release of 3.13 and runs every "
-                    "course package. Do not take the big yellow 3.14 button on python.org: PyMC-Marketing does not run "
-                    "on 3.14 yet. On Windows the box 'Add python.exe to PATH' is the step most often missed.")
+PY = "3.14.8"
+s = add_slide("Titel und Inhalt", "Step 2: install Python " + PY,
+              notes="Python 3.14.8 (30 September 2026) is the latest release; every course package installs and runs on it. "
+                    "Windows and macOS do not come with Python, so it is always installed once. On Windows, python.org now "
+                    "distributes Python through the Python install manager, which installs and updates Python itself. "
+                    "Positron can also install Python for you: Command Palette, Python: Install Python via uv.")
 progress(s, 1)
 cw2 = (9.0 - GAP) / 2
-for k, (osname, ic, button, steps, check) in enumerate([
-        ("Windows", "LuMonitor", "Windows installer (64-bit)",
-         ["Run the downloaded .exe", "Tick \u201cAdd python.exe to PATH\u201d", "Click Install Now"], "py -3.13 --version"),
-        ("macOS", "LuLaptop", "macOS 64-bit universal2 installer",
-         ["Open the downloaded .pkg", "Click through the installer", "Works on Apple silicon and Intel"],
-         "python3.13 --version")]):
+for k, (osname, ic, steps, check) in enumerate([
+        ("Windows", "LuMonitor",
+         [[("Download: ", {"bold": True, "col": NAVY}), ("Python install manager", {})],
+          "Install it with a double-click", "Then in a terminal: py install 3.14"], "py -3.14 --version"),
+        ("macOS", "LuLaptop",
+         [[("Download: ", {"bold": True, "col": NAVY}), ("macOS installer (Python 3.14.8)", {})],
+          "Open the .pkg and click through", "Apple silicon and Intel"], "python3.14 --version")]):
     x = 0.5 + k * (cw2 + GAP)
-    card(s, x, 1.95, cw2, 2.05, osname, [[("Download: ", {"bold": True, "col": NAVY}), (button, {})]] + steps,
-         ic, f"{osname} card", head_h=0.45)
-    code_block(s, x, 4.1, cw2, 0.62, check, f"{osname} check", size=11.5)
+    card(s, x, 1.95, cw2, 2.05, osname, steps, ic, f"{osname} card", head_h=0.45)
+    code_block(s, x, 4.1, cw2, 0.62, check, f"{osname} check", size=11.5, caption=None)
 box(s, 0.5, 4.87, 9.0, 0.68, LIGHT, "Python link box")
 icon(s, "LuDownload", "navy", 0.72, 4.99, 0.42, "download")
-text(s, 1.35, 4.87, 8.0, 0.68, [[("Both installers: ", {"bold": True, "col": NAVY}), link("python.org/downloads/release/python-31316", PY_URL)],
-                                [("Not the yellow \u201cDownload Python 3.14\u201d button: the course needs 3.13.", {"size": 12})]],
+text(s, 1.35, 4.87, 8.0, 0.68, [[("Both downloads: ", {"bold": True, "col": NAVY}),
+                                 link("python.org/downloads", "https://www.python.org/downloads/")],
+                                [("Or let Positron install it: Command Palette \u2192 Python: Install Python via uv", {"size": 12})]],
      "Python link text", anchor=MSO_ANCHOR.MIDDLE, space=0)
 
 # 9  Positron, Quarto, GitHub Desktop
@@ -274,15 +275,15 @@ callout(s, 5.05, 0.5, "LuRefreshCw", ("Restart Positron ", "after installing Qua
 
 # 10  Course repository
 s = add_slide("Titel und Inhalt", "Step 3: get the course repository",
-              notes="The course repository is read-only for students: they pull updates before each session. "
-                    "Group repositories for the case study come later and use the same clicks plus commit and push.")
+              notes="The course repository is public: anyone can clone it without sign-in or access rights. Students pull "
+                    "updates before each session. The cloned folder is the project they open in Positron.")
 progress(s, 2)
 stepper(s, 0.5, 1.95, 9.0, 0.6, ["Copy the URL\vfrom Canvas", "GitHub Desktop:\vClone repository", "Pick a folder\vwithout spaces",
                                  "Positron:\vOpen Folder"], "Clone steps", size=12)
 code_block(s, 0.5, 2.75, 4.4, 1.05, "C:\\Users\\anna\\wu\\ima\n~/wu/ima", "Folder code", caption="Good folder names")
 text(s, 0.5, 3.9, 4.4, 0.85, [("Avoid ", "spaces, umlauts and cloud folders such as OneDrive or iCloud: they break "
                                          "paths and syncing.")], "Folder note", size=12)
-words = [("Clone", "your own copy of the repository, linked to GitHub"),
+words = [("Clone", "your own copy of a repository; a public one needs no sign-in"),
          ("Pull", "get the latest materials; do it before every session"),
          ("Commit and push", "save and upload your changes (group repository)")]
 for i, (w, d) in enumerate(words):
@@ -290,42 +291,42 @@ for i, (w, d) in enumerate(words):
     box(s, 5.1, y, 4.4, 0.58, LIGHT, f"Git word {i + 1}")
     box(s, 5.1, y, 0.07, 0.58, ACC, f"Git word bar {i + 1}")
     text(s, 5.32, y, 4.08, 0.58, [(w + ": ", d)], f"Git word text {i + 1}", size=12, anchor=MSO_ANCHOR.MIDDLE)
-callout(s, 4.9, 0.65, "LuFolderOpen", ("In Positron: ", "File \u2192 Open Folder and choose the cloned folder."), "Open folder")
+callout(s, 4.9, 0.65, "LuFolderOpen", ("In Positron: ", "File \u2192 Open Folder. The cloned folder is now your project."),
+        "Open folder")
 
-# 11  Course packages into a .venv
-s = add_slide("Titel und Inhalt", "Step 4: install the course packages",
-              notes="Run the two lines in the Positron terminal, inside the course folder. The first line makes a private "
-                    "Python in the folder .venv, the second installs every package in requirements.txt into it. The first "
-                    "install takes a few minutes because PyMC is large. No activation step is needed, because the "
-                    "commands call the Python inside .venv directly.")
+# 11  The project's Python: a .venv made by Positron
+s = add_slide("Titel und Inhalt", "Step 4: set up the project's Python",
+              notes="Python: Create Environment makes a .venv inside the open project folder with the chosen Python, offers "
+                    "to install the packages from requirements.txt, and selects the new interpreter. The first install "
+                    "takes a few minutes because PyMC is large. If packages were not installed, the console line does it, "
+                    "on Windows and macOS alike.")
 progress(s, 3)
-code_block(s, 0.5, 1.95, 5.6, 0.95, "py -3.13 -m venv .venv\n.venv\\Scripts\\python -m pip install -r requirements.txt",
-           "Env code win", size=11, caption="Windows: Positron terminal (PowerShell)")
-code_block(s, 0.5, 3.0, 5.6, 0.95, "python3.13 -m venv .venv\n.venv/bin/python -m pip install -r requirements.txt",
-           "Env code mac", size=11, caption="macOS: Positron terminal")
-text(s, 0.5, 4.05, 5.6, 0.75, [("Line 1 ", "creates .venv, a private Python for this folder. "),
-                               ("Line 2 ", "installs all course packages into it.")], "Env lines", size=12, space=2)
-box(s, 6.3, 1.95, 3.2, 2.85, LIGHT, "Interpreter panel")
-text(s, 6.45, 2.05, 2.95, 0.35, [[("Then: Interpreter picker", {"bold": True, "col": NAVY})]], "Interpreter head")
-pill = box(s, 6.45, 2.5, 2.9, 0.42, WHITE_BG, "Interpreter pill", shape=MSO_SHAPE.ROUNDED_RECTANGLE, line=ACC)
-text(s, 6.55, 2.5, 2.75, 0.42, [[("Python 3.13.16 (.venv) \u25be", {"font": MONO, "col": NAVY, "size": 11})]], "Pill text",
+stepper(s, 0.5, 1.95, 9.0, 0.6, ["Create\vEnvironment", "Venv", "Python\v3.14.8",
+                                 "Install\vpackages", ".venv\vselected"], "Env steps", size=12)
+card(s, 0.5, 2.75, 4.3, 2.05, "Positron then", [
+    "Start: Command Palette \u2192 Python: Create Environment",
+    "Creates .venv inside the project",
+    "Installs all course packages",
+    "Starts Python from .venv"], "LuFolderOpen", "Env card", head_h=0.45)
+box(s, 4.95, 2.75, 4.55, 0.95, LIGHT, "Interpreter panel")
+text(s, 5.1, 2.75, 1.6, 0.95, [[("Interpreter picker", {"bold": True, "col": NAVY, "size": 12})], [("top right", {"size": 11})]],
+     "Interpreter head", anchor=MSO_ANCHOR.MIDDLE, space=0)
+pill = box(s, 6.65, 3.02, 2.7, 0.42, WHITE_BG, "Interpreter pill", shape=MSO_SHAPE.ROUNDED_RECTANGLE, line=ACC)
+text(s, 6.72, 3.02, 2.6, 0.42, [[("Python 3.14.8 (.venv) \u25be", {"font": MONO, "col": NAVY, "size": 11})]], "Pill text",
      anchor=MSO_ANCHOR.MIDDLE)
-text(s, 6.45, 3.05, 2.95, 1.7, [
-    "Top right in Positron",
-    "Pick the Python in .venv",
-    "Positron remembers it for this folder"], "Interpreter text", size=12, bullets=True, space=4)
-callout(s, 4.95, 0.6, "LuSquareTerminal", ("No typing? ", "Command Palette \u2192 Python: Create Environment \u2192 Venv "
-                                                       "\u2192 tick requirements.txt."), "Create env")
+code_block(s, 4.95, 3.85, 4.55, 0.95, "%pip install -r requirements.txt", "Env console", size=11,
+           caption="Packages missing? Positron console")
+callout(s, 4.95, 0.6, "LuRefreshCw", ("Once per project: ", "Positron remembers the .venv and starts it whenever you open "
+                                                         "the folder."), "Once note")
 
 # 12  The check
 s = add_slide("Titel und Inhalt", "Step 5: run the check",
-              notes="The script lives in setup/check_setup.py. Every line marked !! says what to fix. "
+              notes="The script lives in setup/check_setup.py. Every line marked !! says what to fix. setup/test_stack.qmd "
+                    "then runs polars, plotnine and statsmodels on the course data and renders with Quarto. "
                     "Alternatively open the file and press the Run button at the top right of the editor.")
 progress(s, 4)
-code_block(s, 0.5, 1.95, cw2, 0.75, ".venv\\Scripts\\python setup\\check_setup.py", "Check command win",
-           size=11, caption="Windows")
-code_block(s, 0.5 + cw2 + GAP, 1.95, cw2, 0.75, ".venv/bin/python setup/check_setup.py", "Check command mac",
-           size=11, caption="macOS")
+code_block(s, 0.5, 1.95, 9.0, 0.75, "%run setup/check_setup.py", "Check command", size=11,
+           caption="Positron console (Windows and macOS)")
 out = """Packages
   [ok] polars           1.44.2     data wrangling
   [ok] plotnine         0.15.8     charts
@@ -338,7 +339,8 @@ card(s, 6.3, 2.85, 3.2, 2.1, "Reading it", [
     "[ok]: in place",
     "[!!]: the line says what to fix",
     "Ends with \u201cready\u201d: done"], "LuCircleCheck", "Check card", head_h=0.45)
-callout(s, 5.05, 0.5, "LuPlay", ("No terminal? ", "Open setup/check_setup.py in Positron and press Run."), "Run button")
+callout(s, 5.05, 0.5, "LuPlay", ("Full test: ", "open setup/test_stack.qmd and press Preview (Ctrl/Cmd + Shift + K)."),
+        "Run button")
 
 # 13  AI assistant
 s = add_slide("Titel und Inhalt", "Step 6: connect your AI assistant",
@@ -375,7 +377,7 @@ box(s, 5.0, 1.39, 1.65, 0.28, WHITE_BG, "Project switcher", shape=MSO_SHAPE.ROUN
 text(s, 5.05, 1.39, 1.55, 0.28, [[("case-study ▾", {"col": NAVY, "size": 10.5})]], "Project switcher text",
      anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER)
 box(s, 6.75, 1.39, 2.65, 0.28, WHITE_BG, "Window pill", shape=MSO_SHAPE.ROUNDED_RECTANGLE)
-text(s, 6.8, 1.39, 2.55, 0.28, [[("Python 3.13.16 (.venv) ▾", {"font": MONO, "col": NAVY, "size": 10.5})]],
+text(s, 6.8, 1.39, 2.55, 0.28, [[("Python 3.14.8 (.venv) ▾", {"font": MONO, "col": NAVY, "size": 10.5})]],
      "Window pill text", anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.CENTER)
 box(s, 0.5, 1.71, 0.3, 3.84, ACC, "Activity bar")
 panes = [  # x, y, w, h, name, description, sample
@@ -452,7 +454,7 @@ s = add_slide("Titel und Inhalt", "Start a new project from a template",
                     "Open it from the New menu (top left), the project switcher or the Command Palette "
                     "(Workspaces: New Folder from Template).")
 stepper(s, 0.5, 1.35, 9.0, 0.6, ["New Folder\vfrom Template", "Python\vProject", "Name and\vlocation",
-                                 "Python 3.13\v+ venv", "Create"], "Template steps", size=12)
+                                 "Python 3.14\v+ venv", "Create"], "Template steps", size=12)
 card(s, 0.5, 2.15, 4.3, 2.35, "Positron sets up", [
     "The folder with a .venv inside",
     "Git: .git and a .gitignore",
@@ -477,7 +479,7 @@ groups = [("LuGlobe", "github.com", ["One member creates the repository: Python 
                                                  "Settings → Collaborators: invite the group"]),
           ("LuFolderGit2", "GitHub Desktop", ["Pull before you start", "Commit small steps with a clear message",
                                               "Push when you stop"]),
-          ("LuMonitor", "Positron", ["Open the cloned folder", "Create .venv from requirements.txt (Step 4)",
+          ("LuMonitor", "Positron", ["Open the cloned folder", "Create Environment from requirements.txt (Step 4)",
                                      "Work, save, then back to Desktop"])]
 for i, (ic, head, items) in enumerate(groups):
     card(s, 0.5 + i * (tw3 + GAP), 2.15, tw3, 2.45, head, items, ic, f"Group card {i + 1}", head_h=0.45)
@@ -601,12 +603,12 @@ def two(prefix):
     return f"{a.ljust(58)}# all course packages\n{b.ljust(58)}# one package"
 
 
-code_block(s, 0.5, 1.35, 9.0, 0.95, two(".venv\\Scripts\\python"),
-           "Install win", size=11, caption="1  Windows: Positron terminal")
-code_block(s, 0.5, 2.42, 9.0, 0.95, two(".venv/bin/python"),
-           "Install mac", size=11, caption="2  macOS: Positron terminal")
-code_block(s, 0.5, 3.49, 9.0, 0.7, "%pip install polars plotnine great-tables", "Install console", size=11,
-           caption="3  Windows and macOS: Positron console")
+code_block(s, 0.5, 2.15, 9.0, 0.95, two(".venv\\Scripts\\python"),
+           "Install win", size=11, caption="2  Windows: Positron terminal")
+code_block(s, 0.5, 3.22, 9.0, 0.95, two(".venv/bin/python"),
+           "Install mac", size=11, caption="3  macOS: Positron terminal")
+code_block(s, 0.5, 1.35, 9.0, 0.7, "%pip install polars plotnine great-tables", "Install console", size=11,
+           caption="1  Windows and macOS: Positron console (easiest)")
 callout(s, 4.35, 1.2, "LuPackage", ("Install name and import name can differ: ",
                                     "pip install great-tables → import great_tables; scikit-learn → sklearn; "
                                     "pymc-marketing → pymc_marketing."), "Names")
@@ -620,7 +622,7 @@ stepper(s, 0.5, 1.35, 9.0, 0.6, ["Packages icon\v(Activity Bar)", "Install\vPack
                                  "Restart session\vwhen asked"], "Pane steps", size=12)
 box(s, 0.5, 2.15, 4.4, 3.4, LIGHT, "Pane mock")
 text(s, 0.65, 2.22, 4.1, 0.35, [[("PACKAGES", {"bold": True, "col": NAVY, "size": 11}),
-                                 ("     Python 3.13.16 (.venv)", {"size": 11})]], "Pane mock head", anchor=MSO_ANCHOR.MIDDLE)
+                                 ("     Python 3.14.8 (.venv)", {"size": 11})]], "Pane mock head", anchor=MSO_ANCHOR.MIDDLE)
 mock = [("great-tables", "1.0.0", ""), ("pandas", "3.0.6", "● attached"), ("plotnine", "0.15.8", ""),
         ("polars", "1.44.2", "● attached"), ("statsmodels", "0.15.0", "● attached"), ("…", "", "")]
 for j, (n, v, a) in enumerate(mock):
@@ -796,10 +798,10 @@ text(s, 0.5, 4.9, 9.0, 0.65, [[("Later in the course: ", {"bold": True, "col": N
 s = add_slide("Titel und Tabelle", "When something goes wrong",
               notes="Most problems are an old terminal window or the wrong interpreter.")
 rows = [("Problem", "Fix"),
-        ("Windows: python or py is not recognised", "Reinstall Python 3.13 with \u201cAdd python.exe to PATH\u201d ticked"),
-        ("No .venv in the Interpreter picker", "Open the course folder, not a single file; then pick Python 3.13.16 (.venv)"),
+        ("Windows: python or py is not recognised", "Reinstall the Python install manager, then run py install 3.14"),
+        ("No .venv in the Interpreter picker", "Open the course folder, not a single file; then pick Python 3.14.8 (.venv)"),
         ("ModuleNotFoundError", "Select the .venv interpreter, then %pip install the package"),
-        ("macOS: externally-managed-environment", "You used the system Python: use the .venv/bin/python commands"),
+        ("macOS: externally-managed-environment", "You used the system Python: select the project's .venv first"),
         ("Quarto preview does not start", "Restart Positron; run quarto check in the terminal"),
         ("Clone fails in GitHub Desktop", "Sign in again under Accounts in the settings; check the URL"),
         ("Copilot is not offered", "GitHub Education still pending: use Copilot Free meanwhile")]
@@ -826,8 +828,8 @@ cw2 = (9.0 - GAP) / 2
 for k, (head, ic, items) in enumerate([
         ("Accounts", "LuUserPlus", ["GitHub account with two-factor sign-in", "GitHub Education application sent",
                                     "DataCamp classroom joined"]),
-        ("Laptop", "LuLaptop", ["Python 3.13, Positron, Quarto, GitHub Desktop", "Course repository cloned and open",
-                                ".venv created and selected", "Check script prints \u201cready\u201d",
+        ("Laptop", "LuLaptop", ["Python 3.14, Positron, Quarto, GitHub Desktop", "Course repository cloned and open",
+                                ".venv created and selected", "\u201cready\u201d and the test report renders",
                                 "Posit Assistant connected"])]):
     x = 0.5 + k * (cw2 + GAP)
     box(s, x, 1.35 + 0.45, cw2, 3.0, LIGHT, f"Checklist {head} body")

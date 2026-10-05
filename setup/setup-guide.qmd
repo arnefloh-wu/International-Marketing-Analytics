@@ -14,21 +14,21 @@ We go through this guide together in Session 1; you do not need to install anyth
 2. **GitHub Education:** apply for student benefits at <https://education.github.com/pack> (verified WU e-mail plus proof of enrolment). Approval can take a few days; the free Copilot Student plan becomes available once approved. Until then, Copilot Free works.
 3. **DataCamp:** join the course classroom through the invitation link on Canvas, using your WU e-mail. This gives you free access to the assigned courses.
 
-## 1. Install Python 3.13
+## 1. Install Python 3.14
 
-The course uses **Python 3.13.16**. Do not take the yellow "Download Python 3.14" button on python.org: PyMC-Marketing, which we use in Session 5, does not run on 3.14 yet.
+The course uses the latest Python, **3.14.8** (30 September 2026). Windows and macOS do not come with Python, so you install it once. Both downloads are on <https://www.python.org/downloads/>.
 
-Open <https://www.python.org/downloads/release/python-31316/> and scroll to *Files*.
-
-- **Windows:** download *Windows installer (64-bit)* and run it. On the first screen tick **Add python.exe to PATH**, then click *Install Now*.
-- **macOS:** download *macOS 64-bit universal2 installer* (Apple silicon and Intel), open the `.pkg` and click through.
+- **Windows:** download the **Python install manager** and double-click it to install. Then, in a terminal, run `py install 3.14`. The install manager installs Python itself and keeps it up to date.
+- **macOS:** download the **macOS installer** for Python 3.14.8 (Apple silicon and Intel), open the `.pkg` and click through.
 
 Check in a new terminal:
 
 ```bash
-py -3.13 --version        # Windows
-python3.13 --version      # macOS
+py -3.14 --version        # Windows
+python3.14 --version      # macOS
 ```
+
+Alternatively, let Positron install Python for you once Positron is installed: *Command Palette → Python: Install Python via uv*.
 
 ## 2. Install Positron
 
@@ -46,36 +46,31 @@ Install GitHub Desktop from <https://desktop.github.com> and sign in with your G
 
 In GitHub Desktop: *File → Clone repository → URL* and paste the repository address from Canvas. Choose a folder without spaces, umlauts or cloud syncing (OneDrive, iCloud), for example `C:\Users\you\wu\ima` or `~/wu/ima`. Then open that folder in Positron with *File → Open Folder*.
 
-## 6. Install the course packages
+## 6. Set up the project's Python
 
-Open a terminal in Positron (*Terminal → New Terminal*) and run the two lines for your system:
+The cloned course folder is your **project** in Positron. Give it its own Python environment:
 
-```powershell
-# Windows
-py -3.13 -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
+1. *Command Palette* (Ctrl/Cmd + Shift + P) → **Python: Create Environment**
+2. Choose **Venv**, then **Python 3.14.8**
+3. Tick **requirements.txt** so Positron installs all course packages
+4. Positron creates `.venv` inside the project and selects it in the **Interpreter picker** (top right): *Python 3.14.8 (.venv)*
+
+This installs everything the course uses, including `polars` (data wrangling), `plotnine` (charts), `great_tables` (tables), `statsmodels` (regression) and `pymc-marketing` (Bayesian MMM). The versions are pinned in `requirements.txt`, so everyone gets the same results. If the packages were not installed, run this in the Positron console (Windows and macOS alike):
+
+```python
+%pip install -r requirements.txt
 ```
 
-```bash
-# macOS
-python3.13 -m venv .venv
-.venv/bin/python -m pip install -r requirements.txt
-```
-
-The first line creates `.venv`, a private Python for this folder; the second installs everything the course uses into it, including `polars` (data wrangling), `plotnine` (charts), `great_tables` (tables), `statsmodels` (regression) and `pymc-marketing` (Bayesian MMM). The versions are pinned in `requirements.txt`, so everyone gets the same results. No activation step is needed.
-
-Without typing: *Command Palette → Python: Create Environment → Venv*, choose Python 3.13 and tick `requirements.txt`.
-
-Then select the interpreter: in the **Interpreter picker** at the top right of Positron choose *Python 3.13.16 (.venv)*.
+For a new project of your own, use *New ▾ → New Folder from Template → Python Project*: Positron creates the folder, a `.venv` and Git in one step.
 
 ### Install and load single packages
 
 Three ways to install, all into the course `.venv`:
 
 ```bash
+%pip install polars                            # Positron console, both systems
 .venv\Scripts\python -m pip install polars     # Windows terminal
 .venv/bin/python -m pip install polars         # macOS terminal
-%pip install polars                            # Positron console, both systems
 ```
 
 Or use the **Packages** pane (package icon in the Activity Bar → *Install Package*). The install name can differ from the import name: `great-tables` → `great_tables`, `scikit-learn` → `sklearn`.
@@ -108,19 +103,20 @@ The rule for this course: the AI writes, you check. Run the code, read the outpu
 
 ## 9. Check your installation
 
-Run in the Positron terminal:
+Run in the Positron console:
 
-```bash
-.venv\Scripts\python setup\check_setup.py     # Windows
-.venv/bin/python setup/check_setup.py         # macOS
+```python
+%run setup/check_setup.py
 ```
 
-The script lists Python, each course package, Quarto and Git, and ends with `ready`. A line marked `!!` names what is still missing.
+or open `setup/check_setup.py` and press *Run*. The script lists Python, each course package, Quarto and Git, and ends with `ready`. A line marked `!!` names what is still missing.
+
+Then test the whole stack: open `setup/test_stack.qmd` and press *Preview* (Ctrl/Cmd + Shift + K). It loads the Alpenglow data with polars, draws a chart with plotnine, fits a regression with statsmodels and renders the result with Quarto. If the report appears, you are ready for Session 1.
 
 ## Troubleshooting
 
-- **Windows: `python` or `py` is not recognised:** reinstall Python 3.13 with *Add python.exe to PATH* ticked.
-- **No `.venv` in the Interpreter picker:** open the course folder (not a single file), then pick *Python 3.13.16 (.venv)*.
-- **macOS: `externally-managed-environment`:** you used the system Python; use the `.venv/bin/python` commands above.
+- **Windows: `python` or `py` is not recognised:** reinstall the Python install manager, then run `py install 3.14`.
+- **No `.venv` in the Interpreter picker:** open the course folder (not a single file), then pick *Python 3.14.8 (.venv)*.
+- **macOS: `externally-managed-environment`:** you used the system Python; select the project's `.venv` first.
 - **PyMC compiles slowly on first run:** this is normal (a C compiler is used once).
 - **Quarto cannot find Python:** check that the `.venv` interpreter is selected; in the terminal run `quarto check jupyter`.

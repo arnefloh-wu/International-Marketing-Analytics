@@ -1,11 +1,10 @@
 """Check the course set-up: Python version, course packages, Quarto and Git.
 
-Run it from the course folder, in the Positron terminal:
+Run it in the Positron console of the course project, with the .venv interpreter selected:
 
-    Windows:  .venv\\Scripts\\python setup\\check_setup.py
-    macOS:    .venv/bin/python setup/check_setup.py
+    %run setup/check_setup.py
 
-or open this file in Positron, with the .venv interpreter selected, and press Run.
+or open this file in Positron and press Run (top right of the editor).
 It prints one line per item and ends with "ready" when everything is in place.
 """
 import importlib
@@ -38,8 +37,7 @@ def show(ok, label, detail):
 
 print("Python")
 in_venv = sys.prefix != sys.base_prefix
-show((3, 11) <= sys.version_info[:2] <= (3, 13), "version",
-     sys.version.split()[0] + " (course: 3.13; PyMC-Marketing does not run on 3.14 yet)")
+show(sys.version_info[:2] >= (3, 11), "version", sys.version.split()[0] + " (course: 3.14)")
 show(in_venv, "environment", sys.prefix if in_venv else "not the course .venv: select it in Positron")
 
 print("Packages")
@@ -64,4 +62,3 @@ for tool in ("quarto", "git"):
 
 print()
 print("ready" if not problems else "not ready yet, fix: " + ", ".join(problems))
-sys.exit(1 if problems else 0)

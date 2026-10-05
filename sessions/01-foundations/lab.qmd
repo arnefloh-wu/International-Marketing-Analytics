@@ -45,7 +45,7 @@ Positron is an IDE for data science made by Posit. Everything you need for this 
 
 **Screenshot 1: the whole window.** Imagine four regions. On the left, a narrow vertical bar with icons (Explorer, Search, Source Control, Extensions, and the Assistant). Next to it, the file explorer showing the course folder: `assets`, `data`, `sessions`, `syllabus`. The large centre region holds the editor with `lab.qmd` open. The right-hand third is split in two: the **Variables** pane on top, the **Plots** pane below. At the bottom runs the **Console**, where code results appear, with tabs for **Terminal** and **Problems** beside it.
 
-**Screenshot 2: the interpreter selector.** At the top right of the window a small label says something like `Python 3.12 (.venv)`. Clicking it lists every Python installation on your machine. The one you want ends in `.venv`. If it is missing, open a terminal and run `uv venv` followed by `uv pip install -r requirements.txt`, as in the setup guide.
+**Screenshot 2: the Interpreter picker.** At the top right of the window a small label says something like `Python 3.14.8 (.venv)`. Clicking it lists every Python installation on your machine. The one you want ends in `.venv`. If it is missing, run *Python: Create Environment* from the Command Palette (Venv, Python 3.14, tick `requirements.txt`), as in the setup guide.
 
 **Screenshot 3: running a cell.** In a `.qmd` file, code lives between lines with three backticks and `{python}`. Positron draws a faint "Run Cell" button above each one. Put your cursor anywhere inside the cell and press Ctrl+Enter. The code is sent to the console and the result appears there; any DataFrame you created appears in the Variables pane with its dimensions, for example `df  DataFrame [936 x 21]`.
 
