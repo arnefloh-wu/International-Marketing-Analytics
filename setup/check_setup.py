@@ -2,9 +2,10 @@
 
 Run it from the course folder, in the Positron terminal:
 
-    uv run --no-project python setup/check_setup.py
+    Windows:  .venv\\Scripts\\python setup\\check_setup.py
+    macOS:    .venv/bin/python setup/check_setup.py
 
-or open this file in Positron and press the Run button (top right of the editor).
+or open this file in Positron, with the .venv interpreter selected, and press Run.
 It prints one line per item and ends with "ready" when everything is in place.
 """
 import importlib
@@ -37,7 +38,8 @@ def show(ok, label, detail):
 
 print("Python")
 in_venv = sys.prefix != sys.base_prefix
-show(sys.version_info >= (3, 11), "version", sys.version.split()[0] + " (3.11 or newer needed)")
+show((3, 11) <= sys.version_info[:2] <= (3, 13), "version",
+     sys.version.split()[0] + " (course: 3.13; PyMC-Marketing does not run on 3.14 yet)")
 show(in_venv, "environment", sys.prefix if in_venv else "not the course .venv: select it in Positron")
 
 print("Packages")
@@ -46,11 +48,14 @@ for name, purpose in PACKAGES:
         mod = importlib.import_module(name)
         show(True, name, f"{getattr(mod, '__version__', '?'):<10} {purpose}")
     except Exception as err:  # ImportError, or a broken install
-        show(False, name, f"missing ({type(err).__name__}): run  uv pip install -r requirements.txt")
+        show(False, name, f"missing ({type(err).__name__}): run  %pip install -r requirements.txt  in the console")
 
 print("Tools")
 for tool in ("quarto", "git"):
     path = shutil.which(tool)
+    if path is None and tool == "git":   # GitHub Desktop brings its own Git, which is not on PATH
+        print(f"  [--] {tool:<16} not on PATH: fine, GitHub Desktop has its own Git")
+        continue
     if path is None:
         show(False, tool, "not found on PATH: install it, then restart Positron")
         continue

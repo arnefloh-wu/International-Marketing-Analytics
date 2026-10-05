@@ -13,77 +13,95 @@ We go through this guide together in Session 1; you do not need to install anyth
 1. **GitHub:** create a free account at <https://github.com/signup> with your WU student e-mail, pick a professional username (it appears on every commit) and turn on two-factor authentication.
 2. **GitHub Education:** apply for student benefits at <https://education.github.com/pack> (verified WU e-mail plus proof of enrolment). Approval can take a few days; the free Copilot Student plan becomes available once approved. Until then, Copilot Free works.
 3. **DataCamp:** join the course classroom through the invitation link on Canvas, using your WU e-mail. This gives you free access to the assigned courses.
-4. **Course organisation:** enter your GitHub username in the Canvas survey so we can add you to the course repositories.
 
-## 1. Install Python with `uv`
+## 1. Install Python 3.13
 
-`uv` is a fast Python installer and environment manager. It installs Python for you.
+The course uses **Python 3.13.16**. Do not take the yellow "Download Python 3.14" button on python.org: PyMC-Marketing, which we use in Session 5, does not run on 3.14 yet.
 
-**Windows (PowerShell):**
+Open <https://www.python.org/downloads/release/python-31316/> and scroll to *Files*.
 
-```powershell
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
+- **Windows:** download *Windows installer (64-bit)* and run it. On the first screen tick **Add python.exe to PATH**, then click *Install Now*.
+- **macOS:** download *macOS 64-bit universal2 installer* (Apple silicon and Intel), open the `.pkg` and click through.
 
-**macOS / Linux (Terminal):**
+Check in a new terminal:
 
 ```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Close and reopen the terminal, then check:
-
-```bash
-uv --version
+py -3.13 --version        # Windows
+python3.13 --version      # macOS
 ```
 
 ## 2. Install Positron
 
-Positron is a data-science IDE from Posit that supports Python and Quarto natively. Download the installer for your operating system from <https://positron.posit.co> and install it. On first start, choose Python as your language.
+Positron is a data-science editor from Posit with first-class Python and Quarto support. Download it from <https://positron.posit.co/download> (current version 2026.09) and install it. Its welcome page checks whether Python is ready.
 
 ## 3. Install Quarto
 
-Download and install Quarto from <https://quarto.org/docs/get-started/>. Positron detects it automatically.
+Download and install Quarto from <https://quarto.org/docs/get-started/>. Restart Positron afterwards so it finds Quarto.
 
-## 4. Install Git and GitHub Desktop
+## 4. Install GitHub Desktop
 
-1. Create a free GitHub account at <https://github.com> (use your WU email so you get the student benefits).
-2. Install GitHub Desktop from <https://desktop.github.com>. It installs Git for you and gives you a point-and-click interface for clone, commit, pull and push.
-3. Sign in to GitHub Desktop with your GitHub account.
+Install GitHub Desktop from <https://desktop.github.com> and sign in with your GitHub account. It brings its own Git and gives you a point-and-click interface for clone, commit, pull and push.
 
 ## 5. Clone the course repository
 
-In GitHub Desktop: *File → Clone repository → URL* and paste the repository address given in class. Choose a folder without spaces or special characters, for example `C:\Users\you\wu\ima` or `~/wu/ima`.
+In GitHub Desktop: *File → Clone repository → URL* and paste the repository address from Canvas. Choose a folder without spaces, umlauts or cloud syncing (OneDrive, iCloud), for example `C:\Users\you\wu\ima` or `~/wu/ima`. Then open that folder in Positron with *File → Open Folder*.
 
-## 6. Create the course environment
+## 6. Install the course packages
 
-Open the cloned folder in Positron (*File → Open Folder*). Open a terminal inside Positron (*Terminal → New Terminal*) and run:
+Open a terminal in Positron (*Terminal → New Terminal*) and run the two lines for your system:
 
-```bash
-uv venv
-uv pip install -r requirements.txt
+```powershell
+# Windows
+py -3.13 -m venv .venv
+.venv\Scripts\python -m pip install -r requirements.txt
 ```
 
-This installs everything the course uses, including `polars` (data wrangling), `plotnine` (charts), `great_tables` (tables), `statsmodels` (regression) and `pymc-marketing` (Bayesian MMM). The versions are pinned in `requirements.txt`, so everyone gets the same results.
+```bash
+# macOS
+python3.13 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+```
 
-Then select the interpreter: in Positron's top-right interpreter selector choose the Python inside `.venv`. Test it by opening `sessions/01-foundations/lab.qmd` and running the first code cell with *Ctrl+Enter* (*Cmd+Enter* on macOS).
+The first line creates `.venv`, a private Python for this folder; the second installs everything the course uses into it, including `polars` (data wrangling), `plotnine` (charts), `great_tables` (tables), `statsmodels` (regression) and `pymc-marketing` (Bayesian MMM). The versions are pinned in `requirements.txt`, so everyone gets the same results. No activation step is needed.
 
-## 7. Set up an AI coding assistant
+Without typing: *Command Palette → Python: Create Environment → Venv*, choose Python 3.13 and tick `requirements.txt`.
 
-Pick one. All three work inside Positron.
+Then select the interpreter: in the **Interpreter picker** at the top right of Positron choose *Python 3.13.16 (.venv)*.
 
-| Assistant | How to enable | Cost |
-|---|---|---|
-| Positron Assistant | *Positron Assistant* in the sidebar; sign in with Anthropic or GitHub Copilot | Pay as you go or Copilot subscription |
-| GitHub Copilot | Install the Copilot extension; students get it free through the GitHub Student Developer Pack | Free for students |
-| Claude Code | Install from <https://claude.ai/code> and run `claude` in the Positron terminal | Subscription |
+### Install and load single packages
 
-The course does not assume a specific assistant. What matters is that you can ask it to write and explain Python code in your notebook, and that you know how to check its output.
+Three ways to install, all into the course `.venv`:
+
+```bash
+.venv\Scripts\python -m pip install polars     # Windows terminal
+.venv/bin/python -m pip install polars         # macOS terminal
+%pip install polars                            # Positron console, both systems
+```
+
+Or use the **Packages** pane (package icon in the Activity Bar → *Install Package*). The install name can differ from the import name: `great-tables` → `great_tables`, `scikit-learn` → `sklearn`.
+
+Loading is the same on both systems, at the top of every file:
+
+```python
+import polars as pl
+import statsmodels.formula.api as smf
+from plotnine import ggplot, aes, geom_line
+from great_tables import GT
+```
+
+## 7. Connect your AI assistant
+
+Positron's built-in AI is **Posit Assistant** (since Positron 2026.07; it replaced Positron Assistant).
+
+1. Command Palette → *Authentication: Configure Language Model Providers* → **GitHub Copilot** → sign in with GitHub. Copilot gives chat and code completions; it is free with Copilot Student (after GitHub Education approval) or Copilot Free.
+2. Open the chat with *View: Show Posit Assistant*.
+
+The rule for this course: the AI writes, you check. Run the code, read the output and export the chat as your prompt log.
 
 ## 8. The GitHub workflow you will use
 
 1. **Pull** before you start working (GitHub Desktop: *Fetch origin* then *Pull*).
-2. Work in your group's repository, one notebook per person where possible to avoid conflicts.
+2. Work in your group's repository, one file per person where possible to avoid conflicts.
 3. **Commit** small, often, with a message that says what changed ("add TV adstock to German model").
 4. **Push** at the end of every working session.
 5. If GitHub Desktop reports a conflict, do not panic: ask your AI assistant to explain the conflict markers, keep the version you want, commit, push.
@@ -93,14 +111,16 @@ The course does not assume a specific assistant. What matters is that you can as
 Run in the Positron terminal:
 
 ```bash
-uv run --no-project python setup/check_setup.py
+.venv\Scripts\python setup\check_setup.py     # Windows
+.venv/bin/python setup/check_setup.py         # macOS
 ```
 
 The script lists Python, each course package, Quarto and Git, and ends with `ready`. A line marked `!!` names what is still missing.
 
 ## Troubleshooting
 
-- **`uv` not found after installation:** reopen the terminal or restart Positron.
-- **PyMC compiles slowly on first run:** this is normal (a C compiler is used once). On Windows, install the Microsoft C++ Build Tools if prompted, or run PyMC labs on the course JupyterHub fallback given in class.
-- **Quarto cannot find Python:** in Positron, check that the `.venv` interpreter is selected; in the terminal run `quarto check jupyter`.
-- **Apple Silicon:** everything is supported natively; use the macOS ARM installers.
+- **Windows: `python` or `py` is not recognised:** reinstall Python 3.13 with *Add python.exe to PATH* ticked.
+- **No `.venv` in the Interpreter picker:** open the course folder (not a single file), then pick *Python 3.13.16 (.venv)*.
+- **macOS: `externally-managed-environment`:** you used the system Python; use the `.venv/bin/python` commands above.
+- **PyMC compiles slowly on first run:** this is normal (a C compiler is used once).
+- **Quarto cannot find Python:** check that the `.venv` interpreter is selected; in the terminal run `quarto check jupyter`.
