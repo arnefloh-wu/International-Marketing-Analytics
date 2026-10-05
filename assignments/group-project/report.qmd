@@ -1,0 +1,171 @@
+---
+title: "Alpenglow's web shop: orders, prices, advertising, churn and the Q1 2026 baseline"
+subtitle: "Group case study · International Marketing Analytics · WU Vienna · WT 2026/27"
+author:
+  - "Group XX: First Last, First Last, First Last, First Last"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: true
+    code-summary: "Code"
+    embed-resources: true
+execute:
+  warning: false
+---
+
+<!--
+Template for the group case study. Keep this file at the top level of your group repository,
+next to the data/ folder, so that the paths data/case/... work on every laptop.
+Delete these comments and the instructions in italics before you submit.
+Brief and assessment criteria: assignments/group-project/brief.qmd (course repository).
+-->
+
+# Executive summary {.unnumbered}
+
+*At most 300 words: your answers to the four questions, with the key numbers, and one sentence on the main limitation.*
+
+```{python}
+#| label: setup
+#| code-summary: "Set-up: packages, data and helpers"
+import numpy as np
+import polars as pl
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+from great_tables import GT
+from plotnine import aes, facet_wrap, geom_line, ggplot, labs, theme_minimal
+
+shop = pl.read_csv("data/case/alpenglow_shop_weekly.csv", try_parse_dates=True)
+club = pl.read_csv("data/case/alpenglow_club_customers.csv")
+plan = pl.read_csv("data/case/plan_q1_2026.csv", try_parse_dates=True)
+
+
+def adstock(x, decay, max_lag=10):
+    """Geometric adstock: this week's spend plus a decaying share of past weeks' spend."""
+    w = decay ** np.arange(max_lag + 1)
+    w = w / w.sum()
+    x = np.asarray(x, dtype=float)
+    out = np.zeros_like(x)
+    for lag, wl in enumerate(w):
+        out[lag:] += wl * x[: len(x) - lag]
+    return out
+
+
+# Week counter t, month and adstocked spend (decay 0.3), computed within each country
+CHANNELS = ["tv", "online_video", "paid_search", "paid_social"]
+parts = []
+for country in ["AT", "DE", "CH"]:
+    d = shop.filter(pl.col("country") == country).sort("week")
+    d = d.with_columns(
+        pl.int_range(pl.len()).alias("t"),
+        pl.col("week").dt.month().alias("month"),
+        *[pl.Series(f"{ch}_adstock", adstock(d[f"spend_{ch}_k"], 0.3)) for ch in CHANNELS],
+    )
+    parts.append(d)
+shop = pl.concat(parts)
+```
+
+# Part A: What drives weekly orders?
+
+## A1 Data check
+
+```{python}
+#| label: tbl-a1
+#| tbl-cap: "Table A1: The three markets in 2025"
+table_a1 = (
+    shop.filter(pl.col("week").dt.year() == 2025)
+    .group_by("country")
+    .agg(pl.col("orders").mean().alias("avg_weekly_orders"),
+         pl.col("avg_price_eur").mean().alias("avg_price_eur"))
+    .sort("country")
+)
+GT(table_a1).fmt_number(columns=["avg_weekly_orders"], decimals=0).fmt_number(columns=["avg_price_eur"], decimals=2)
+```
+
+*Complete Table A1 (branded search, media spend per channel) and describe the data checks.*
+
+## A2 First look
+
+```{python}
+#| label: fig-a1
+#| fig-cap: "Figure A1: Weekly orders by country"
+(ggplot(shop, aes("week", "orders"))
+ + geom_line(color="#0096D3")
+ + facet_wrap("country", ncol=1, scales="free_y")
+ + labs(x="", y="Orders per week")
+ + theme_minimal())
+```
+
+## A3 First regression
+
+## A4 Model fit
+
+## A5 Assumptions of the first regression
+
+# Part B: Price, advertising and how it works
+
+## B1 Price elasticities
+
+## B2 A non-linear effect: temperature
+
+## B3 Adstock and saturation
+
+## B4 Moderation: paid social and free shipping
+
+## B5 Mediation: TV and branded search
+
+## B6 Assumptions of the final model
+
+## B7 Holdout check
+
+# Part C: Which subscribers will cancel?
+
+## C1 Explore
+
+## C2 Split
+
+## C3 Logistic regression
+
+## C4 Model fit
+
+## C5 Assumptions of the logistic regression
+
+## C6 Classification
+
+## C7 Who gets a retention offer?
+
+# Part D: The Q1 2026 baseline for Germany
+
+## D1 The series
+
+## D2 Model comparison on a holdout
+
+## D3 Residual checks
+
+## D4 Forecast Q1 2026
+
+## D5 Reading the forecast
+
+# Part E: Recommendations and limitations
+
+## E2 Recommendations
+
+## E3 Limitations and what to test next
+
+# Appendix {.unnumbered}
+
+## AI prompt log {.unnumbered}
+
+| Part | Prompt (short) | What we kept | What we corrected and why |
+|---|---|---|---|
+| | | | |
+
+## Contribution statement {.unnumbered}
+
+| Member | Main parts | Also contributed to |
+|---|---|---|
+| | | |
+
+*All members confirm this statement by their names in the author field.*

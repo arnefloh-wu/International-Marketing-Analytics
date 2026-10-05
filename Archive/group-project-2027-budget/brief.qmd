@@ -1,0 +1,192 @@
+---
+title: "Alpenglow 2027 media budget: a recommendation to the board"
+subtitle: "Group project brief · International Marketing Analytics · WU Vienna · Winter 2026/27"
+author: "Dr. Arne Floh"
+date: 2026-10-06
+format:
+  html:
+    toc: true
+    toc-depth: 2
+execute:
+  echo: false
+---
+
+::: {.callout-note}
+## In one sentence
+Your group is Alpenglow's analytics team. By **Monday 2 November 2026, 18:00** you deliver a GitHub repository with a reproducible report and an allocation file that tells the board how to split the fixed 2027 media budget across six countries and five channels, and on **Tuesday 3 November** you defend it in a ten-minute pitch. The project is worth **40 % of the course grade**.
+:::
+
+## 1. The situation
+
+Alpenglow is a Vienna-based premium chocolate brand sold in Austria, Germany, France, Italy, the Netherlands and Poland. Media is its largest discretionary cost. Every autumn the country managers negotiate next year's budget, and every autumn the result looks like last year's budget plus or minus a few percent, because nobody can say what a euro in Polish paid social returns compared with a euro in French television.
+
+The CFO has frozen the total: **the 2027 media budget equals the total 2025 media spend**. The CEO has asked the analytics team to recommend how that fixed amount should be distributed across countries and channels, what incremental revenue the board can expect from the change, and how sure the team is. The CEO has also asked for one thing the country managers cannot supply: an explanation of *why* channels work differently in different markets.
+
+You have three years of weekly data for all six markets, the results of a paid-social geo-lift test run in Germany in autumn 2025, and a sample of 60 000 customer journeys from the brand's online shop. Session 5 is the board meeting.
+
+## 2. The budget constraint
+
+The numbers below are computed from `data/mmm/alpenglow_weekly.csv` (the code is in `assignments/group-project/template/code/00_load.py`).
+
+```{python}
+#| output: asis
+import pandas as pd
+
+panel = pd.read_csv("../../data/mmm/alpenglow_weekly.csv", parse_dates=["week"])
+channels = ["tv", "online_video", "paid_search", "paid_social", "ooh"]
+spend_cols = [f"spend_{ch}_k" for ch in channels]
+y2025 = panel[panel.week.dt.year == 2025]
+n_weeks = y2025.week.nunique()
+total_2025 = y2025[spend_cols].sum().sum()
+weekly = total_2025 / n_weeks
+by_country = y2025.groupby("country")[spend_cols].sum().sum(axis=1)
+
+print(f"| Quantity | Value |\n|---|---|")
+print(f"| Total 2025 media spend in the data ({n_weeks} weeks, six countries, five channels) | **{total_2025:,.0f} thousand EUR** |")
+print(f"| Average weekly total media spend in 2025 = **2027 weekly budget** | **{weekly:,.2f} thousand EUR per week** |")
+print(f"| 2027 annual budget (52 weeks x weekly budget) | **{52 * weekly:,.0f} thousand EUR** |")
+print()
+print("2025 spend by country (thousand EUR, share of total):\n")
+print("| Country | 2025 spend | Share |\n|---|---|---|")
+for c, v in by_country.items():
+    print(f"| {c} | {v:,.0f} | {100 * v / total_2025:.1f} % |")
+```
+
+Your `allocation_2027.csv` states **weekly** spend in thousand EUR per country and channel. Its 30 values must sum to the weekly budget above within 0.5 %. Your report may discuss flighting (spending more in Q4), but the allocation file is the steady-state weekly plan the board approves.
+
+## 3. Inputs
+
+| File | What it is | Used for |
+|---|---|---|
+| `data/mmm/alpenglow_weekly.csv` | 936 rows: 6 countries x 156 weeks (2023 to 2025) of sales, price, promotion, distribution, controls and spend in five channels | MMM, forecast, allocation |
+| `data/mmm/country_meta.csv` | Population, GDP per capita, Hofstede scores, Eurozone, years in market, retail concentration | International insight |
+| `data/experiments/geolift_germany.csv` | 40 German regions x 64 weeks; 12 regions received 2.5x paid-social spend for 8 weeks | Calibration of paid social |
+| `data/attribution/journeys.csv` | 60 000 online journeys with touchpoints per channel, conversion and order value | Optional: digital channel insight |
+
+The data dictionary is in `data/README.md`. Do **not** copy the data into your repository: the template loads them from the course repository cloned next to yours.
+
+## 4. Tasks
+
+Your report must answer the five tasks below. The rubric (`rubric.qmd`) scores each of them.
+
+### Task 1: Marketing mix models for all six countries
+
+Build MMMs that estimate the contribution and ROAS of each of the five channels in each of the six countries. Any approach from Sessions 2 and 3 is acceptable (OLS with adstock and saturation, panel fixed effects, PyMC-Marketing per country, hierarchical Bayesian). Requirements:
+
+- at least **one per-country specification** and **one pooled or hierarchical specification**, compared on holdout fit (2025) and on the plausibility of the estimates;
+- a table of ROAS (and, if you optimise on response curves, marginal ROAS) for all 30 country x channel cells, with uncertainty where the method provides it;
+- a statement of which estimates you trust and where (for example: hierarchical for AT and PL, per-country for DE).
+
+### Task 2: 2026 baseline forecast
+
+Forecast weekly 2026 sales per country without media changes, evaluated against a seasonal naive benchmark on 2025 as holdout (or rolling origin). The forecast is the baseline against which the board judges incremental revenue; say what it is worth and where it is weak.
+
+### Task 3: Calibrate paid social with the German geo-lift test
+
+Estimate the lift of the German paid-social test (difference-in-differences; synthetic control optional) with a confidence interval, convert it into an incremental ROAS, and compare it with your MMM estimate for German paid social. Decide whether to **sanity-check** (report the gap and what it implies) or **calibrate** (adjust the model, for example through priors or a scaling factor) and justify the choice. Discuss whether the test result transfers to other countries.
+
+### Task 4: Recommend the 2027 allocation
+
+Allocate the fixed weekly budget across 6 countries x 5 channels using your response curves. Provide **at least two scenarios**, for example:
+
+- *Unconstrained*: the optimiser's answer with no limits other than the total;
+- *Bounded*: no cell changes by more than plus or minus 30 % against 2025, which is what country managers can absorb in one year;
+- *Growth markets*: a floor for the young markets (NL, PL) or a strategic rule of your choice.
+
+For each scenario report expected incremental revenue (thousand EUR per week and per year) against the 2025 allocation and its uncertainty (intervals from bootstrap, posterior draws or scenario ranges). Recommend one scenario and write `allocation_2027.csv` for it.
+
+### Task 5: One international insight
+
+Explain one cross-country difference in channel effectiveness with evidence from `country_meta.csv`: market maturity (years in market, distribution build-up), culture (Hofstede dimensions), economics (GDP per capita, Eurozone) or retail structure (concentration). One clear figure, a careful argument, and an honest statement of what six countries can and cannot prove.
+
+## 5. Deliverables
+
+### 5.1 GitHub repository
+
+One repository per group in the course GitHub organisation, named `group-XX-alpenglow`, created from the template in `assignments/group-project/template/`. Required structure:
+
+```
+README.md             team, structure, how to reproduce
+report.qmd            the report source (renders without error)
+report.pdf            rendered report (print the HTML or Word output to PDF), max 12 pages excluding appendices
+pitch.pdf             the pitch deck, max 8 slides
+allocation_2027.csv   columns country, channel, weekly_spend_k; 30 rows; sums to the weekly budget
+code/                 numbered scripts or notebooks that produce every table and figure
+results/              model tables and figures written by the code
+```
+
+The data are not duplicated in the repository. The commit history is part of the assessment: commit small and often, from every member's account.
+
+### 5.2 Report (max 12 pages)
+
+Quarto, rendered to PDF or self-contained HTML. Sections as in the template: executive summary, decision and data, MMMs, forecast, geo-lift calibration, allocation, international insight, limitations. Page limit excludes the two appendices:
+
+- **Appendix A, prompt log**: every non-trivial prompt to an AI assistant, what it produced, and how you verified it (syllabus rule 2).
+- **Appendix B, contribution statement**: who did what, signed by all members (template in `rubric.qmd`).
+
+### 5.3 Pitch (10 minutes, max 8 slides)
+
+In Session 5 the group presents to the board (the rest of the cohort and the instructor), followed by five minutes of questions. Recommended structure: the decision in one slide, the evidence in four, the recommendation and its uncertainty in two, the risk and next experiment in one. Every group member speaks. Slides are submitted as `pitch.pdf` with the final submission.
+
+### 5.4 Allocation file
+
+`allocation_2027.csv` is auto-checked. From the course repository:
+
+```bash
+PROJECT_CSV=../group-XX-alpenglow/allocation_2027.csv pytest assignments/checks/test_project.py
+```
+
+The check verifies 30 rows, all 6 x 5 cells, non-negative values and the budget total. Run it before every push.
+
+## 6. Timeline
+
+| When | What |
+|---|---|
+| Session 1, Tue 6 Oct | Groups of 5 formed; repository created from the template; all members push one commit |
+| Before Session 2, Tue 13 Oct | **Milestone 1**: data exploration in `code/01_explore.py` and first figures in `results/` |
+| Before Session 4, Tue 27 Oct | **Milestone 2**: first model table (ROAS per country x channel from at least one specification) in `results/`; report skeleton renders |
+| Mon 2 Nov, 18:00 | **Final submission**: tag `v1.0` on the repository; report, allocation, pitch, prompt log and contribution statement complete |
+| Tue 3 Nov | **Pitches** in Session 5, board-meeting format; peer evaluation forms due by Fri 6 Nov |
+
+Milestones are checked for presence and give feedback, not points. Late final submissions lose 10 percentage points per day unless agreed in advance.
+
+## 7. Use of AI tools
+
+The syllabus rules apply in full:
+
+1. **You are responsible for every number you report.** Verify outputs with the checks taught in class (holdout fit, sign and size of coefficients, sum of contributions, budget total).
+2. **Document the prompts** that produced non-trivial code in the prompt-log appendix.
+3. Quizzes are closed-book; the project is open-everything, including AI assistants.
+4. Fabricated references or results are academic misconduct under WU rules. A model table that your code does not produce counts as fabricated.
+
+A good prompt log shows judgement: what you asked, what came back wrong, and how you found out.
+
+## 8. Assessment
+
+The project is 40 % of the course grade and is scored on 100 points with the rubric in `rubric.qmd`:
+
+| Criterion | Weight |
+|---|---|
+| Analysis quality (Tasks 1 to 3) | 35 |
+| Decision quality and uncertainty (Task 4) | 25 |
+| International insight (Task 5) | 10 |
+| Communication and pitch | 15 |
+| Reproducibility and GitHub practice | 15 |
+
+All members receive the group score. The separate **peer evaluation and contribution** component (10 % of the course grade) uses the peer form in `rubric.qmd` and the commit history, and can move an individual grade up or down.
+
+## 9. Frequently asked questions
+
+**Must we use PyMC-Marketing?** No. An OLS or panel model done carefully scores higher than a Bayesian model nobody in the group can explain. You need one pooled or hierarchical comparison, which can be a fixed-effects panel model.
+
+**How many weeks should the holdout be?** Train on 2023 to 2024, hold out 2025, as in the labs. Say so in the report.
+
+**May we spend zero on a channel in a country?** Yes, if the model and your judgement support it. Say what the country manager will say, and answer it.
+
+**Does the allocation have to come from an optimiser?** No, but it has to come from your response curves and be reproducible from your code.
+
+**Can the allocation vary by week?** The file is a steady-state weekly plan. Flighting belongs in the report as a recommendation, not in the file.
+
+**What if the geo-lift and the MMM disagree?** That is the point of Task 3. Explain the gap (saturation, carryover, regional versus national, test spend level) and choose a course of action.
+
+**What if the data look wrong?** Report what you found in Milestone 1 and ask on the GitHub Discussions board. The data are synthetic and contain deliberate features (dark weeks, budget following seasonality) that good models must handle.

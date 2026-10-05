@@ -346,16 +346,17 @@ card(s, 0.5 + 2 * (cw3 + GAP), 2.55, cw3, 3.0, "Preparation", [
 
 # 13  Case study: written report (group)
 s = add_slide("Titel und Inhalt", "Case study: written report",
-              notes="The case and its data are published on Canvas. Online consulting hours need registration. "
-                    "The report is the only group component of the grade.")
+              notes="Brief, data and report template are in the course repository (case-study/ and data/case/). "
+                    "Each part of the case uses the methods of one session, so groups can work on it week by week. "
+                    "Questions go to the Q&A forum on Canvas so every group gets the same answer.")
 fact_tiles(s, [("1", "written report per group"), ("max." + NB + "4", "students per group"),
-               ("30" + NB + "%", "of the final grade"), ("2" + NB + "weeks", "after the last session: deadline")],
+               ("30" + NB + "%", "of the final grade"), ("30" + NB + "Nov", "2026, 23:59: deadline")],
            1.35, "Case")
 tw = (9.0 - GAP * 2) / 3
-text(s, 0.5, 2.55, 9.0, 0.3, [[("What you submit", {"bold": True, "col": NAVY})]], "Submit label")
-subs = [("LuCode", "Quarto file", "your analysis and text in one reproducible document"),
-        ("LuFileText", "Rendered report", "the output of the Quarto file; HTML recommended"),
-        ("LuFileSpreadsheet", "Data file", "the data you analysed, so the report can be rerun")]
+text(s, 0.5, 2.55, 9.0, 0.3, [[("What you submit on Canvas", {"bold": True, "col": NAVY})]], "Submit label")
+subs = [("LuCode", "report.qmd", "your analysis and text in one Quarto file that renders without errors"),
+        ("LuFileText", "report.html", "the rendered, self-contained report"),
+        ("LuNotebookPen", "Appendix", "AI prompt log and contribution statement, inside the report")]
 for i, (ic, head, body) in enumerate(subs):
     x = 0.5 + i * (tw + GAP)
     box(s, x, 2.9, tw, 1.35, LIGHT, f"Submission card {i + 1}")
@@ -364,10 +365,10 @@ for i, (ic, head, body) in enumerate(subs):
 box(s, 0.5, 4.45, 9.0, 1.1, NAVY, "Task box")
 text(s, 0.75, 4.45, 8.5, 1.1,
      [[("The task: ", {"bold": True, "col": WHITE}),
-       ("apply marketing mix modelling to a real marketing case, interpret the results and recommend a decision "
-        "to management.", {"col": WHITE})],
-      [("Support: ", {"bold": True, "col": WHITE}),
-       ("online consulting hours (registration needed).", {"col": WHITE})]],
+       ("answer four questions about Alpenglow's web shop with the methods of Sessions 1 to 4: what drives orders, "
+        "price and advertising effects, subscriber churn, and the Q1 2026 baseline.", {"col": WHITE})],
+      [("Tools: ", {"bold": True, "col": WHITE}),
+       ("polars, plotnine, great_tables and statsmodels.", {"col": WHITE})]],
      "Task text", anchor=MSO_ANCHOR.MIDDLE, space=6)
 
 # 14  Closing contact card

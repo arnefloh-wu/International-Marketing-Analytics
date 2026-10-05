@@ -6,6 +6,7 @@ project:
     - "sessions/**/*.qmd"
     - "assignments/**/*.qmd"
     - "!instructor/"
+    - "!assignments/group-project/report.qmd"
   output-dir: _site
 
 jupyter: python3
