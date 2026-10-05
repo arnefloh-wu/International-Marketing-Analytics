@@ -256,29 +256,33 @@ text(s, 0.5, 5.12, 9.0, 0.4, [[("Attendance: ", {"bold": True, "col": NAVY}), ("
                                ("AI tools: ", {"bold": True, "col": NAVY}), ("expected; you own every number you report.", {})]],
      "Rules line", anchor=MSO_ANCHOR.MIDDLE)
 
-# 9  Software and set-up: tool cards plus installation stepper
+# 9  Software and set-up: tool cards plus installation stepper (same steps as the Session 1 set-up deck)
 s = add_slide("Titel und Inhalt", "Software and set-up",
               notes="Everything is free for students. No preparation before the course: we register the accounts and install "
-                    "the software together in Session 1. The check is the command in the guide that prints 'ready'.")
-tools = [("LuCode", "Python", "the language for all analyses"),
+                    "the software together in Session 1, following the set-up deck (01a). The check script prints 'ready' "
+                    "and test_stack.qmd renders a short report when everything works.")
+tools = [("LuCode", "Python 3.14", "the language for all analyses"),
          ("LuLaptop", "Positron", "the editor where you write, run and see results"),
          ("LuFileText", "Quarto", "turns code and text into reports and slides"),
-         ("LuGitBranch", "GitHub", "versions and shares your work"),
-         ("LuBot", "AI assistant", "GitHub Copilot, free with the student plan")]
+         ("LuGitBranch", "GitHub Desktop", "versions and shares your work"),
+         ("LuBot", "Posit Assistant", "AI inside Positron, with GitHub Copilot")]
 tw5 = (9.0 - 0.12 * 4) / 5
 for i, (ic, name, role) in enumerate(tools):
     x = 0.5 + i * (tw5 + 0.12)
     box(s, x, 1.35, tw5, 1.9, LIGHT, f"Tool card {i + 1}")
     icon(s, ic, "navy", x + 0.15, 1.5, 0.45, f"tool {i + 1}")
     text(s, x + 0.15, 2.05, tw5 - 0.25, 1.15, [[(name, {"bold": True, "col": NAVY})], role], f"Tool text {i + 1}", space=3)
-text(s, 0.5, 3.4, 9.0, 0.3, [[("Set-up in Session 1: four steps", {"bold": True, "col": NAVY})]], "Set-up label")
-stepper(s, 0.5, 3.75, 9.0, 0.75, ["Register\vaccounts", "Install\vthe software", "Clone\vthe repo", "Run the\vcheck"],
-        "Set-up steps", current=3)
+text(s, 0.5, 3.4, 9.0, 0.3, [[("Set-up in Session 1: five steps", {"bold": True, "col": NAVY})]], "Set-up label")
+stepper(s, 0.5, 3.75, 9.0, 0.75, ["Register\vaccounts", "Install\vthe tools", "Clone the\vrepo",
+                                  "Set up the\vproject", "Run the\vcheck"], "Set-up steps", current=4)
 box(s, 0.5, 4.75, 9.0, 0.8, LIGHT, "Set-up callout")
 icon(s, "LuSchool", "navy", 0.7, 4.91, 0.48, "set-up in class")
-text(s, 1.4, 4.75, 7.9, 0.8, [("Together in Session 1. ", "Registration (GitHub, Copilot, DataCamp) and installation are done in class. "
-                                "Just bring your laptop and charger; no preparation needed.")],
-     "Set-up text", anchor=MSO_ANCHOR.MIDDLE)
+text(s, 1.4, 4.75, 7.9, 0.8, [("Together in Session 1: ", "bring your laptop and charger, no preparation needed."),
+                              [("Course repository: ", {"bold": True, "col": NAVY}),
+                               ("arnefloh-wu/international-marketing-analytics-teaching",
+                                {"link": "https://github.com/arnefloh-wu/international-marketing-analytics-teaching", "col": ACC,
+                                 "size": 12})]],
+     "Set-up text", anchor=MSO_ANCHOR.MIDDLE, space=2)
 
 # 10  Online certificates: stat rows plus a callout
 s = add_slide("Titel und Inhalt", "Online certificates",
