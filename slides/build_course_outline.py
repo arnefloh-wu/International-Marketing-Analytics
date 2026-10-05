@@ -203,7 +203,16 @@ def old_shape(slide_no, name):
 
 
 # ================================================================ slides ======
-# 1  Title
+# 1  Title. Empty line after the institute in this deck's copy of the contact block (layout only, template untouched)
+kontakt = next(sh for sh in L["Titelfolie Kontakt"].shapes if sh.name == "Kontaktdaten")
+for para in kontakt.text_frame.paragraphs:
+    if "Institute for International Business" in para.text:
+        blank = copy.deepcopy(para._p)
+        for r in blank.findall(f"{{{A}}}r"):
+            blank.remove(r)
+        end = etree.SubElement(blank, f"{{{A}}}endParaRPr"); end.set("lang", "en-GB"); end.set("sz", "1200")
+        para._p.addnext(blank)
+        break
 s = add_slide("Titelfolie Kontakt", footer=None,
               notes="Welcome. This deck explains what the course is about, how it is taught and how it is assessed.")
 set_runs(ph(s, 0).text_frame.paragraphs[0], "International Marketing Analytics")
@@ -217,14 +226,18 @@ copy_pictures(old_shape(2, "Grafik 5"), s)
 
 # 3  Module content: icon rows
 s = add_slide("Titel und Inhalt", "Module content",
-              notes="Frame the course as one budget decision studied from five angles. Alpenglow is fictional; "
-                    "the data are synthetic with a known truth revealed in Session 5.")
+              notes="Marketing mix modelling in one breath: take the sales history, separate what would have sold anyway "
+                    "from what each marketing activity added, and use that to decide where the next euro goes.")
 rows = [
-    ("LuChartLine", ("Marketing analytics ", "turns marketing data into decisions on markets, prices, channels and budgets, and checks whether they worked.")),
-    ("LuEuro", ("One budget question: ", "how should a fixed media budget be split across countries and channels?")),
-    ("LuScale", ("Marketing mix modelling ", "is back at the centre since privacy rules weakened user-level tracking. Managers who can read and challenge it own the budget debate.")),
-    ("LuCandy", ("One running case: ", "Alpenglow, a Vienna-based premium chocolate brand selling in Austria, Germany, France, Italy, the Netherlands and Poland.")),
-    ("LuBot", ("Python with AI assistants: ", "the assistant does most of the typing; you specify, run, check and communicate the analysis.")),
+    ("LuChartLine", ("Marketing analytics ", "turns marketing data into decisions. It measures what marketing achieved and shows "
+                                              "where the next euro should go.")),
+    ("LuTarget", ("Key questions: ", "how do price, place, product features and promotion drive performance measures such "
+                                     "as sales, and how should a fixed budget be split across countries and channels?")),
+    ("LuScale", ("Marketing mix modelling in plain words: ", "a model that splits sales into what would have sold anyway and "
+                                                             "the extra sales each marketing activity brought in.")),
+    ("LuLaptop", ("Tools: ", "Python in Positron, GitHub for versioning and DataCamp courses; AI assistants do most of the "
+                             "typing, you check the results.")),
+    ("LuBriefcase", ("Case studies: ", "Zalando and NEOH, plus a six-country teaching dataset with known answers for the labs.")),
 ]
 rh = (4.25 - GAP * 4) / 5
 for i, (ic, para) in enumerate(rows):
@@ -233,34 +246,41 @@ for i, (ic, para) in enumerate(rows):
     icon(s, ic, "navy", 0.72, y + (rh - 0.42) / 2, 0.42, f"content row {i + 1}")
     text(s, 1.4, y, 7.9, rh, [para], f"Content text {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
 
-# 4  Five sessions, five decisions: card grid plus the central question
-s = add_slide("Titel und Inhalt", "Five sessions, five decisions",
-              notes="Each session starts from a decision an international marketing manager has to take and works "
-                    "backwards to the model that answers it. Session 5 is the board meeting where groups defend their budget.")
-sessions = [
-    ("Session 1", "Tue 6" + NB + "Oct", "Is our price too high in Poland?", "Price and promotion elasticities"),
-    ("Session 2", "Tue 13" + NB + "Oct", "What did TV do for us in Germany?", "Adstock, saturation and ROAS"),
-    ("Session 3", "Tue 20" + NB + "Oct", "Where should the next euro go?", "Budget allocation across countries and channels"),
-    ("Session 4", "Tue 27" + NB + "Oct", "Can we trust the model?", "Forecasts, geo-lift tests and attribution"),
-    ("Session 5", "Tue 3" + NB + "Nov", "Board meeting", "Groups pitch and defend their 2027 budget"),
+# 4  Course roadmap: five sessions as stops on a road
+s = add_slide("Titel und Inhalt", "Course roadmap: five sessions",
+              notes="Session 1 combines the introduction with linear regression. Each session adds one method; "
+                    "the last brings them together in dedicated MMM software.")
+stops = [
+    ("Introduction and linear regression", "MMM basics, OLS, elasticities, dummy variables"),
+    ("Advanced regression", "Non-linear effects, interactions, adstock, saturation"),
+    ("Logistic regression", "Binary outcomes, odds ratios"),
+    ("ARIMA", "Trend, seasonality, forecasting the baseline"),
+    ("Advanced MMM tools", "Bayesian MMM, budget optimisation"),
 ]
-cw = (9.0 - GAP * 4) / 5
-for i, (head, date, q, method) in enumerate(sessions):
-    x = 0.5 + i * (cw + GAP)
-    box(s, x, 1.35, cw, 2.95, LIGHT, f"Session card {i + 1}")
-    box(s, x, 1.35, cw, 0.45, NAVY if i < 4 else ACC, f"Session header {i + 1}")
-    text(s, x + 0.1, 1.35, cw - 0.2, 0.45, [head], f"Session heading {i + 1}", size=HEAD, col=WHITE, bold=True,
-         head=True, anchor=MSO_ANCHOR.MIDDLE)
-    text(s, x + 0.12, 1.92, cw - 0.22, 2.3,
-         [[(date, {"col": NAVY})], [(q, {"bold": True, "col": NAVY})], [("→ " + method, {"col": ACC})]],
-         f"Session text {i + 1}", space=8)
-box(s, 0.5, 4.5, 9.0, 1.05, NAVY, "Central question box")
-text(s, 0.75, 4.5, 8.5, 1.05,
-     [[("The question behind all five sessions: ", {"bold": True, "col": WHITE}),
-       ("how should Alpenglow split a fixed media budget across six countries and five channels?", {"col": WHITE})]],
-     "Central question", size=HEAD, head=True, anchor=MSO_ANCHOR.MIDDLE)
+road_y, sw = 2.4, 9.0 / 5
+box(s, 0.5, road_y - 0.06, 8.85, 0.12, ACC, "Road")
+arrowhead = box(s, 9.25, road_y - 0.17, 0.25, 0.34, ACC, "Road end", shape=MSO_SHAPE.ISOSCELES_TRIANGLE)
+arrowhead.rotation = 90
+for i, (theme, desc) in enumerate(stops):
+    cx = 0.5 + sw * (i + 0.5)
+    text(s, cx - sw / 2 + 0.05, 1.42, sw - 0.1, 0.3, [[("Session " + str(i + 1), {"bold": True, "col": ACC})]],
+         f"Stop label {i + 1}", align=PP_ALIGN.CENTER)
+    dot = box(s, cx - 0.33, road_y - 0.33, 0.66, 0.66, NAVY, f"Stop {i + 1}", shape=MSO_SHAPE.OVAL)
+    tf = dot.text_frame; tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+    tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+    p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
+    r = p.add_run(); r.text = str(i + 1); r.font.size = Pt(TITLE); r.font.bold = True; r.font.name = "+mj-lt"
+    color(r.font.color, WHITE)
+    text(s, cx - sw / 2 + 0.07, 2.9, sw - 0.14, 0.85, [theme], f"Stop theme {i + 1}", size=HEAD, col=NAVY, bold=True,
+         head=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.BOTTOM, space=0)
+    text(s, cx - sw / 2 + 0.07, 3.85, sw - 0.14, 1.15, [desc], f"Stop text {i + 1}", align=PP_ALIGN.CENTER)
+box(s, 0.5, 5.0, 9.0, 0.55, LIGHT, "Along the way")
+icon(s, "LuFlag", "navy", 0.7, 5.08, 0.38, "along the way")
+text(s, 1.25, 5.0, 8.1, 0.55, [("Along the way: ", "DataCamp certificates, coding exercises and a guest speaker. "
+                                                   "At the end: written exam.")], "Along the way text", anchor=MSO_ANCHOR.MIDDLE)
 
-# 5 and 6  Learning outcomes: grouped bands
+
+# 5  Learning outcomes: grouped bands
 def bands(slide, groups, top, height, prefix):
     for g, (ic, heading, items) in enumerate(groups):
         y = top + g * (height + GAP)
@@ -276,66 +296,61 @@ def bands(slide, groups, top, height, prefix):
 
 
 s = add_slide("Titel und Inhalt", "Learning outcomes",
-              notes="Outcomes 1 to 6 are the analytical core of the course; 7 to 11 on the next slide are the working skills.")
+              notes="Two outcomes each for understanding, applying and transferring. Cross-sectional means many units "
+                    "at one point in time (countries, stores); longitudinal means the same units over time (weekly sales).")
 text(s, 0.5, 1.3, 9.0, 0.3, ["On successful completion of this module, students will be able to:"], "Outcomes intro")
 bands(s, [
-    ("LuChartLine", "Model the market", [
-        ("1", "Explain marketing mix modelling: ", "carryover, saturation, baseline versus incremental sales, ROAS versus marginal ROAS."),
-        ("2", "Estimate response models ", "in Python, from OLS and log-log elasticities to fixed effects and Bayesian MMM.")]),
-    ("LuEuro", "Decide on budgets", [
-        ("3", "Allocate budgets ", "across countries and channels and defend the allocation under uncertainty."),
-        ("4", "Forecast sales ", "and evaluate the forecasts as the baseline for planning.")]),
-    ("LuFlaskConical", "Test the evidence", [
-        ("5", "Design experiments: ", "analyse a geo-lift test and use it to validate and calibrate an MMM."),
-        ("6", "Compare attribution: ", "explain why last-touch, regression-based and Shapley attribution disagree across markets.")]),
+    ("LuLightbulb", "Understand", [
+        ("1", "Explain the fundamentals of MMM, ", "including its strengths and limitations."),
+        ("2", "Describe real-world applications ", "of MMM in marketing and budget planning.")]),
+    ("LuCode", "Apply", [
+        ("3", "Apply MMM in Python ", "to cross-sectional and longitudinal data."),
+        ("4", "Practise decision-making: ", "interpret results and turn them into marketing decisions.")]),
+    ("LuUsers", "Transfer", [
+        ("5", "Use AI tools ", "for analysis and reporting, and check their output."),
+        ("6", "Apply transferable skills: ", "think critically and work effectively in teams.")]),
 ], 1.72, 1.18, "Outcomes")
 
-s = add_slide("Titel und Inhalt", "Learning outcomes (continued)")
-bands(s, [
-    ("LuCode", "Work with tools", [
-        ("7", "Work reproducibly: ", "use Python, Positron, Quarto and GitHub to build analyses that colleagues can rerun and audit."),
-        ("8", "Use AI assistants responsibly: ", "direct an AI coding assistant, verify its output and document the prompts behind an analysis.")]),
-    ("LuUsers", "Work with people", [
-        ("9", "Communicate: ", "present analytical findings to a board audience in a written report and a pitch."),
-        ("10", "Work in teams: ", "collaborate in version-controlled projects and take collective, data-driven decisions."),
-        ("11", "Think critically: ", "evaluate data sources, model assumptions and findings in an international marketing context.")]),
-], 1.35, 2.0, "Outcomes II")
-
-# 7  Methods of teaching and learning: stepper plus two cards
+# 6  Methods of teaching and learning: stepper, two cards, the exam
 s = add_slide("Titel und Inhalt", "Methods of teaching and learning",
-              notes="In person, five Tuesdays. Bring your own laptop with the environment installed; a setup clinic runs "
-                    "at the start of Session 1. Between sessions: read, take the quiz, work on the project.")
+              notes="Each session ends with a short online quiz that is not graded; it shows you what to revise. "
+                    "The written exam at the end is paper and pencil with multiple-choice questions.")
 text(s, 0.5, 1.28, 9.0, 0.3, [[("Every session", {"bold": True, "col": NAVY})]], "Session rhythm label")
 stepper(s, 0.5, 1.62, 9.0, 0.72, ["Concept lecture\v60" + NB + "min", "Guided lab\v90" + NB + "min",
-                                  "Team exercise\v60" + NB + "min", "Debrief\vand quiz"], "Session rhythm")
+                                  "Team exercise\v60" + NB + "min", "Online quiz\vnot graded"], "Session rhythm")
 cw2 = (9.0 - 0.5) / 2
-card(s, 0.5, 2.55, cw2, 3.0, "Between sessions", [
-    "Read the book chapters and materials in advance",
-    "Online quiz after Sessions 1 to 4",
-    "Lab check-ins after Sessions 2 and 4",
-    "Group project in your team repository",
-    "Q&A forum on Canvas; consulting hours on request"], "LuHouse", "Between sessions card")
-arrow = box(s, 0.5 + cw2 + 0.09, 3.85, 0.32, 0.4, ACC, "Card arrow", shape=MSO_SHAPE.CHEVRON)
-card(s, 0.5 + cw2 + 0.5, 2.55, cw2, 3.0, "In the classroom", [
-    "Five Tuesdays, 6 October to 3" + NB + "November 2026",
-    "Bring your laptop with Python, Positron, Quarto and GitHub",
-    "AI-assisted coding: you direct, the assistant types, you check",
-    "Pull, commit and push from Session 1"], "LuSchool", "In the classroom card")
+card(s, 0.5, 2.55, cw2, 2.3, "Between sessions", [
+    "Read chapters and materials",
+    "DataCamp courses and certificates",
+    "Coding exercises",
+    "Case study report in your group",
+    "Q&A forum on Canvas"], "LuHouse", "Between sessions card")
+box(s, 0.5 + cw2 + 0.09, 3.5, 0.32, 0.4, ACC, "Card arrow", shape=MSO_SHAPE.CHEVRON)
+card(s, 0.5 + cw2 + 0.5, 2.55, cw2, 2.3, "In the classroom", [
+    "Five in-person sessions",
+    "Laptop with Python, Positron, GitHub",
+    "AI-assisted coding, checked by you",
+    "Guest speaker from industry"], "LuSchool", "In the classroom card")
+box(s, 0.5, 5.0, 9.0, 0.55, NAVY, "Exam box")
+icon(s, "LuPencilLine", "white", 0.7, 5.08, 0.38, "exam")
+text(s, 1.25, 5.0, 8.1, 0.55, [[("At the end: ", {"bold": True, "col": WHITE}),
+                                ("written exam, paper and pencil, multiple-choice questions.", {"col": WHITE})]],
+     "Exam text", anchor=MSO_ANCHOR.MIDDLE)
 
-# 8  Module roadmap: table
-s = add_slide("Titel und Tabelle", "Module roadmap", footer="Chapters: Yildirim and Kübler (2025), SAGE",
-              notes="Chapter numbers refer to the 2025 Python edition of Yildirim and Kübler. Times and rooms are on Canvas.")
+# 7  Module roadmap: table
+s = add_slide("Titel und Tabelle", "Module roadmap",
+              notes="Topics follow the course roadmap; methods in detail.")
 rows = [
-    ("Session", "Date", "Topic", "Methods", "Chapter"),
-    ("1", "Tue 6" + NB + "Oct", "Course content and style, toolkit, regression foundations", "Descriptive statistics, OLS, log-log elasticities, dummies and interactions", "1, 11"),
-    ("2", "Tue 13" + NB + "Oct", "Marketing mix modelling I: one country", "Adstock, saturation, decomposition, ROAS, diagnostics", "3"),
-    ("3", "Tue 20" + NB + "Oct", "Marketing mix modelling II: many countries, one budget", "Panel fixed effects, hierarchical Bayesian MMM, budget optimisation", "3"),
-    ("4", "Tue 27" + NB + "Oct", "Forecasting, experiments and attribution", "Time series regression, difference-in-differences, logistic regression, Shapley values", "9, 4"),
-    ("5", "Tue 3" + NB + "Nov", "Group project pitches and wrap-up", "Board presentation, ground-truth reveal", "11"),
+    ("Session", "Topic", "Methods"),
+    ("1", "Introduction and linear regression", "Course content and style; Python, Positron, GitHub and DataCamp; MMM fundamentals; OLS, log-log elasticities, dummy variables"),
+    ("2", "Advanced regression", "Non-linear effects, moderation and mediation, adstock and saturation, regression diagnostics"),
+    ("3", "Logistic regression", "Binary outcomes such as purchase or churn, odds ratios, model fit and classification"),
+    ("4", "ARIMA", "Trend, seasonality and autocorrelation; ARIMA and ARIMAX forecasts as the sales baseline"),
+    ("5", "Advanced MMM tools", "Bayesian MMM with PyMC-Marketing and Google Meridian; budget optimisation across channels and countries"),
 ]
 gf = ph(s, 1).insert_table(len(rows), len(rows[0]))
 tbl = gf.table
-widths = [1.3, 1.05, 2.2, 2.65, 1.25]
+widths = [1.2, 2.6, 5.2]
 for i, w in enumerate(widths):
     tbl.columns[i].width = I(w)
 gf.width = I(sum(widths))
@@ -346,21 +361,23 @@ for r_i, row in enumerate(rows):
         set_runs(p, txt)
         for r in p.runs:
             r.font.size = Pt(HEAD if r_i == 0 else BODY)
-        if c_i in (0, 1, 4) and r_i > 0:
+            if c_i == 1 and r_i > 0:
+                r.font.bold = True
+        if c_i == 0 and r_i > 0:
             p.alignment = PP_ALIGN.CENTER
-        cell.margin_top = cell.margin_bottom = Emu(36000)
+        cell.margin_top = cell.margin_bottom = Emu(54000)
 
-# 9  Assessment: native bar chart of the weights plus a rules card
+# 8  Assessment: native bar chart of the weights plus a rules card
 s = add_slide("Titel und Inhalt", "Assessment strategy",
-              notes="Six components. The group project is the centrepiece; quizzes and check-ins keep everyone on track "
-                    "between sessions. Certificates and self-reflection are small but required.")
+              notes="Four components. Certificates, coding exercises and the exam are individual; the case study report "
+                    "is written in groups.")
 text(s, 0.5, 1.28, 5.0, 0.35, [[("Weight in the final grade", {"bold": True, "col": NAVY, "size": HEAD, "head": True})]],
      "Weights heading")
 cd = CategoryChartData()
-cats = ["Self-reflection", "Online certificates", "Peer review", "Lab check-ins (2" + NB + "×" + NB + "10" + NB + "%)",
-        "Online quizzes (4" + NB + "×" + NB + "5" + NB + "%)", "Group project"]
-cd.categories = cats
-cd.add_series("Weight", (5, 5, 10, 20, 20, 40))
+cd.categories = ["Coding exercises (4" + NB + "×" + NB + "5" + NB + "%)",
+                 "Online certificates, DataCamp (4" + NB + "×" + NB + "5" + NB + "%)",
+                 "Written exam", "Case study: written report (group)"]
+cd.add_series("Weight", (20, 20, 30, 30))
 gfc = s.shapes.add_chart(XL_CHART_TYPE.BAR_CLUSTERED, I(0.5), I(1.7), I(5.0), I(3.85), cd)
 gfc.name = "Grade weights chart"
 ch = gfc.chart
@@ -369,7 +386,7 @@ ch.has_title = False
 ch.font.size = Pt(BODY)
 ch.font.name = "+mn-lt"
 plot = ch.plots[0]
-plot.gap_width = 45
+plot.gap_width = 55
 plot.has_data_labels = True
 dl = plot.data_labels
 dl.number_format = '0" %"'
@@ -381,27 +398,27 @@ ser.format.fill.solid(); ser.format.fill.fore_color.theme_color = BARS
 va = ch.value_axis
 va.visible = False
 va.has_major_gridlines = False
-va.maximum_scale = 48
+va.maximum_scale = 38
 va.minimum_scale = 0
 ca = ch.category_axis
 ca.format.line.fill.background()
 ca.tick_labels.font.size = Pt(BODY)
 ca.tick_labels.font.color.theme_color = INK
 card(s, 5.75, 1.35, 3.75, 4.2, "Rules", [
-    ("Groups: ", "5 students; enrol on Canvas by the end of Session 1"),
+    ("Individual: ", "certificates, coding exercises and the written exam"),
+    ("Group: ", "case study report, groups of 4 to 5; enrol on Canvas"),
     ("Grades: ", "WU scale, 1 from 90" + NB + "%, 2 from 80" + NB + "%, 3 from 70" + NB + "%, 4 from 60" + NB + "%"),
     ("Attendance: ", "at least 80" + NB + "% of sessions"),
-    ("Late work: ", "minus 10 points per day unless agreed"),
     ("AI tools: ", "expected; you own every number you report"),
 ], "LuShieldCheck", "Rules card")
 
-# 10  Online certificates: stat rows plus a deadline callout
+# 9  Online certificates and set-up: stat rows plus a callout
 s = add_slide("Titel und Inhalt", "Online certificates and set-up",
-              notes="Both courses are free. The installation check is the command in the setup guide that prints 'ready'. "
-                    "Bring problems to the setup clinic at the start of Session 1.")
+              notes="The DataCamp courses are assigned on Canvas. The installation check is the command in the setup guide "
+                    "that prints 'ready'.")
 stats = [
-    ("5" + NB + "h", ("Kaggle Learn: Python. ", "Free course with a certificate on completion.")),
-    ("1" + NB + "h", ("GitHub Skills: Introduction to GitHub. ", "Free, runs in the browser.")),
+    ("4", ("DataCamp courses. ", "Python courses assigned on Canvas, each ending with a certificate.")),
+    ("5" + NB + "%", ("Per certificate. ", "Upload each certificate on Canvas by its deadline; 20" + NB + "% of the grade in total.")),
     ("45" + NB + "min", ("Course environment. ", "Install Python (via uv), Positron, Quarto and GitHub Desktop with the setup guide, then run the installation check.")),
 ]
 for i, (fig, para) in enumerate(stats):
@@ -412,85 +429,31 @@ for i, (fig, para) in enumerate(stats):
     text(s, 2.6, y, 6.9, 0.85, [para], f"Stat text {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
 box(s, 0.5, 4.5, 9.0, 1.05, LIGHT, "Deadline callout")
 icon(s, "LuClock", "navy", 0.75, 4.75, 0.55, "deadline")
-text(s, 1.55, 4.5, 7.75, 1.05, [("Deadline: ", "upload both certificates and a screenshot of the passing installation check on Canvas by "
-                                               "Mon 12" + NB + "Oct, 11:59" + NB + "pm.")],
-     "Deadline text", anchor=MSO_ANCHOR.MIDDLE)
+text(s, 1.55, 4.5, 7.75, 1.05, [("Deadlines: ", "the date for each certificate is on Canvas. Bring installation problems "
+                                                "to Session 1.")], "Deadline text", anchor=MSO_ANCHOR.MIDDLE)
 
-# 11  Quizzes and lab check-ins: two cards with figures
-s = add_slide("Titel und Inhalt", "Quizzes and lab check-ins",
-              notes="Quizzes test concepts, not code. Check-ins replicate a lab for another country and are auto-checked "
-                    "for plausibility before grading.")
+# 10  Coding exercises and written exam: two cards with figures
+s = add_slide("Titel und Inhalt", "Coding exercises and written exam",
+              notes="Coding exercises apply the lab code to a similar task. The exam tests concepts and interpretation, "
+                    "not code.")
 cw3 = (9.0 - 0.2) / 2
-card(s, 0.5, 1.35, cw3, 3.25, "Online quizzes", [
-    "After each of Sessions 1 to 4",
-    "Open Wednesday 9" + NB + "am, close Monday 11:59" + NB + "pm",
-    "10 multiple-choice questions in 10" + NB + "minutes",
-    "Closed book: concepts, not code"], "LuListChecks", "Quiz card", stat=("5" + NB + "%", "per quiz, 20" + NB + "% in total"))
-card(s, 0.7 + cw3, 1.35, cw3, 3.25, "Lab check-ins", [
-    "After Sessions 2 and 4",
-    "Replicate the lab for another country or dataset",
-    "Submit notebook, HTML, result files and prompt log",
-    "Auto-checked for plausibility, reviewed for interpretation"], "LuNotebookPen", "Check-in card",
-     stat=("10" + NB + "%", "per check-in, 20" + NB + "% in total"))
+card(s, 0.5, 1.35, cw3, 3.25, "Coding exercises", [
+    "Four exercises during the course",
+    "Apply the lab code to a similar task",
+    "Submit your Python or Quarto file on Canvas",
+    "AI assistants allowed; add a short prompt log"], "LuCode", "Coding card",
+     stat=("5" + NB + "%", "per exercise, 20" + NB + "% in total"))
+card(s, 0.7 + cw3, 1.35, cw3, 3.25, "Written exam", [
+    "At the end of the course",
+    "Paper and pencil",
+    "Multiple-choice questions",
+    "Concepts and interpretation, not code"], "LuPencilLine", "Exam card", stat=("30" + NB + "%", "of the final grade"))
 box(s, 0.5, 4.8, 9.0, 0.75, NAVY, "Takeaway box")
-text(s, 0.75, 4.8, 8.5, 0.75, [[("Both are individual: ", {"bold": True, "col": WHITE}),
-                               ("quizzes check that you understand the concepts, check-ins that you can run, check and "
-                                "explain an analysis on your own.", {"col": WHITE})]],
+text(s, 0.75, 4.8, 8.5, 0.75, [[("Both are individual. ", {"bold": True, "col": WHITE}),
+                               ("The case study report (30" + NB + "%) is the group component.", {"col": WHITE})]],
      "Takeaway text", anchor=MSO_ANCHOR.MIDDLE)
 
-# 12  Group project: timeline stepper, deliverable cards, the task
-s = add_slide("Titel und Inhalt", "Group project",
-              notes="The brief, rubric and starter repository are in the course GitHub organisation. Online consulting "
-                    "hours need registration.")
-text(s, 0.5, 1.28, 9.0, 0.3, [[("Timeline", {"bold": True, "col": NAVY})]], "Timeline label")
-stepper(s, 0.5, 1.62, 9.0, 0.72, ["Session" + NB + "1\vform groups", "By S2\vrepo and data",
-                                  "By S4\vfirst model", "Mon 2" + NB + "Nov\vsubmit", "Tue 3" + NB + "Nov\vpitch"],
-        "Project timeline", current=4)
-deliv = [
-    ("LuFileText", "Quarto report", "max 12 pages, rendered to HTML"),
-    ("LuFileSpreadsheet", "Allocation file", "CSV with weekly spend per country and channel"),
-    ("LuPresentation", "Pitch deck", "max 8 slides for a 10-minute pitch"),
-    ("LuGitBranch", "Repository", "code, data pipeline and a prompt log"),
-]
-dw = (9.0 - GAP * 3) / 4
-for i, (ic, head, body) in enumerate(deliv):
-    x = 0.5 + i * (dw + GAP)
-    box(s, x, 2.55, dw, 1.75, LIGHT, f"Deliverable card {i + 1}")
-    icon(s, ic, "navy", x + 0.15, 2.7, 0.4, f"deliverable {i + 1}")
-    text(s, x + 0.15, 3.18, dw - 0.3, 1.05, [[(head, {"bold": True, "col": NAVY})], body], f"Deliverable text {i + 1}", space=4)
-box(s, 0.5, 4.5, 9.0, 1.05, NAVY, "Task box")
-text(s, 0.75, 4.5, 8.5, 1.05,
-     [[("The task: ", {"bold": True, "col": WHITE}),
-       ("as Alpenglow's analytics team, recommend to the board how the 2027 media budget should be split across "
-        "six countries and five channels.", {"col": WHITE})]], "Task text", size=HEAD, head=True, anchor=MSO_ANCHOR.MIDDLE)
-
-# 13  Peer rating: text left, form right
-s = add_slide("Inhalt und Bild mit Logo", "Peer rating",
-              notes="The peer rating form is on Canvas. Each member rates the others; self-ratings are not allowed.")
-body = ph(s, 1)
-tf = body.text_frame
-items = [("Who: ", "every group member rates the other members on a 0 to 10 scale"),
-         ("Criteria: ", "tasks carried out, deadlines met, quality of work, communication and respect, attendance, pre-agreed rules"),
-         ("Confidential: ", "feeds the peer review component (10" + NB + "%)"),
-         ("When: ", "submit on Canvas with the final project")]
-for i, it in enumerate(items):
-    p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-    set_runs(p, it)
-    for r in p.runs:
-        r.font.size = Pt(BODY)
-    p.runs[0].font.color.theme_color = NAVY
-form = old_shape(15, "Grafik 6")
-pb = ph(s, 2)
-bx, by, bw, bh = pb.left, pb.top, pb.width, pb.height
-remove_shape(pb); remove_shape(ph(s, 13))
-from PIL import Image
-iw, ih = Image.open(io.BytesIO(form.image.blob)).size
-sc = min(bw / iw, bh / ih)
-pic = s.shapes.add_picture(io.BytesIO(form.image.blob), bx + (bw - int(iw * sc)) // 2, by, int(iw * sc), int(ih * sc))
-pic.name = "Peer rating form"
-pic._element.nvPicPr.cNvPr.set("descr", "Peer rating form: criteria list and a grade table for five group members")
-
-# 14  Closing contact card
+# 11  Closing contact card
 add_slide("Abschlussfolie Kontakt", notes="Any questions? Contact details on the card.")
 
 # ---- language tag on every run ----------------------------------------------

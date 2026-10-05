@@ -4,7 +4,7 @@ const sharp = require('sharp'); const lu = require('react-icons/lu'); const path
 const OUT = process.argv[2];
 const names = ['LuChartLine','LuEuro','LuGlobe','LuCandy','LuBot','LuScale','LuSplit','LuFlaskConical','LuCode','LuMessagesSquare',
   'LuSchool','LuHouse','LuClock','LuFileText','LuFileSpreadsheet','LuPresentation','LuNotebookPen','LuGraduationCap','LuGitBranch',
-  'LuLaptop','LuListChecks','LuClipboardCheck','LuShieldCheck','LuUsers','LuLightbulb','LuTarget'];
+  'LuLaptop','LuListChecks','LuClipboardCheck','LuShieldCheck','LuUsers','LuLightbulb','LuTarget','LuMic','LuPencilLine','LuBriefcase','LuFlag','LuSparkles','LuBookOpen'];
 (async () => {
   for (const n of names) {
     for (const [tag, color] of [['navy', '#002350'], ['white', '#FFFFFF'], ['blue', '#0096D3']]) {
