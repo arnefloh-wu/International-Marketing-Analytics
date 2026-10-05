@@ -30,8 +30,8 @@ format:
 |---|---|
 | **Groups** | at most 4 students |
 | **Weight** | 30 % of the final grade |
-| **Submit** | `report.qmd` **and** the rendered `report.html`, one upload per group on Canvas |
-| **Deadline** | **Monday 30 November 2026, 23:59 (Vienna time)** |
+| **Submit** | `report.qmd` **and** the rendered `report.html`, one upload per group on Canvas (see *Submission*) |
+| **Deadline** | **Monday 30 November 2026, midnight (23:59 Vienna time)** |
 | **Tools** | Python with **polars**, **plotnine**, **great_tables** and **statsmodels** (plus numpy, which comes with them). No other packages are needed. |
 | **Data** | `data/case/` in the course repository: weekly web-shop data for Austria, Germany and Switzerland, a file of Alpenglow Club subscribers, and the Q1 2026 plan |
 :::
@@ -94,10 +94,14 @@ The drivers that are known before the quarter starts: planned prices and discoun
 
 # Set-up for the group
 
-1. One member creates the **group repository** on github.com and invites the others (Settings → Collaborators). Everyone clones it with GitHub Desktop.
-2. Copy `data/case/` and the template `case-study/report.qmd` from the course repository into the group repository, so that `report.qmd` sits at the top level next to the `data/` folder. Keep the paths in the template (`data/case/...`): they must work on every laptop.
-3. Create the project environment in Positron (*Python: Create Environment*, Venv, Python 3.14, tick `requirements.txt`; copy `requirements.txt` from the course repository too).
-4. Work in small commits; pull before you start, push when you stop. Split the parts between members, but every member must be able to explain every part.
+1. **Get the material from GitHub (required).** Clone the course repository with GitHub Desktop (*File → Clone repository → URL*). Whenever we announce an update on Canvas, click *Fetch origin*, then *Pull*. The repository contains the data (`data/case/`), the template (`case-study/report.qmd`), this brief and `requirements.txt`.
+2. **Make your group's project folder.** Copy `data/case/`, `case-study/report.qmd` and `requirements.txt` into a new folder outside the course repository, so that `report.qmd` sits at the top level next to the `data/` folder. Do not write your report inside the course repository: your changes would clash with our updates when you pull. Keep the paths in the template (`data/case/...`): they must work on every laptop.
+3. **Create the project environment** in Positron: open the folder, then *Python: Create Environment*, Venv, Python 3.14, tick `requirements.txt`.
+4. **Work together.** Split the parts between members, but every member must be able to explain every part. Choose one of two ways to combine your work:
+    - *Simple:* one member keeps the group's `report.qmd`; the others work in their own copy of the folder and send their code chunks and text to be pasted in. Render the combined file at least once a week.
+    - *With GitHub (optional):* one member publishes the folder as a **private** repository from GitHub Desktop (*Repository → Publish repository*, keep *Keep this code private* ticked) and invites the others (on github.com: *Settings → Collaborators*). Everyone clones it, pulls before working and commits and pushes when they stop. Edit different parts of `report.qmd` to avoid conflicts.
+
+    Both ways are fine: only the files you upload to Canvas are assessed, not your commit history.
 
 One helper you may copy into your report (it is also in the template):
 
@@ -220,14 +224,22 @@ Work with German weekly orders on the log scale and statsmodels' `SARIMAX` (`fro
 
 # Report format
 
-- One Quarto file `report.qmd` that renders without errors from a fresh copy of your repository (`quarto render report.qmd`) to a single, self-contained `report.html`. Use the YAML header of the template: `embed-resources: true`, `code-fold: true`, `toc: true`.
+- One Quarto file `report.qmd` that renders without errors from a fresh copy of your project folder, with `report.qmd` next to `data/case/` (`quarto render report.qmd`), to a single, self-contained `report.html`. Use the YAML header of the template: `embed-resources: true`, `code-fold: true`, `toc: true`.
 - All tables with great_tables, all figures with plotnine, all data work with polars, all models with statsmodels.
 - Length: at most 3 000 words of text, excluding code, tables, figure captions and the appendix. Short and precise beats long.
 - Every number in the text is computed in the report (inline code, for example `` `{python} f"{elasticity_de:.2f}"` ``), not typed in by hand.
 
 # Submission
 
-Upload **both** files, `report.qmd` and `report.html`, to the Canvas assignment **by Monday 30 November 2026, 23:59 (Vienna time)**. One member submits for the group; the names of all members are in the YAML header (`author:`). Keep your repository: we may ask you to show it.
+| | |
+|---|---|
+| **Deadline** | **Monday 30 November 2026, midnight** (23:59 Vienna time). The Canvas time stamp counts. |
+| **Where** | Canvas → *Assignments* → *Group case study*. One member uploads for the whole Canvas group. |
+| **What** | Two files: `report.qmd` and the rendered `report.html`. Do not zip them and do not upload the data. |
+| **Names** | All members in the YAML header (`author:`) and in the contribution statement. |
+| **Changes** | You can upload again until the deadline; the last upload counts. |
+
+Before you upload: copy your project folder to a new place, render `report.qmd` there (`quarto render report.qmd`), and open the new `report.html` in your browser without Positron: all tables and figures must show. Keep your project folder until the grades are published; we may ask you to show how a number was produced.
 
 # Assessment criteria
 

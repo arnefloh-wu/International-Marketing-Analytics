@@ -17,7 +17,7 @@ execute:
 ---
 
 <!--
-Template for the group case study. Keep this file at the top level of your group repository,
+Template for the group case study. Keep this file at the top level of your group's project folder,
 next to the data/ folder, so that the paths data/case/... work on every laptop.
 Delete these comments and the instructions in italics before you submit.
 Brief and assessment criteria: case-study/brief.pdf in the course repository.
