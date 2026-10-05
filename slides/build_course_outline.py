@@ -17,6 +17,9 @@ A = "http://schemas.openxmlformats.org/drawingml/2006/main"
 R = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 P = "http://schemas.openxmlformats.org/presentationml/2006/main"
 NB = " "
+BODY = 13      # body text (pt)
+TABLE_HEAD = 15  # table header row and column headings (pt)
+TITLE = 16     # slide titles (pt); the template default is 24
 FOOTER = "International Marketing Analytics" + NB + "·" + NB + "WT" + NB + "2026/27"
 
 prs = Presentation(TEMPLATE)
@@ -51,6 +54,8 @@ def add_slide(layout_name, title=None, footer=FOOTER, notes=None):
             set_runs(sh.text_frame.paragraphs[0], footer)
         if t in (PP_PLACEHOLDER.TITLE, PP_PLACEHOLDER.CENTER_TITLE) and title is not None:
             set_runs(sh.text_frame.paragraphs[0], title)
+            for r in sh.text_frame.paragraphs[0].runs:
+                r.font.size = Pt(TITLE)
     if notes:
         s.notes_slide.notes_text_frame.text = notes
     return s
@@ -81,6 +86,13 @@ def set_runs(p, text):
     else:
         r = p.add_run()
         r.text = text
+
+
+def set_heading(shape, text):
+    p = shape.text_frame.paragraphs[0]
+    set_runs(p, text)
+    for r in p.runs:
+        r.font.size = Pt(TABLE_HEAD)
 
 
 def fill_body(shape, items, size=None, numbered_from=None):
@@ -163,7 +175,7 @@ fill_body(ph(s, 1), [
     (0, ("Teaching: ", "International Marketing, Marketing Analytics, Digital Marketing and Social Media, Entrepreneurial Marketing")),
     (0, ("Research: ", "Consumer behaviour, relationship marketing, electronic marketing and social media")),
     (0, ("Contact: ", "arne.floh@wu.ac.at, office hours by appointment (see closing slide)")),
-], size=14)
+], size=BODY)
 portrait = old_shape(3, "Picture 2")
 ph(s, 2).insert_picture(io.BytesIO(portrait.image.blob))
 remove_shape(ph(s, 13))  # no logo
@@ -175,7 +187,7 @@ fill_body(ph(s, 1), [
     (0, ("Experience: ", "international and industry background, more than 20 years of teaching")),
     (0, ("Supervision: ", "BSc, MSc and PhD theses")),
     (0, ("Private: ", "football, electronic gadgets, Austrian wine")),
-], size=16)
+], size=BODY)
 remove_shape(ph(s, 2))
 collage = copy_pictures(old_shape(4, "Gruppieren 6"), s)
 
@@ -188,7 +200,7 @@ fill_body(ph(s, 1), [
     (0, ("Marketing mix modelling (MMM) ", "is back at the centre of this debate since privacy changes made user-level tracking unreliable. Managers who can read, challenge and commission these models hold the budget conversation.")),
     (0, ("One running case: ", "Alpenglow, a Vienna-based premium chocolate brand active in six European markets (AT, DE, FR, IT, NL, PL).")),
     (0, ("Python with AI assistants: ", "the assistant does most of the typing; you learn to specify, run, check and communicate analyses.")),
-], size=14)
+], size=BODY)
 
 # 6  Decision of the day per session
 s = add_slide("Titel und Inhalt", "Five sessions, five decisions",
@@ -201,7 +213,7 @@ fill_body(ph(s, 1), [
     (0, ("Session 3: ", "Where should the next euro go? Budget allocation across six countries and five channels")),
     (0, ("Session 4: ", "Can we trust the model? Sales forecasts, geo-lift experiments and multi-market attribution")),
     (0, ("Session 5: ", "Board meeting: the groups pitch and defend their 2027 budget")),
-], size=14)
+], size=BODY)
 
 # 7 and 8  Learning outcomes
 s = add_slide("Titel und Inhalt", "Learning outcomes",
@@ -215,7 +227,7 @@ fill_body(ph(s, 1), [
     (0, ("Forecast sales: ", "produce and evaluate short-term forecasts as the baseline for planning.")),
     (0, ("Design experiments: ", "design and analyse a geo-lift test and use it to validate and calibrate an MMM.")),
     (0, ("Compare attribution approaches: ", "explain why last-touch, regression-based and Shapley attribution disagree across markets.")),
-], size=13)
+], size=BODY)
 # number only the outcome paragraphs
 tf = ph(s, 1).text_frame
 for k, p in enumerate(tf.paragraphs):
@@ -239,26 +251,26 @@ fill_body(ph(s, 1), [
     (0, ("Communicate: ", "present analytical findings to a board audience in a written report and a pitch.")),
     (0, ("Work in teams: ", "collaborate in version-controlled analytical work and take collective data-driven decisions.")),
     (0, ("Think critically: ", "evaluate data sources, model assumptions and findings in the context of international marketing.")),
-], size=14, numbered_from=7)
+], size=BODY, numbered_from=7)
 
 # 9  Methods of teaching and learning (comparison layout)
 s = add_slide("Zwei Inhalte Vergleich", "Methods of teaching and learning",
               notes="In person, five Tuesdays. Bring your own laptop with the environment installed; a setup clinic runs at the start of Session 1.")
-set_runs(ph(s, 13).text_frame.paragraphs[0], "In the classroom")
-set_runs(ph(s, 17).text_frame.paragraphs[0], "Between sessions")
+set_heading(ph(s, 13), "In the classroom")
+set_heading(ph(s, 17), "Between sessions")
 fill_body(ph(s, 1), [
     (0, "Five in-person sessions on Tuesdays, 6 October to 3" + NB + "November 2026"),
     (0, "Concept lecture (60" + NB + "min), guided lab in Positron (90" + NB + "min), team exercise on the project data (60" + NB + "min), debrief"),
     (0, "Coding is AI-assisted: your laptop, your assistant, your checks"),
     (0, "Everything lives in GitHub: pull, commit and push from Session 1"),
-], size=14)
+], size=BODY)
 fill_body(ph(s, 2), [
     (0, "Read the book chapters and session materials in advance"),
     (0, "Online quiz after each of Sessions 1 to 4"),
     (0, "Lab check-ins after Sessions 2 and 4"),
     (0, "Group project work in your team repository; consulting hours on request"),
     (0, "Q&A forum on Canvas"),
-], size=14)
+], size=BODY)
 
 # 10  Roadmap table
 s = add_slide("Titel und Tabelle", "Module roadmap", footer="Chapters: Yildirim and Kübler (2025), SAGE",
@@ -274,7 +286,7 @@ rows = [
 tph = ph(s, 1)
 gf = tph.insert_table(len(rows), len(rows[0]))
 tbl = gf.table
-widths = [Emu(int(1.1 * 914400)), Emu(int(1.05 * 914400)), Emu(int(2.45 * 914400)), Emu(int(2.75 * 914400)), Emu(int(1.1 * 914400))]
+widths = [Emu(int(1.3 * 914400)), Emu(int(1.05 * 914400)), Emu(int(2.2 * 914400)), Emu(int(2.65 * 914400)), Emu(int(1.25 * 914400))]
 for i, w in enumerate(widths):
     tbl.columns[i].width = w
 gf.width = sum(widths)
@@ -284,7 +296,7 @@ for r_i, row in enumerate(rows):
         p = cell.text_frame.paragraphs[0]
         set_runs(p, txt)
         for r in p.runs:
-            r.font.size = Pt(12)
+            r.font.size = Pt(TABLE_HEAD if r_i == 0 else BODY)
         if c_i in (0, 1, 4) and r_i > 0:
             from pptx.enum.text import PP_ALIGN
             p.alignment = PP_ALIGN.CENTER
@@ -293,8 +305,8 @@ for r_i, row in enumerate(rows):
 # 11  Assessment (comparison layout)
 s = add_slide("Zwei Inhalte Vergleich", "Assessment strategy",
               notes="Six components. The group project is the centrepiece; quizzes and check-ins keep everyone on track between sessions.")
-set_runs(ph(s, 13).text_frame.paragraphs[0], "Components")
-set_runs(ph(s, 17).text_frame.paragraphs[0], "Rules")
+set_heading(ph(s, 13), "Components")
+set_heading(ph(s, 17), "Rules")
 fill_body(ph(s, 1), [
     (0, ("5" + NB + "% ", "Online certificates Python and GitHub (individual)")),
     (0, ("5" + NB + "% ", "Self-reflection (individual)")),
@@ -302,14 +314,14 @@ fill_body(ph(s, 1), [
     (0, ("20" + NB + "% ", "Lab check-ins, 2" + NB + "×" + NB + "10" + NB + "% (individual)")),
     (0, ("40" + NB + "% ", "Group project: report, repository and pitch")),
     (0, ("10" + NB + "% ", "Peer review")),
-], size=14)
+], size=BODY)
 fill_body(ph(s, 2), [
     (0, ("Groups: ", "5 students, enrol on Canvas by the end of Session 1")),
     (0, ("Grades: ", "WU scale, 1 from 90" + NB + "%, 2 from 80" + NB + "%, 3 from 70" + NB + "%, 4 from 60" + NB + "%")),
     (0, ("Attendance: ", "at least 80" + NB + "% of sessions")),
     (0, ("Late submissions: ", "minus 10 percentage points per day unless agreed in advance")),
     (0, ("AI tools: ", "expected for coding; you remain responsible for every number you report")),
-], size=14)
+], size=BODY)
 
 # 12  Online certificates
 s = add_slide("Titel und Inhalt", "Online certificates",
@@ -320,27 +332,27 @@ fill_body(ph(s, 1), [
     (1, ("GitHub Skills: Introduction to GitHub ", "(about 1" + NB + "hour)")),
     (0, "Install the course environment with the setup guide: Python via uv, Positron, Quarto, GitHub Desktop, and run the installation check"),
     (0, ("Upload ", "both certificates and a screenshot of the passing installation check on Canvas by Mon 12" + NB + "Oct, 11:59" + NB + "pm")),
-], size=16)
+], size=BODY)
 
 # 13  Quizzes and lab check-ins (comparison layout)
 s = add_slide("Zwei Inhalte Vergleich", "Quizzes and lab check-ins",
               notes="Quizzes test concepts, not code. Check-ins replicate a lab for another country and are auto-checked before grading.")
-set_runs(ph(s, 13).text_frame.paragraphs[0], "Online quizzes (individual)")
-set_runs(ph(s, 17).text_frame.paragraphs[0], "Lab check-ins (individual)")
+set_heading(ph(s, 13), "Online quizzes (individual)")
+set_heading(ph(s, 17), "Lab check-ins (individual)")
 fill_body(ph(s, 1), [
     (0, "After each of Sessions 1 to 4"),
     (0, "Open Wednesday 9" + NB + "am, close Monday 11:59" + NB + "pm"),
     (0, "10 multiple-choice questions in 10" + NB + "minutes"),
     (0, "Closed book: concepts, not code"),
     (0, "5" + NB + "% each"),
-], size=16)
+], size=BODY)
 fill_body(ph(s, 2), [
     (0, "After Sessions 2 and 4"),
     (0, "Replicate the lab for another country or dataset with your AI assistant"),
     (0, "Submit the Quarto notebook, rendered HTML, result files and a short prompt log on Canvas"),
     (0, "Auto-checked for plausibility, reviewed for interpretation"),
     (0, "10" + NB + "% each"),
-], size=16)
+], size=BODY)
 
 # 14  Group project
 s = add_slide("Titel und Inhalt", "Group project",
@@ -351,7 +363,7 @@ fill_body(ph(s, 1), [
     (0, ("Milestones: ", "repository and data exploration before Session 2; first model table before Session 4.")),
     (0, ("Support: ", "online consulting hours (registration needed).")),
     (0, ("Deadline: ", "Mon 2" + NB + "Nov 2026, 6" + NB + "pm. Pitches in Session 5 on Tue 3" + NB + "Nov 2026.")),
-], size=16)
+], size=BODY)
 
 # 15  Peer rating: text left, form on the right
 s = add_slide("Inhalt und Bild mit Logo", "Peer rating",
@@ -361,7 +373,7 @@ fill_body(ph(s, 1), [
     (0, "Six criteria: tasks carried out, deadlines met, quality of work, communication and respect, attendance, pre-agreed rules"),
     (0, "Kept in strict confidence; feeds the peer review component (10" + NB + "%)"),
     (0, "Submit on Canvas with the final project"),
-], size=14)
+], size=BODY)
 form = old_shape(15, "Grafik 6")
 box = ph(s, 2)
 bx, by, bw, bh = box.left, box.top, box.width, box.height
