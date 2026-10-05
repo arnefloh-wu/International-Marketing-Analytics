@@ -1,7 +1,7 @@
 """Merge research-agent parts into one guide, a CSV source list and Notion table rows.
 
 usage: python instructor/resources/build_guide.py <topic> <part-file> [<part-file> ...]
-topic: mmm | positron | python
+topic: mmm | positron | python | regression
 
 Writes:
   instructor/resources/<topic>-resource-guide.md   (merged guide)
@@ -20,6 +20,7 @@ TITLES = {
     "mmm": "Marketing mix modelling: resource guide",
     "positron": "Positron and AI-assisted analytics: resource guide",
     "python": "Python data-analysis stack (polars, plotnine, Great Tables, Quarto): resource guide",
+    "regression": "Regression analysis in Python: resource guide",
 }
 # map section headings (lower-case substrings) to the Notion category labels
 CATS = [
