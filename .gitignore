@@ -23,3 +23,7 @@ assignments/checks/submissions/your_github_username/
 *.quarto_ipynb
 assignments/checks/submissions/*
 !assignments/checks/submissions/.gitkeep
+!slides/*.pptx
+!old-slides/*.pptx
+!.claude/skills/**/*.pptx
+!.claude/skills/**/*.potx
