@@ -7,7 +7,7 @@ rows = json.loads((ROOT / f"{topic}-notion.json").read_text())
 ORDER = ["Bücher", "Journal Articles", "Reports", "Websites / Blogs", "(Video-) Tutorials", "Cases for Teaching",
          "Praxisbeispiele", "Software", "stat. Methoden", "Data", "Personenkontakte", "Communities & Events"]
 def esc(s):
-    s = re.sub(r"\s+", " ", s or "").strip()
+    s = re.sub(r"\s+", " ", s or "").strip().replace("`", "")
     return re.sub(r"([\\*~`$\[\]<>{}|^])", r"\\\1", s)
 def link(u):
     u = (u or "").strip()
@@ -25,7 +25,7 @@ for i, cat in enumerate(cats, 1):
              "\t<tr>", "\t\t<td>Kategorie</td>", "\t\t<td>Titel / Name</td>", "\t\t<td>Autor / Quelle / Firma</td>",
              "\t\t<td>Link</td>", "\t\t<td>Notiz</td>", "\t\t<td>Verwendung im Kurs</td>", "\t\t<td>Status</td>", "\t</tr>"]
     for r in rs:
-        lines += ["\t<tr>", f"\t\t<td>{esc(cat)}</td>", f"\t\t<td>{esc(r['title'])}</td>", f"\t\t<td>{esc(r['source'])[:250]}</td>",
+        lines += ["\t<tr>", f"\t\t<td>{esc(cat)}</td>", f"\t\t<td>{esc(r['title'])}</td>", f"\t\t<td>{esc(r['source'])}</td>",
                   f"\t\t<td>{link(r['link'])}</td>", f"\t\t<td>{esc(r['note'])}</td>", f"\t\t<td>{esc(r['use'])}</td>", f"\t\t<td>{esc(r['status'])}</td>", "\t</tr>"]
     lines.append("</table>")
     (out / f"{i:02d}-{re.sub(r'[^a-z0-9]+','-',cat.lower()).strip('-')}.md").write_text("\n".join(lines), encoding="utf-8")

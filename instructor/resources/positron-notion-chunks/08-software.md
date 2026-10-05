@@ -14,7 +14,7 @@
 		<td>Positron IDE (current release 2026.09.1-2, 4 September 2026)</td>
 		<td>Posit PBC, 2024-2026, software (desktop IDE; Elastic License 2.0, source-available, free for personal, academic and commercial use)</td>
 		<td>[https://positron.posit.co/](https://positron.posit.co/)</td>
-		<td>Fork of VS Code (Code OSS) with first-class Python and R, Data Explorer, Variables pane, Plots pane, Connections pane, native Quarto and a Jupyter notebook editor (GA since 2026.07.0, 6 July 2026). Monthly date-stamped releases (there is no "1.0"; GA was declared with 2025.08.0 in August 2025). macOS, Windows and Linux. Only restriction: you may not host it as a service for third parties without P</td>
+		<td>Fork of VS Code (Code OSS) with first-class Python and R, Data Explorer, Variables pane, Plots pane, Connections pane, native Quarto and a Jupyter notebook editor (GA since 2026.07.0, 6 July 2026). Monthly date-stamped releases (there is no "1.0"; GA was declared with 2025.08.0 in August 2025). macOS, Windows and Linux. Only restriction: you may not host it as a service for third parties without Posit's consent; education hosting for your own students is explicitly allowed.</td>
 		<td>session 1 (install, tour, first Quarto document); free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -23,7 +23,7 @@
 		<td>Posit Assistant (in Positron 2026.07+, RStudio 2026.04+, terminal TUI)</td>
 		<td>Posit PBC, 2026, software (AI coding agent for data science; preview from Positron 2026.04.0, default since 2026.07; Posit AI Pass GA April 2026)</td>
 		<td>[https://positron.posit.co/assistant.html](https://positron.posit.co/assistant.html)</td>
-		<td>The agent sees the live Python or R session (data frames, variables, plots, console history), runs code, has plan mode, skills, MCP servers, an \`AGENTS.md\` memory file and three permission modes. Bring your own key: providers listed on the getting-started page are Posit AI Pass, Anthropic, OpenAI, GitHub Copilot (preview), Amazon Bedrock, Microsoft Foundry, Snowflake Cortex, Databricks, DeepSeek,</td>
+		<td>The agent sees the live Python or R session (data frames, variables, plots, console history), runs code, has plan mode, skills, MCP servers, an AGENTS.md memory file and three permission modes. Bring your own key: providers listed on the getting-started page are Posit AI Pass, Anthropic, OpenAI, GitHub Copilot (preview), Amazon Bedrock, Microsoft Foundry, Snowflake Cortex, Databricks, DeepSeek, Google Gemini and Gemini Enterprise. Posit AI Pass Pro is USD 20/month (USD 5 first month) with USD 15 of model credits; it cannot draw on a personal Claude Pro or Max subscription.</td>
 		<td>sessions 1-5 (the default assistant for labs); students need either a Posit AI Pass, an Anthropic API key or a Copilot account.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -50,7 +50,7 @@
 		<td>GitHub Copilot in Positron</td>
 		<td>GitHub / Posit, 2025-2026, software (completions, Next Edit Suggestions and chat provider inside Posit Assistant; status "Preview")</td>
 		<td>[https://positron.posit.co/assistant-completions.html](https://positron.posit.co/assistant-completions.html)</td>
-		<td>Sign in via the Accounts menu; ghost-text completions in Python, R and Quarto, and Copilot can be selected as the chat model provider so students with a Copilot account avoid paying for API credits. Copilot Free gives 2,000 completions a month; the GitHub Student Developer Pack's free Copilot Student plan paused new sign-ups in April 2026 and reopened gradually from 17 June 2026 (check current sta</td>
+		<td>Sign in via the Accounts menu; ghost-text completions in Python, R and Quarto, and Copilot can be selected as the chat model provider so students with a Copilot account avoid paying for API credits. Copilot Free gives 2,000 completions a month; the GitHub Student Developer Pack's free Copilot Student plan paused new sign-ups in April 2026 and reopened gradually from 17 June 2026 (check current status at https://education.github.com/pack).</td>
 		<td>session 1 set-up; the cheapest route for students who have a GitHub Education account.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -59,7 +59,7 @@
 		<td>Claude Code in the Positron terminal</td>
 		<td>Anthropic, 2025-2026, software (terminal agent; requires Claude Pro/Max or API billing)</td>
 		<td>[https://opensource.posit.co/blog/2026-06-08_comparing-posit-assistant-and-claude-code/](https://opensource.posit.co/blog/2026-06-08_comparing-posit-assistant-and-claude-code/)</td>
-		<td>Runs unchanged in Positron's integrated terminal, and the Claude Code VS Code extension also installs in Positron (Sharon Machlis, October 2025). Posit's own comparison (8 June 2026) is honest: Claude Code edits files and runs scripts but cannot see the live session unless you add the \`btw\` package's MCP server, whereas Posit Assistant has session access built in. Issue #13603 (May 2026, milestone</td>
+		<td>Runs unchanged in Positron's integrated terminal, and the Claude Code VS Code extension also installs in Positron (Sharon Machlis, October 2025). Posit's own comparison (8 June 2026) is honest: Claude Code edits files and runs scripts but cannot see the live session unless you add the btw package's MCP server, whereas Posit Assistant has session access built in. Issue #13603 (May 2026, milestone 2026.10) proposes routing console "Fix / Explain" links to Claude Code for Claude subscribers.</td>
 		<td>sessions 3-5 for students who already have Claude Pro; good for the "agent writes the whole pipeline" versus "assistant explores with me" contrast.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -156,7 +156,7 @@
 	<tr>
 		<td>Software</td>
 		<td>Positron Server on JupyterHub and Positron Pro on Posit Workbench (institutional)</td>
-		<td>Posit PBC, 2026, software (free 12-month education licence for qualifying institutions; \`jupyter-positron-server\` on PyPI)</td>
+		<td>Posit PBC, 2026, software (free 12-month education licence for qualifying institutions; jupyter-positron-server on PyPI)</td>
 		<td>[https://positron.posit.co/education.html](https://positron.posit.co/education.html)</td>
 		<td>If WU already runs JupyterHub, Positron can be added as a launcher next to JupyterLab with a free education licence (request via academic-licenses@posit.co); Workbench 2026.04.0 adds Posit Assistant with institution-controlled BYOK providers. This is the route to a uniform, admin-controlled AI set-up for 30 students.</td>
 		<td>background / infrastructure decision before session 1.</td>
@@ -167,7 +167,7 @@
 		<td>Student pricing summary (as of October 2026)</td>
 		<td>compiled from vendor pages, 2026, software/pricing</td>
 		<td>[https://education.github.com/pack](https://education.github.com/pack)</td>
-		<td>Cheapest working combination for a student: Positron (free) + GitHub Education (Copilot Student plan when open, otherwise Copilot Free) as the Posit Assistant provider. Alternatives: Posit AI Pass USD 20/month (USD 5 first month); Anthropic API pay-as-you-go (an Anthropic console key; Claude Pro does not work in Posit Assistant but does power Claude Code in the terminal); Claude for Education is i</td>
+		<td>Cheapest working combination for a student: Positron (free) + GitHub Education (Copilot Student plan when open, otherwise Copilot Free) as the Posit Assistant provider. Alternatives: Posit AI Pass USD 20/month (USD 5 first month); Anthropic API pay-as-you-go (an Anthropic console key; Claude Pro does not work in Posit Assistant but does power Claude Code in the terminal); Claude for Education is institution-level only, with no individual student discount.</td>
 		<td>session 1 and the syllabus "tools and costs" paragraph. Verify GitHub Copilot Student availability the week before term; it has been paused and reopened once already in 2026.</td>
 		<td>neu; Link geprüft</td>
 	</tr>

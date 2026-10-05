@@ -185,7 +185,7 @@
 		<td>A General Approach to Causal Mediation Analysis</td>
 		<td>Kosuke Imai, Luke Keele and Dustin Tingley, Psychological Methods 15(4), 309-334, 2010, article</td>
 		<td>[https://doi.org/10.1037/a0020761](https://doi.org/10.1037/a0020761)</td>
-		<td>Potential-outcomes definition of mediation (ACME, ADE), the sequential ignorability assumption and sensitivity analysis. Implemented in Python as \`statsmodels.stats.mediation.Mediation\` (https://www.statsmodels.org/stable/generated/statsmodels.stats.mediation.Mediation.html, confirmed via listing), so students can run it without R.</td>
+		<td>Potential-outcomes definition of mediation (ACME, ADE), the sequential ignorability assumption and sensitivity analysis. Implemented in Python as statsmodels.stats.mediation.Mediation (https://www.statsmodels.org/stable/generated/statsmodels.stats.mediation.Mediation.html, confirmed via listing), so students can run it without R.</td>
 		<td>background (instructor reference for any project with a mediator).</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -230,7 +230,7 @@
 		<td>A Tutorial on Testing, Visualizing, and Probing an Interaction Involving a Multicategorical Variable in Linear Regression Analysis</td>
 		<td>Andrew F. Hayes and Amanda K. Montoya, Communication Methods and Measures 11(1), 1-30, 2017, article</td>
 		<td>[https://doi.org/10.1080/19312458.2016.1271116](https://doi.org/10.1080/19312458.2016.1271116)</td>
-		<td>Explains indicator, sequential and Helmert coding of a multi-level factor and how coding choice changes what each interaction coefficient means. Directly relevant to "country (six levels) x price" models; translate to patsy \`C(country, Treatment('AT'))\` or \`Sum\` coding.</td>
+		<td>Explains indicator, sequential and Helmert coding of a multi-level factor and how coding choice changes what each interaction coefficient means. Directly relevant to "country (six levels) x price" models; translate to patsy C(country, Treatment('AT')) or Sum coding.</td>
 		<td>Session 1 (instructor background; lab note on coding choices).</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -256,8 +256,8 @@
 		<td>Journal Articles</td>
 		<td>Some heteroskedasticity-consistent covariance matrix estimators with improved finite sample properties</td>
 		<td>James G. MacKinnon and Halbert White, Journal of Econometrics 29(3), 305-325, 1985, article</td>
-		<td>https://doi.org/10.1016/0304-4076(85</td>
-		<td>Source of HC1, HC2 and HC3; shows HC3 performs best in small samples. Explains the \`cov_type="HC3"\` option in statsmodels and why it is a sensible default for small weekly datasets.</td>
+		<td>https://doi.org/10.1016/0304-4076(85)90158-7</td>
+		<td>Source of HC1, HC2 and HC3; shows HC3 performs best in small samples. Explains the cov_type="HC3" option in statsmodels and why it is a sensible default for small weekly datasets.</td>
 		<td>Session 2 (background for robust SEs in the lab).</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -284,8 +284,8 @@
 		<td>A Simple, Positive Semi-Definite, Heteroskedasticity and Autocorrelation Consistent Covariance Matrix</td>
 		<td>Whitney K. Newey and Kenneth D. West, Econometrica 55(3), 703-708, 1987, article</td>
 		<td>[https://doi.org/10.2307/1913610](https://doi.org/10.2307/1913610)</td>
-		<td>The HAC (Newey-West) estimator behind \`cov_type="HAC"\` in statsmodels; the correct fix for autocorrelated residuals in weekly sales regressions when the model is otherwise sound.</td>
-		<td>Session 2 and Session 4 (background; one slide on HAC errors with \`maxlags\`).</td>
+		<td>The HAC (Newey-West) estimator behind cov_type="HAC" in statsmodels; the correct fix for autocorrelated residuals in weekly sales regressions when the model is otherwise sound.</td>
+		<td>Session 2 and Session 4 (background; one slide on HAC errors with maxlags).</td>
 		<td>neu; Link geprüft</td>
 	</tr>
 	<tr>

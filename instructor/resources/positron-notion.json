@@ -9,7 +9,7 @@
   "use": "session 1 (install, tour, first Quarto document); free.",
   "link_raw": "https://positron.posit.co/ and https://github.com/posit-dev/positron/releases",
   "status": "neu; Link geprüft",
-  "note": "Fork of VS Code (Code OSS) with first-class Python and R, Data Explorer, Variables pane, Plots pane, Connections pane, native Quarto and a Jupyter notebook editor (GA since 2026.07.0, 6 July 2026). Monthly date-stamped releases (there is no \"1.0\"; GA was declared with 2025.08.0 in August 2025). macOS, Windows and Linux. Only restriction: you may not host it as a service for third parties without P"
+  "note": "Fork of VS Code (Code OSS) with first-class Python and R, Data Explorer, Variables pane, Plots pane, Connections pane, native Quarto and a Jupyter notebook editor (GA since 2026.07.0, 6 July 2026). Monthly date-stamped releases (there is no \"1.0\"; GA was declared with 2025.08.0 in August 2025). macOS, Windows and Linux. Only restriction: you may not host it as a service for third parties without Posit's consent; education hosting for your own students is explicitly allowed."
  },
  {
   "category": "Software",
@@ -21,7 +21,7 @@
   "use": "sessions 1-5 (the default assistant for labs); students need either a Posit AI Pass, an Anthropic API key or a Copilot account.",
   "link_raw": "https://positron.posit.co/assistant.html and https://assistant.posit.co/docs/getting-started/",
   "status": "neu; Link geprüft",
-  "note": "The agent sees the live Python or R session (data frames, variables, plots, console history), runs code, has plan mode, skills, MCP servers, an `AGENTS.md` memory file and three permission modes. Bring your own key: providers listed on the getting-started page are Posit AI Pass, Anthropic, OpenAI, GitHub Copilot (preview), Amazon Bedrock, Microsoft Foundry, Snowflake Cortex, Databricks, DeepSeek, "
+  "note": "The agent sees the live Python or R session (data frames, variables, plots, console history), runs code, has plan mode, skills, MCP servers, an `AGENTS.md` memory file and three permission modes. Bring your own key: providers listed on the getting-started page are Posit AI Pass, Anthropic, OpenAI, GitHub Copilot (preview), Amazon Bedrock, Microsoft Foundry, Snowflake Cortex, Databricks, DeepSeek, Google Gemini and Gemini Enterprise. Posit AI Pass Pro is USD 20/month (USD 5 first month) with USD 15 of model credits; it cannot draw on a personal Claude Pro or Max subscription."
  },
  {
   "category": "Software",
@@ -57,7 +57,7 @@
   "use": "session 1 set-up; the cheapest route for students who have a GitHub Education account.",
   "link_raw": "https://positron.posit.co/assistant-completions.html and https://docs.posit.co/ide/user/ide/guide/tools/copilot.html",
   "status": "neu; Link geprüft",
-  "note": "Sign in via the Accounts menu; ghost-text completions in Python, R and Quarto, and Copilot can be selected as the chat model provider so students with a Copilot account avoid paying for API credits. Copilot Free gives 2,000 completions a month; the GitHub Student Developer Pack's free Copilot Student plan paused new sign-ups in April 2026 and reopened gradually from 17 June 2026 (check current sta"
+  "note": "Sign in via the Accounts menu; ghost-text completions in Python, R and Quarto, and Copilot can be selected as the chat model provider so students with a Copilot account avoid paying for API credits. Copilot Free gives 2,000 completions a month; the GitHub Student Developer Pack's free Copilot Student plan paused new sign-ups in April 2026 and reopened gradually from 17 June 2026 (check current status at https://education.github.com/pack)."
  },
  {
   "category": "Software",
@@ -69,7 +69,7 @@
   "use": "sessions 3-5 for students who already have Claude Pro; good for the \"agent writes the whole pipeline\" versus \"assistant explores with me\" contrast.",
   "link_raw": "https://opensource.posit.co/blog/2026-06-08_comparing-posit-assistant-and-claude-code/ and https://github.com/posit-dev/positron/issues/13603",
   "status": "neu; Link geprüft",
-  "note": "Runs unchanged in Positron's integrated terminal, and the Claude Code VS Code extension also installs in Positron (Sharon Machlis, October 2025). Posit's own comparison (8 June 2026) is honest: Claude Code edits files and runs scripts but cannot see the live session unless you add the `btw` package's MCP server, whereas Posit Assistant has session access built in. Issue #13603 (May 2026, milestone"
+  "note": "Runs unchanged in Positron's integrated terminal, and the Claude Code VS Code extension also installs in Positron (Sharon Machlis, October 2025). Posit's own comparison (8 June 2026) is honest: Claude Code edits files and runs scripts but cannot see the live session unless you add the `btw` package's MCP server, whereas Posit Assistant has session access built in. Issue #13603 (May 2026, milestone 2026.10) proposes routing console \"Fix / Explain\" links to Claude Code for Claude subscribers."
  },
  {
   "category": "Software",
@@ -213,7 +213,7 @@
   "use": "session 1 and the syllabus \"tools and costs\" paragraph. Verify GitHub Copilot Student availability the week before term; it has been paused and reopened once already in 2026.",
   "link_raw": "https://education.github.com/pack ; https://www.anthropic.com/education ; https://posit.ai/ ; https://posit.cloud/plans/student",
   "status": "neu; Link geprüft",
-  "note": "Cheapest working combination for a student: Positron (free) + GitHub Education (Copilot Student plan when open, otherwise Copilot Free) as the Posit Assistant provider. Alternatives: Posit AI Pass USD 20/month (USD 5 first month); Anthropic API pay-as-you-go (an Anthropic console key; Claude Pro does not work in Posit Assistant but does power Claude Code in the terminal); Claude for Education is i"
+  "note": "Cheapest working combination for a student: Positron (free) + GitHub Education (Copilot Student plan when open, otherwise Copilot Free) as the Posit Assistant provider. Alternatives: Posit AI Pass USD 20/month (USD 5 first month); Anthropic API pay-as-you-go (an Anthropic console key; Claude Pro does not work in Posit Assistant but does power Claude Code in the terminal); Claude for Education is institution-level only, with no individual student discount."
  },
  {
   "category": "Websites / Blogs",
@@ -1269,7 +1269,7 @@
   "use": "Session 1: the course AI rules must sit inside this framework; the prompt-documentation advice maps directly onto a prompt-log deliverable. Free. (Pages confirmed in search results; direct fetch blocked in this session.)",
   "link_raw": "https://www.wu.ac.at/en/students/wu-campus/code-of-conduct/ai-and-your-academic-practice and https://www.wu.ac.at/en/staff/information-for-teachers/ai-in-teaching/wissenschaftliches-arbeiten-und-ki",
   "status": "neu; in Suchergebnis bestätigt",
-  "note": "WU's own rule set: the course instructor decides whether and for what AI may be used, AI-generated content must be transparently identified, and students are advised to keep and document their prompts. Turnitin's AI check runs on a trial basis for English texts. Institute-level examples exist (Institute for Social Policy: https://www.wu.ac.at/en/institute-for-social-policy/lehre/institute-guidelin"
+  "note": "WU's own rule set: the course instructor decides whether and for what AI may be used, AI-generated content must be transparently identified, and students are advised to keep and document their prompts. Turnitin's AI check runs on a trial basis for English texts. Institute-level examples exist (Institute for Social Policy: https://www.wu.ac.at/en/institute-for-social-policy/lehre/institute-guidelines-for-the-use-of-ai; Institute for Nonprofit Management: https://www.wu.ac.at/en/institute-for-nonprofit-management-and-governance/lehre/ai-und-software-policy)."
  },
  {
   "category": "Reports",

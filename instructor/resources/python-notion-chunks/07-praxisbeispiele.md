@@ -21,7 +21,7 @@
 	<tr>
 		<td>Praxisbeispiele</td>
 		<td>BMLL, Citizens, Double River, Vydia, Rabobank and La Mobilière case studies (Polars blog)</td>
-		<td>Polars, 2024 to 2026, cases: BMLL (1.5 TB of market data in under four minutes, 48x faster than pandas), Citizens bank (analyst empowerment), Double River Investments (plugins), Vydia (music CSV processing), Rabobank (window functions), La Mobilière </td>
+		<td>Polars, 2024 to 2026, cases: BMLL (1.5 TB of market data in under four minutes, 48x faster than pandas), Citizens bank (analyst empowerment), Double River Investments (plugins), Vydia (music CSV processing), Rabobank (window functions), La Mobilière (Swiss insurer).</td>
 		<td>[https://pola.rs/posts/case-bmll/](https://pola.rs/posts/case-bmll/)</td>
 		<td>Short, concrete production stories including two European financial firms (Rabobank, La Mobilière); the Citizens case is about analysts, not engineers, which matches the course audience.</td>
 		<td>background; one or two quoted in session 1. Free.</td>

@@ -21,7 +21,7 @@
   "use": "session 2 lab and all later sessions for figures; ggplot2 tutorials transfer almost one to one. Free.",
   "link_raw": "https://pypi.org/project/plotnine/ and https://github.com/has2k1/plotnine",
   "status": "neu; Link geprüft",
-  "note": "A faithful grammar-of-graphics port of ggplot2: `ggplot(df, aes(...)) + geom_*() + facet_wrap() + theme_*()`, with scales, stats, labels, built-in themes (theme_minimal, theme_bw, theme_538, theme_xkcd) and, since 0.15 (2025), plot composition with `|` and `/`, HCL colour space and better facet strips. Accepts polars frames (converted to pandas internally). Renders through matplotlib, so PNG, SVG "
+  "note": "A faithful grammar-of-graphics port of ggplot2: `ggplot(df, aes(...)) + geom_*() + facet_wrap() + theme_*()`, with scales, stats, labels, built-in themes (theme_minimal, theme_bw, theme_538, theme_xkcd) and, since 0.15 (2025), plot composition with `|` and `/`, HCL colour space and better facet strips. Accepts polars frames (converted to pandas internally). Renders through matplotlib, so PNG, SVG and PDF output work in Quarto."
  },
  {
   "category": "Software",
@@ -33,7 +33,7 @@
   "use": "session 3 lab (summary tables for a market comparison), session 5 project reports. Free.",
   "link_raw": "https://pypi.org/project/great-tables/ and https://github.com/posit-dev/great-tables/releases/tag/v1.0.0",
   "status": "neu; Link geprüft",
-  "note": "Python port of R's gt: header, stub, spanners, `fmt_number`, `fmt_currency`, `fmt_percent`, `tab_style`, `data_color`, nanoplots (`fmt_nanoplot`, line and bar sparklines with hover values), polars selectors in `columns=`, `pl.DataFrame.style` returning a GT, `save()` to PNG and native HTML rendering in Quarto; LaTeX output exists but nanoplots do not render to PDF yet. 1.0 added `load_dataset()`, "
+  "note": "Python port of R's gt: header, stub, spanners, `fmt_number`, `fmt_currency`, `fmt_percent`, `tab_style`, `data_color`, nanoplots (`fmt_nanoplot`, line and bar sparklines with hover values), polars selectors in `columns=`, `pl.DataFrame.style` returning a GT, `save()` to PNG and native HTML rendering in Quarto; LaTeX output exists but nanoplots do not render to PDF yet. 1.0 added `load_dataset()`, `fmt_url`, `tab_style_body` and HTML escaping by default (breaking for anyone injecting raw HTML)."
  },
  {
   "category": "Software",
@@ -45,7 +45,7 @@
   "use": "sessions 3 and 5 (reports, slides, GitHub Pages deployment); background for all labs since Positron edits and previews .qmd natively. Free.",
   "link_raw": "https://github.com/quarto-dev/quarto-cli/releases and https://pypi.org/project/quarto-cli/",
   "status": "neu; Link geprüft",
-  "note": "One `.qmd` (or `.ipynb`) renders to HTML, revealjs slides, pptx, docx, PDF (LaTeX or Typst), dashboards (`format: dashboard` with cards and value boxes) and manuscripts (`type: manuscript` project with notebook embedding). Python cells run through a Jupyter kernel (ipykernel), parameterised reports via the Jupyter engine, brand.yml theming since 1.6, accessibility checks in 1.8. Quarto 2, a Rust r"
+  "note": "One `.qmd` (or `.ipynb`) renders to HTML, revealjs slides, pptx, docx, PDF (LaTeX or Typst), dashboards (`format: dashboard` with cards and value boxes) and manuscripts (`type: manuscript` project with notebook embedding). Python cells run through a Jupyter kernel (ipykernel), parameterised reports via the Jupyter engine, brand.yml theming since 1.6, accessibility checks in 1.8. Quarto 2, a Rust rewrite with a collaborative editor, was announced on 6 April 2026 for late 2026 and promises backward compatibility."
  },
  {
   "category": "Software",
@@ -1317,7 +1317,7 @@
   "use": "background (course design); open access.",
   "link_raw": "https://doi.org/10.21105/jose.00138",
   "status": "neu; Link geprüft",
-  "note": "Describes an open, modular Python data-science curriculum (notebooks, autograded exercises, Binder) and the lessons from running it with beginners. Useful for borrowing exercise design patterns; also worth reading next to the business-school pieces in the Journal of Information Systems Education, for example \"A foundation course in business analytics: design and implementation at two universities\""
+  "note": "Describes an open, modular Python data-science curriculum (notebooks, autograded exercises, Binder) and the lessons from running it with beginners. Useful for borrowing exercise design patterns; also worth reading next to the business-school pieces in the Journal of Information Systems Education, for example \"A foundation course in business analytics: design and implementation at two universities\" (2020, https://eric.ed.gov/?id=EJ1281524)."
  },
  {
   "category": "Reports",
@@ -1545,6 +1545,6 @@
   "use": "background; free.",
   "link_raw": "https://github.com/edinburgh-data-science",
   "status": "neu; Link geprüft",
-  "note": "Second-year undergraduate data analysis course built around McKinney's Python for Data Analysis, plus a first-year Foundations of Data Science course; useful mainly as an example of a mathematics department teaching Python data analysis from a free textbook. Little recent activity and no Quarto, so a weaker example than the others; the Carpentries at Edinburgh (https://edcarp.github.io/) run curre"
+  "note": "Second-year undergraduate data analysis course built around McKinney's Python for Data Analysis, plus a first-year Foundations of Data Science course; useful mainly as an example of a mathematics department teaching Python data analysis from a free textbook. Little recent activity and no Quarto, so a weaker example than the others; the Carpentries at Edinburgh (https://edcarp.github.io/) run current Python workshops."
  }
 ]

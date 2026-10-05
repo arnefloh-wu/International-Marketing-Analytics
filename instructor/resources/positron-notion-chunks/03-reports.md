@@ -68,7 +68,7 @@
 		<td>WU Vienna: AI and Your Academic Practice (Code of Conduct) and AI in Teaching pages</td>
 		<td>WU Wirtschaftsuniversität Wien, 2024 to 2025, institutional guidelines</td>
 		<td>[https://www.wu.ac.at/en/students/wu-campus/code-of-conduct/ai-and-your-academic-practice](https://www.wu.ac.at/en/students/wu-campus/code-of-conduct/ai-and-your-academic-practice)</td>
-		<td>WU's own rule set: the course instructor decides whether and for what AI may be used, AI-generated content must be transparently identified, and students are advised to keep and document their prompts. Turnitin's AI check runs on a trial basis for English texts. Institute-level examples exist (Institute for Social Policy: https://www.wu.ac.at/en/institute-for-social-policy/lehre/institute-guidelin</td>
+		<td>WU's own rule set: the course instructor decides whether and for what AI may be used, AI-generated content must be transparently identified, and students are advised to keep and document their prompts. Turnitin's AI check runs on a trial basis for English texts. Institute-level examples exist (Institute for Social Policy: https://www.wu.ac.at/en/institute-for-social-policy/lehre/institute-guidelines-for-the-use-of-ai; Institute for Nonprofit Management: https://www.wu.ac.at/en/institute-for-nonprofit-management-and-governance/lehre/ai-und-software-policy).</td>
 		<td>Session 1: the course AI rules must sit inside this framework; the prompt-documentation advice maps directly onto a prompt-log deliverable. Free. (Pages confirmed in search results; direct fetch blocked in this session.)</td>
 		<td>neu; in Suchergebnis bestätigt</td>
 	</tr>

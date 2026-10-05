@@ -9,7 +9,7 @@
   "use": "sessions 1 to 4 lab workhorse (elasticity models, MMM OLS, diagnostics, HAC errors); pin 0.15 in `requirements.txt`. Free.",
   "link_raw": "https://pypi.org/project/statsmodels/ and https://github.com/statsmodels/statsmodels/releases",
   "status": "neu; Link geprüft",
-  "note": "The reference for teaching regression in Python: `smf.ols(\"np.log(sales) ~ np.log(price) + C(country) + promo:C(country)\", df).fit(cov_type=\"HC3\")` gives R-style output, `cov_type=\"cluster\"` and `\"HAC\"` (Newey-West), `variance_inflation_factor`, `het_breuschpagan`, `acorr_breusch_godfrey`, `OLSInfluence` (Cook's distance, leverage), `plot_regress_exog`, and `statsmodels.stats.mediation.Mediation`."
+  "note": "The reference for teaching regression in Python: `smf.ols(\"np.log(sales) ~ np.log(price) + C(country) + promo:C(country)\", df).fit(cov_type=\"HC3\")` gives R-style output, `cov_type=\"cluster\"` and `\"HAC\"` (Newey-West), `variance_inflation_factor`, `het_breuschpagan`, `acorr_breusch_godfrey`, `OLSInfluence` (Cook's distance, leverage), `plot_regress_exog`, and `statsmodels.stats.mediation.Mediation`. Release 0.15 abstracts the formula engine so either patsy or formulaic can be the backend and accepts polars DataFrames directly."
  },
  {
   "category": "Software",
@@ -33,7 +33,7 @@
   "use": "session 3 (country and week fixed effects), session 4 (DiD on the geo-lift data). Free.",
   "link_raw": "https://pypi.org/project/pyfixest/ and https://github.com/py-econometrics/pyfixest",
   "status": "neu; Link geprüft",
-  "note": "Port of R's fixest: `pf.feols(\"log_sales ~ log_price | country + week\", data=df, vcov={\"CRV1\": \"country\"})` with fast high-dimensional fixed effects, IV and Poisson, wild cluster bootstrap (important with only 6 to 8 countries), randomisation inference, DiD and event-study estimators, multiple-estimation syntax, and `etable()` regression tables rendered with Great Tables. Integrates with marginale"
+  "note": "Port of R's fixest: `pf.feols(\"log_sales ~ log_price | country + week\", data=df, vcov={\"CRV1\": \"country\"})` with fast high-dimensional fixed effects, IV and Poisson, wild cluster bootstrap (important with only 6 to 8 countries), randomisation inference, DiD and event-study estimators, multiple-estimation syntax, and `etable()` regression tables rendered with Great Tables. Integrates with marginaleffects."
  },
  {
   "category": "Software",
@@ -45,7 +45,7 @@
   "use": "session 1 (interpreting an interaction with a Hofstede moderator), session 2 (slopes of non-linear response curves). Free.",
   "link_raw": "https://pypi.org/project/marginaleffects/ and https://github.com/vincentarelbundock/marginaleffects",
   "status": "neu; Link geprüft",
-  "note": "One consistent grammar (`predictions`, `comparisons`, `slopes`, `hypotheses`, `plot_slopes`) for interpreting interactions and non-linear terms: conditional slopes of price at each level of a cultural moderator, average marginal effects, contrasts between countries, delta-method or bootstrap intervals. Works on statsmodels formula models and pyfixest. The companion book *Model to Meaning* (CRC Pre"
+  "note": "One consistent grammar (`predictions`, `comparisons`, `slopes`, `hypotheses`, `plot_slopes`) for interpreting interactions and non-linear terms: conditional slopes of price at each level of a cultural moderator, average marginal effects, contrasts between countries, delta-method or bootstrap intervals. Works on statsmodels formula models and pyfixest. The companion book *Model to Meaning* (CRC Press, 2026) is free online."
  },
  {
   "category": "Software",
@@ -105,7 +105,7 @@
   "use": "background and optional lab for students who know PROCESS from SPSS courses; useful when a thesis supervisor expects PROCESS model numbers. Free.",
   "link_raw": "https://pypi.org/project/pyprocessmacro/ and https://github.com/QuentinAndre/pyprocessmacro",
   "status": "neu; Link geprüft",
-  "note": "Reimplements all PROCESS models 1 to 76 (moderation, mediation, moderated mediation, serial mediation with model 6), tested against PROCESS 2.16 and, for the 42 models still defined, PROCESS for R 5.0; 2.2 adds multicategorical X and moderators (indicator, Helmert, effect coding), percentile spotlight values as in PROCESS 3+, negative binomial outcomes, `tidy()`/`glance()` outputs and `to_statsmod"
+  "note": "Reimplements all PROCESS models 1 to 76 (moderation, mediation, moderated mediation, serial mediation with model 6), tested against PROCESS 2.16 and, for the 42 models still defined, PROCESS for R 5.0; 2.2 adds multicategorical X and moderators (indicator, Helmert, effect coding), percentile spotlight values as in PROCESS 3+, negative binomial outcomes, `tidy()`/`glance()` outputs and `to_statsmodels()`. Note that its defaults follow PROCESS 2; `percent=True, spotlight=\"percentiles\"` reproduces PROCESS 3 to 5."
  },
  {
   "category": "Software",
@@ -213,7 +213,7 @@
   "use": "background; one slide mapping SPSS PROCESS and R syntax to the Python equivalents.",
   "link_raw": "http://processmacro.org/ (workshops page confirmed in search listing) and https://cran.r-project.org/package=fixest (unverified)",
   "status": "neu; Link ungeprüft",
-  "note": "R remains the reference for regression teaching material, and most Python packages above are ports (pyfixest of fixest, marginaleffects, bambi of brms, pyprocessmacro of PROCESS). PROCESS is the de facto standard in marketing and consumer research for moderation and mediation, so students will meet \"Model 4\" and \"Model 7\" language in papers; pyprocessmacro lets them reproduce it without an SPSS li"
+  "note": "R remains the reference for regression teaching material, and most Python packages above are ports (pyfixest of fixest, marginaleffects, bambi of brms, pyprocessmacro of PROCESS). PROCESS is the de facto standard in marketing and consumer research for moderation and mediation, so students will meet \"Model 4\" and \"Model 7\" language in papers; pyprocessmacro lets them reproduce it without an SPSS licence."
  },
  {
   "category": "Websites / Blogs",
@@ -849,7 +849,7 @@
   "use": "Session 1 (Ch. 3 as core reading and lab warm-up), Session 2 (Ch. 7 sections on non-linear fits as background to saturation curves); free.",
   "link_raw": "https://www.statlearning.com/ (host blocked; free PDF and Springer edition confirmed via search listing and https://link.springer.com/doi/10.1007/978-3-031-38747-0); labs confirmed at https://github.com/intro-stat-learning/ISLP_labs",
   "status": "neu; Link geprüft",
-  "note": "Chapter 3 (linear regression) uses the Advertising data (sales on TV, radio, newspaper), covers qualitative predictors, the TV x radio interaction, polynomial terms and residual diagnostics; Chapter 7 covers polynomials, step functions and splines. The `Ch03-linreg-lab.ipynb` notebook is maintained and uses statsmodels. The cleanest marketing-flavoured, free, Python-native regression text availabl"
+  "note": "Chapter 3 (linear regression) uses the Advertising data (sales on TV, radio, newspaper), covers qualitative predictors, the TV x radio interaction, polynomial terms and residual diagnostics; Chapter 7 covers polynomials, step functions and splines. The `Ch03-linreg-lab.ipynb` notebook is maintained and uses statsmodels. The cleanest marketing-flavoured, free, Python-native regression text available."
  },
  {
   "category": "Bücher",
@@ -861,7 +861,7 @@
   "use": "Session 1 (Ch. 7 as reading; notebooks as lab), Session 2 (Ch. 8 on collinearity); paid (Springer, often free via WU SpringerLink licence).",
   "link_raw": "https://doi.org/10.1007/978-3-030-49720-0 (Springer, confirmed via listing); code and data at https://github.com/python-marketing-research/python-marketing-research-1ed (fetched; Apache-2.0)",
   "status": "neu; Link geprüft",
-  "note": "The only Python regression text written for marketers. Chapter 7 \"Identifying Drivers of Outcomes: Linear Models\" (doi 10.1007/978-3-030-49720-0_7) runs a satisfaction-drivers regression with statsmodels formulas, standardisation, factor (dummy) coding, interactions and a short marketing-mix example; Chapter 8 \"Additional Linear Modeling Topics\" covers collinearity/VIF, logistic regression and hie"
+  "note": "The only Python regression text written for marketers. Chapter 7 \"Identifying Drivers of Outcomes: Linear Models\" (doi 10.1007/978-3-030-49720-0_7) runs a satisfaction-drivers regression with statsmodels formulas, standardisation, factor (dummy) coding, interactions and a short marketing-mix example; Chapter 8 \"Additional Linear Modeling Topics\" covers collinearity/VIF, logistic regression and hierarchical models. All examples are Colab notebooks with simulated marketing data."
  },
  {
   "category": "Bücher",
@@ -873,7 +873,7 @@
   "use": "Session 1 (Chs. 10 and 12 as reading), Session 2 (Ch. 11 on diagnostics); free PDF; examples are R/rstanarm, Python port partial.",
   "link_raw": "https://users.aalto.fi/~ave/ROS.pdf (free PDF, confirmed via search listing; host blocked) and https://avehtari.github.io/ROS-Examples/ ; R code at https://github.com/avehtari/ROS-Examples (fetched, R only); Python/Bambi port at https://github.com/bambinos/Bambi_resources/tree/master/ROS (fetched)",
   "status": "neu; Link geprüft",
-  "note": "The best modern teaching text on interpreting regression. Ch. 10 (multiple predictors, indicator variables, interactions), Ch. 11 (assumptions, diagnostics, model evaluation, with a clear ranking of which assumptions matter most), Ch. 12 (log transformations and elasticity-style interpretation, standardising) and Chs. 18 to 21 (causal inference with regression) map directly onto Session 1. Simulat"
+  "note": "The best modern teaching text on interpreting regression. Ch. 10 (multiple predictors, indicator variables, interactions), Ch. 11 (assumptions, diagnostics, model evaluation, with a clear ranking of which assumptions matter most), Ch. 12 (log transformations and elasticity-style interpretation, standardising) and Chs. 18 to 21 (causal inference with regression) map directly onto Session 1. Simulation-first style suits AI-assisted coding."
  },
  {
   "category": "Bücher",
@@ -909,7 +909,7 @@
   "use": "Session 1 (Chs. 6 to 7), Session 4 (Chs. 10 to 12); Wooldridge paid (about EUR 70 to 90), UPfIE free.",
   "link_raw": "https://www.cengage.com/c/introductory-econometrics-a-modern-approach-8e-wooldridge/9780357900161/ and http://www.upfie.net/ (companion; both confirmed via listing)",
   "status": "neu; Link geprüft",
-  "note": "The standard applied econometrics text: Ch. 6 (logs, quadratics, interactions), Ch. 7 (dummy variables, interactions with dummies, Chow tests), Ch. 8 (heteroskedasticity-robust inference), Chs. 10 to 12 (time-series regression, trends, seasonality, serial correlation, HAC errors). Heiss and Brunner reproduce every example in Python with statsmodels and the `wooldridge` data package, chapter for ch"
+  "note": "The standard applied econometrics text: Ch. 6 (logs, quadratics, interactions), Ch. 7 (dummy variables, interactions with dummies, Chow tests), Ch. 8 (heteroskedasticity-robust inference), Chs. 10 to 12 (time-series regression, trends, seasonality, serial correlation, HAC errors). Heiss and Brunner reproduce every example in Python with statsmodels and the `wooldridge` data package, chapter for chapter."
  },
  {
   "category": "Bücher",
@@ -921,7 +921,7 @@
   "use": "Session 4 (core reading for forecasting as regression), Session 2 (seasonality controls); free.",
   "link_raw": "https://otexts.com/fpppy/ (host blocked; confirmed via IIF announcement https://forecasters.org/blog/2025/04/25/forecasting-principles-and-practice-the-pythonic-way/ and https://robjhyndman.com/hyndsight/fpppy.html)",
   "status": "neu; Link ungeprüft",
-  "note": "Python (Nixtla) edition of fpp3. The time-series regression chapter (trend, seasonal dummies, Fourier terms, lagged predictors, residual autocorrelation checks) and the dynamic regression chapter (regression with ARIMA errors, distributed lags) are the clearest free treatment of forecasting as regression. First 13 chapters follow fpp3 numbering (Ch. 7 time-series regression, Ch. 10 dynamic regress"
+  "note": "Python (Nixtla) edition of fpp3. The time-series regression chapter (trend, seasonal dummies, Fourier terms, lagged predictors, residual autocorrelation checks) and the dynamic regression chapter (regression with ARIMA errors, distributed lags) are the clearest free treatment of forecasting as regression. First 13 chapters follow fpp3 numbering (Ch. 7 time-series regression, Ch. 10 dynamic regression, unverified for the Python edition)."
  },
  {
   "category": "Bücher",
@@ -1348,7 +1348,7 @@
   "section": "Journal articles",
   "title": "Some heteroskedasticity-consistent covariance matrix estimators with improved finite sample properties",
   "source": "James G. MacKinnon and Halbert White, Journal of Econometrics 29(3), 305-325, 1985, article",
-  "link": "https://doi.org/10.1016/0304-4076(85",
+  "link": "https://doi.org/10.1016/0304-4076(85)90158-7",
   "why": "Source of HC1, HC2 and HC3; shows HC3 performs best in small samples. Explains the `cov_type=\"HC3\"` option in statsmodels and why it is a sensible default for small weekly datasets.",
   "use": "Session 2 (background for robust SEs in the lab).",
   "link_raw": "https://doi.org/10.1016/0304-4076(85)90158-7 (confirmed via listing)",

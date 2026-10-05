@@ -14,7 +14,7 @@
 		<td>Polars user guide, including "Coming from pandas"</td>
 		<td>Polars team, 2023 to 2026, website (official documentation).</td>
 		<td>[https://docs.pola.rs/user-guide/](https://docs.pola.rs/user-guide/)</td>
-		<td>The migration page is the clearest short statement of the mental model (expressions instead of index and lambdas, lazy by default, \`with_columns\` versus assignment) and maps pandas idioms to polars.</td>
+		<td>The migration page is the clearest short statement of the mental model (expressions instead of index and lambdas, lazy by default, with_columns versus assignment) and maps pandas idioms to polars.</td>
 		<td>session 1 pre-reading (concepts, expressions, lazy API chapters). Free.</td>
 		<td>neu; Link ungeprüft</td>
 	</tr>
@@ -59,7 +59,7 @@
 		<td>Announcing Plotnine 0.15.0 (Posit blog)</td>
 		<td>Hassan Kibirige, Posit blog, 2025, article.</td>
 		<td>[https://posit.co/blog/plotnine-0-15-0](https://posit.co/blog/plotnine-0-15-0)</td>
-		<td>Introduces plot composition (\`\|\`, \`/\`), text alignment and facet improvements with examples; the best short "what is new" for anyone with ggplot2 habits.</td>
+		<td>Introduces plot composition (\|, /), text alignment and facet improvements with examples; the best short "what is new" for anyone with ggplot2 habits.</td>
 		<td>session 2 optional reading. Free.</td>
 		<td>neu; Link ungeprüft</td>
 	</tr>
@@ -93,9 +93,9 @@
 	<tr>
 		<td>Websites / Blogs</td>
 		<td>Great Tables blog: polars posts</td>
-		<td>Michael Chow and Rich Iannone, Great Tables blog, 2024 to 2025, articles: "Great Tables: the Polars DataFrame styler of your dreams" (January 2024), "Great Tables is now BYODF" (April 2024), "Nanoplots and more, v0.4.0" (March 2024), "Becoming the Po</td>
+		<td>Michael Chow and Rich Iannone, Great Tables blog, 2024 to 2025, articles: "Great Tables: the Polars DataFrame styler of your dreams" (January 2024), "Great Tables is now BYODF" (April 2024), "Nanoplots and more, v0.4.0" (March 2024), "Becoming the Polars .style property" (April 2025), "Generating LaTeX output for PDF".</td>
 		<td>[https://posit-dev.github.io/great-tables/blog/](https://posit-dev.github.io/great-tables/blog/)</td>
-		<td>Shows polars expressions driving conditional formatting (\`tab_style(locations=loc.body(rows=pl.col("x") \> 0))\`), which is the course's main table idiom, plus honest notes on PDF limitations.</td>
+		<td>Shows polars expressions driving conditional formatting (tab_style(locations=loc.body(rows=pl.col("x") \> 0))), which is the course's main table idiom, plus honest notes on PDF limitations.</td>
 		<td>session 3 reading. Free.</td>
 		<td>neu; Link ungeprüft</td>
 	</tr>
@@ -113,7 +113,7 @@
 		<td>Quarto guide: Using Python, Presentations, Dashboards, Manuscripts</td>
 		<td>Posit, 2022 to 2026, website (official guide).</td>
 		<td>[https://quarto.org/docs/computations/python.html](https://quarto.org/docs/computations/python.html)</td>
-		<td>The guide pages are the canonical reference for the Jupyter engine, cell options (\`#\| echo: false\`, \`#\| fig-cap\`), revealjs and pptx output, dashboards and parameterised reports; the Quarto blog moved to opensource.posit.co in 2025 (https://opensource.posit.co/blog/q/quarto/).</td>
+		<td>The guide pages are the canonical reference for the Jupyter engine, cell options (#\| echo: false, #\| fig-cap), revealjs and pptx output, dashboards and parameterised reports; the Quarto blog moved to opensource.posit.co in 2025 (https://opensource.posit.co/blog/q/quarto/).</td>
 		<td>sessions 3 and 5 reference. Free.</td>
 		<td>neu; Link ungeprüft</td>
 	</tr>
@@ -122,7 +122,7 @@
 		<td>Quarto Live documentation</td>
 		<td>George Stagg, Posit, 2024 to 2026, website.</td>
 		<td>[https://r-wasm.github.io/quarto-live/](https://r-wasm.github.io/quarto-live/)</td>
-		<td>Setup, \`\{pyodide\}\` cells, exercises with grading and OJS integration; the Tidyverse blog post "WebAssembly roundup part 3: Quarto Live 0.1.1" (October 2024) is the readable introduction.</td>
+		<td>Setup, \{pyodide\} cells, exercises with grading and OJS integration; the Tidyverse blog post "WebAssembly roundup part 3: Quarto Live 0.1.1" (October 2024) is the readable introduction.</td>
 		<td>background for building self-study pages. Free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>

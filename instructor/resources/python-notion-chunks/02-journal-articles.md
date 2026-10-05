@@ -32,7 +32,7 @@
 		<td>Tidy data</td>
 		<td>Hadley Wickham, 2014, article, Journal of Statistical Software 59(10)</td>
 		<td>[https://doi.org/10.18637/jss.v059.i10](https://doi.org/10.18637/jss.v059.i10)</td>
-		<td>Defines the "one variable per column, one observation per row" convention that polars \`unpivot\` and \`pivot\`, plotnine aesthetics and Great Tables all assume. The cleanest explanation of why reshaping matters before plotting.</td>
+		<td>Defines the "one variable per column, one observation per row" convention that polars unpivot and pivot, plotnine aesthetics and Great Tables all assume. The cleanest explanation of why reshaping matters before plotting.</td>
 		<td>session 2 (reading, 10 pages); open access.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -140,7 +140,7 @@
 		<td>The composable data management system manifesto</td>
 		<td>Pedro Pedreira, Orri Erling, Konstantinos Karanasos, Scott Schneider, Wes McKinney, Satya R. Valluri, Mohamed Zait and Jacques Nadeau, 2023, article, Proceedings of the VLDB Endowment 16(10), 2679-2685</td>
 		<td>[https://doi.org/10.14778/3603581.3603604](https://doi.org/10.14778/3603581.3603604)</td>
-		<td>Co-written by the pandas and Arrow creator; explains Apache Arrow as the shared columnar memory layer that lets polars, pandas 2, DuckDB and Parquet exchange data without copying. The background to why \`pl.from_pandas\` and \`.to_pandas()\` are cheap and why narwhals exists.</td>
+		<td>Co-written by the pandas and Arrow creator; explains Apache Arrow as the shared columnar memory layer that lets polars, pandas 2, DuckDB and Parquet exchange data without copying. The background to why pl.from_pandas and .to_pandas() are cheap and why narwhals exists.</td>
 		<td>background; open access.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -149,7 +149,7 @@
 		<td>Ten guidelines for better tables</td>
 		<td>Jonathan A. Schwabish, 2020, article, Journal of Benefit-Cost Analysis 11(2), 151-178</td>
 		<td>[https://doi.org/10.1017/bca.2020.11](https://doi.org/10.1017/bca.2020.11)</td>
-		<td>The practical rulebook for presentation tables (right-align numbers, remove gridlines, group and highlight, put units in headers). Great Tables' design philosophy post (https://posit-dev.github.io/great-tables/blog/design-philosophy/, Iannone and Chow, April 2024) explicitly builds on this tradition, and each guideline maps to a \`GT\` method.</td>
+		<td>The practical rulebook for presentation tables (right-align numbers, remove gridlines, group and highlight, put units in headers). Great Tables' design philosophy post (https://posit-dev.github.io/great-tables/blog/design-philosophy/, Iannone and Chow, April 2024) explicitly builds on this tradition, and each guideline maps to a GT method.</td>
 		<td>session 3 (reading before the Great Tables lab, with the design-philosophy post); paywalled (Cambridge), free summaries widely available.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -185,7 +185,7 @@
 		<td>Teaching Python for data science: collaborative development of a modular and interactive curriculum</td>
 		<td>Multiple authors (author list on the JOSE page), 2021, article, Journal of Open Source Education 4(37), 138</td>
 		<td>[https://doi.org/10.21105/jose.00138](https://doi.org/10.21105/jose.00138)</td>
-		<td>Describes an open, modular Python data-science curriculum (notebooks, autograded exercises, Binder) and the lessons from running it with beginners. Useful for borrowing exercise design patterns; also worth reading next to the business-school pieces in the Journal of Information Systems Education, for example "A foundation course in business analytics: design and implementation at two universities"</td>
+		<td>Describes an open, modular Python data-science curriculum (notebooks, autograded exercises, Binder) and the lessons from running it with beginners. Useful for borrowing exercise design patterns; also worth reading next to the business-school pieces in the Journal of Information Systems Education, for example "A foundation course in business analytics: design and implementation at two universities" (2020, https://eric.ed.gov/?id=EJ1281524).</td>
 		<td>background (course design); open access.</td>
 		<td>neu; Link geprüft</td>
 	</tr>

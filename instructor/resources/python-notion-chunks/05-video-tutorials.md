@@ -129,7 +129,7 @@
 	<tr>
 		<td>(Video-) Tutorials</td>
 		<td>Posit Academy and posit::conf(2023) Introduction to Data Science with Python</td>
-		<td>Posit, 2023 to 2026; Academy Apprenticeships are six-to-eight-week mentored cohorts for organisations (price on request); a free open library of courses, labs and workshops launched in 2025. The 2023 workshop (plotnine, pandas, functions, Quarto) has</td>
+		<td>Posit, 2023 to 2026; Academy Apprenticeships are six-to-eight-week mentored cohorts for organisations (price on request); a free open library of courses, labs and workshops launched in 2025. The 2023 workshop (plotnine, pandas, functions, Quarto) has public materials.</td>
 		<td>[https://academy.posit.co/](https://academy.posit.co/)</td>
 		<td>The workshop repo is a tested beginner curriculum in the same stack (plotnine plus Quarto), easy to adapt to polars.</td>
 		<td>background; lab material source. Free materials; apprenticeships paid.</td>

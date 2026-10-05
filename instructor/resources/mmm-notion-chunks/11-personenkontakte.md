@@ -42,7 +42,7 @@
 		<td>Google Meridian Marketing Mix Modeling Team (the README cites the team, not individuals); person/team</td>
 		<td>[https://github.com/google/meridian](https://github.com/google/meridian)</td>
 		<td>Meridian is the reference implementation of geo-level hierarchical Bayesian MMM with reach and frequency, exactly the structure used in Session 3; their docs on geo selection are directly reusable.</td>
-		<td>Session 3 (geo hierarchy); follow via the GitHub repo and the Think with Google measurement pages. No single named person to follow; see JSM 2025 talk "Meridian: Google's Open-Source Marketing Mix Model" (https://ww2.amstat.org/meetings/jsm/2025/onlineprogram/abstract.cfm?sid=2361&tid=2363, unverifi</td>
+		<td>Session 3 (geo hierarchy); follow via the GitHub repo and the Think with Google measurement pages. No single named person to follow; see JSM 2025 talk "Meridian: Google's Open-Source Marketing Mix Model" (https://ww2.amstat.org/meetings/jsm/2025/onlineprogram/abstract.cfm?sid=2361&tid=2363, unverified).</td>
 		<td>neu; Link ungeprüft</td>
 	</tr>
 	<tr>

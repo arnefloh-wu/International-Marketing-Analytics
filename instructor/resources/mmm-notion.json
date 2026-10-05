@@ -45,7 +45,7 @@
   "use": "Pre-course or session 1 lab warm-up (chapters on data wrangling and linear models). Paywalled book; GitHub notebooks are free.",
   "link_raw": "https://link.springer.com/book/10.1007/978-3-030-49720-0",
   "status": "neu; Link geprüft",
-  "note": "The only mainstream marketing analytics textbook written in Python (pandas, statsmodels, scikit-learn), by two Google researchers and a Penn professor. Covers data handling, linear models, model interpretation and segmentation with marketing data; no MMM chapter, but it sets the coding baseline. The R twin is Chapman and Feit, R for Marketing Research and Analytics, 2nd ed., 2019, Springer, with f"
+  "note": "The only mainstream marketing analytics textbook written in Python (pandas, statsmodels, scikit-learn), by two Google researchers and a Penn professor. Covers data handling, linear models, model interpretation and segmentation with marketing data; no MMM chapter, but it sets the coding baseline. The R twin is Chapman and Feit, R for Marketing Research and Analytics, 2nd ed., 2019, Springer, with free slides and exercises at https://r-marketing.r-forge.r-project.org/ (verified)."
  },
  {
   "category": "Bücher",
@@ -2094,7 +2094,7 @@
   "source": "Google Meridian Marketing Mix Modeling Team (the README cites the team, not individuals); person/team",
   "link": "https://github.com/google/meridian",
   "why": "Meridian is the reference implementation of geo-level hierarchical Bayesian MMM with reach and frequency, exactly the structure used in Session 3; their docs on geo selection are directly reusable.",
-  "use": "Session 3 (geo hierarchy); follow via the GitHub repo and the Think with Google measurement pages. No single named person to follow; see JSM 2025 talk \"Meridian: Google's Open-Source Marketing Mix Model\" (https://ww2.amstat.org/meetings/jsm/2025/onlineprogram/abstract.cfm?sid=2361&tid=2363, unverifi",
+  "use": "Session 3 (geo hierarchy); follow via the GitHub repo and the Think with Google measurement pages. No single named person to follow; see JSM 2025 talk \"Meridian: Google's Open-Source Marketing Mix Model\" (https://ww2.amstat.org/meetings/jsm/2025/onlineprogram/abstract.cfm?sid=2361&tid=2363, unverified).",
   "link_raw": "https://github.com/google/meridian (verified); blog https://blog.google/products/ads-commerce/meridian-marketing-mix-model-open-to-everyone/",
   "status": "neu; Link ungeprüft",
   "note": "Meridian is the reference implementation of geo-level hierarchical Bayesian MMM with reach and frequency, exactly the structure used in Session 3; their docs on geo selection are directly reusable."

@@ -51,7 +51,7 @@
 		<td>Jon Vaver and Jim Koehler, Google, 2011, white paper; Jouni Kerman, Peng Wang and Jon Vaver, Google, 2017, white paper.</td>
 		<td>[https://research.google/pubs/measuring-ad-effectiveness-using-geo-experiments/](https://research.google/pubs/measuring-ad-effectiveness-using-geo-experiments/)</td>
 		<td>Ad effectiveness (iROAS) estimated by weighted regression of post-period response on pre-period response across geos (GBR), and by a time-series regression of treated on control markets (TBR). Exactly the bridge from regression to the geo-lift test in session 4.</td>
-		<td>session 4 reading and lab rationale for \`geolift_germany.csv\`. Free.</td>
+		<td>session 4 reading and lab rationale for geolift_germany.csv. Free.</td>
 		<td>neu; in Suchergebnis bestätigt</td>
 	</tr>
 	<tr>
@@ -66,7 +66,7 @@
 	<tr>
 		<td>Praxisbeispiele</td>
 		<td>Walmart and the M5 forecasting competition</td>
-		<td>Spyros Makridakis, Evangelos Spiliotis and Vassilios Assimakopoulos, \*International Journal of Forecasting\*, 2022, article; Walmart forecasting team (Brian Seaman and colleagues; authorship unverified), "Applicability of the M5 to Forecasting at Wa</td>
+		<td>Spyros Makridakis, Evangelos Spiliotis and Vassilios Assimakopoulos, \*International Journal of Forecasting\*, 2022, article; Walmart forecasting team (Brian Seaman and colleagues; authorship unverified), "Applicability of the M5 to Forecasting at Walmart", IJF 2022, commentary.</td>
 		<td>[https://www.sciencedirect.com/science/article/pii/S0169207021001874](https://www.sciencedirect.com/science/article/pii/S0169207021001874)</td>
 		<td>Forecasting Walmart unit sales showed that pure extrapolation fails without price, promotion, holiday and event regressors; Walmart's own commentary explains what transfers to production forecasting.</td>
 		<td>session 4 reading (forecasting as regression with promotion covariates). Results paper open access (unverified); commentary paywalled.</td>

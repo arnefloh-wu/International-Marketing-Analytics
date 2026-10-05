@@ -23,7 +23,7 @@
 		<td>Posit Assistant documentation (positron.posit.co and assistant.posit.co)</td>
 		<td>Posit PBC, 2026, website</td>
 		<td>[https://positron.posit.co/assistant.html](https://positron.posit.co/assistant.html)</td>
-		<td>Defines the modes, permission levels, \`/plan\` and \`/savememory\` commands, skills and the \`AGENTS.md\` memory file; the providers page is the authoritative list of what students can sign in with. The permission-mode section is directly usable as course rules ("approve every code change in lab 1 and 2").</td>
+		<td>Defines the modes, permission levels, /plan and /savememory commands, skills and the AGENTS.md memory file; the providers page is the authoritative list of what students can sign in with. The permission-mode section is directly usable as course rules ("approve every code change in lab 1 and 2").</td>
 		<td>session 1 (set-up); the AI policy appendix.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -32,7 +32,7 @@
 		<td>Tutorial: "Collaborate with AI on a Python analysis"</td>
 		<td>Posit PBC, 2026, website (step-by-step tutorial in the Positron docs)</td>
 		<td>[https://positron.posit.co/tutorial-ai-notebooks.html](https://positron.posit.co/tutorial-ai-notebooks.html)</td>
-		<td>The closest thing to a ready-made lab for this course: clone a repo, inspect \`retail_sales.xlsx\` (about 9,800 orders) in the Data Explorer, set up a venv, ask Posit Assistant for quarterly sales aggregation and a chart, export the chat to a notebook, use one-click error fixes and ghost cells, convert to Quarto and publish a dashboard.</td>
+		<td>The closest thing to a ready-made lab for this course: clone a repo, inspect retail_sales.xlsx (about 9,800 orders) in the Data Explorer, set up a venv, ask Posit Assistant for quarterly sales aggregation and a chart, export the chat to a notebook, use one-click error fixes and ghost cells, convert to Quarto and publish a dashboard.</td>
 		<td>session 2 lab (swap in a marketing dataset); free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -140,7 +140,7 @@
 		<td>"10 tips for getting better R code from your AI coding agent" (Sharon Machlis)</td>
 		<td>InfoWorld, 17 June 2026, article</td>
 		<td>[https://www.infoworld.com/article/4184642/10-tips-for-getting-better-r-code-from-your-ai-coding-agent.html](https://www.infoworld.com/article/4184642/10-tips-for-getting-better-r-code-from-your-ai-coding-agent.html)</td>
-		<td>Covers Claude Code, Codex and Posit Assistant alike: knowledge files (\`CLAUDE.md\`, \`AGENTS.md\`), skills, plan mode before coding, having the agent write tests, and budget management with local models. R-flavoured but every tip applies to Python in Positron.</td>
+		<td>Covers Claude Code, Codex and Posit Assistant alike: knowledge files (CLAUDE.md, AGENTS.md), skills, plan mode before coding, having the agent write tests, and budget management with local models. R-flavoured but every tip applies to Python in Positron.</td>
 		<td>session 3 or 4 reading (turns "prompting" into a reproducible workflow with memory files, which is also a good artefact to assess).</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -168,7 +168,7 @@
 		<td>Posit Open Source blog, 28 April 2026, article</td>
 		<td>[https://opensource.posit.co/blog/2026-04-28_positron-community-resources/](https://opensource.posit.co/blog/2026-04-28_positron-community-resources/)</td>
 		<td>Curated list of settings, keybindings, themes and workflow posts (including Andrew Heiss's "Switching to Positron full-time" thread); a shortcut to a sane default configuration for a classroom.</td>
-		<td>session 1 (distribute a recommended \`settings.json\`).</td>
+		<td>session 1 (distribute a recommended settings.json).</td>
 		<td>neu; Link geprüft</td>
 	</tr>
 </table>

@@ -41,7 +41,7 @@
 		<td>"Comparing Posit Assistant and Claude Code" (Sara Altman, Simon Couch)</td>
 		<td>Posit, 13 April 2026, video (21 min)</td>
 		<td>[https://www.youtube.com/watch?v=7GI6-4J0AXA](https://www.youtube.com/watch?v=7GI6-4J0AXA)</td>
-		<td>Same task done with both tools; shows the \`btw::btw_mcp_session()\` workaround for Claude Code and the assistant's iterative exploration style. Pairs with the June blog post.</td>
+		<td>Same task done with both tools; shows the btw::btw_mcp_session() workaround for Claude Code and the assistant's iterative exploration style. Pairs with the June blog post.</td>
 		<td>session 3.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -68,7 +68,7 @@
 		<td>"Data analysis with Posit AI-assistants" (Data Science Lab)</td>
 		<td>Posit Data Science Lab (Libby Heeren with Sara Altman and Simon Couch), 12 March 2026, video (54 min)</td>
 		<td>[https://opensource.posit.co/resources/videos/2026-03-12_data-analysis-with-posit-ai-assistants-sara-altman-simon-couch-data-science-lab/](https://opensource.posit.co/resources/videos/2026-03-12_data-analysis-with-posit-ai-assistants-sara-altman-simon-couch-data-science-lab/)</td>
-		<td>Long-form live analysis with the assistants plus a demo of the \`reviewer\` package (AI code review); shows what a realistic hour of AI-assisted EDA looks like, including dead ends.</td>
+		<td>Long-form live analysis with the assistants plus a demo of the reviewer package (AI code review); shows what a realistic hour of AI-assisted EDA looks like, including dead ends.</td>
 		<td>background; clip 10-15 minutes for session 3.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -123,7 +123,7 @@
 		<td>Posit, September 2026, one-day workshop materials (CC-BY 4.0; recordings expected on YouTube per Posit's practice)</td>
 		<td>[https://github.com/posit-conf-2026/modern-r-workflow](https://github.com/posit-conf-2026/modern-r-workflow)</td>
 		<td>The two most influential R educators teaching functions, testing and Claude Code and Positron Assistant skills together; the repo includes ready-made assistant skill files. R, but the "how to work with an agent responsibly" material is language-neutral.</td>
-		<td>background for the instructor; skill files as templates for a course \`AGENTS.md\`.</td>
+		<td>background for the instructor; skill files as templates for a course AGENTS.md.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
 	<tr>

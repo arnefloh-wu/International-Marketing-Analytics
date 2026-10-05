@@ -14,7 +14,7 @@
 		<td>An Introduction to Statistical Learning, with Applications in Python (ISLP)</td>
 		<td>James, Witten, Hastie, Tibshirani and Taylor, Springer, 2023, book (free PDF on the book website)</td>
 		<td>[https://www.statlearning.com/](https://www.statlearning.com/)</td>
-		<td>Chapter 3 (linear regression) uses the Advertising data (sales on TV, radio, newspaper), covers qualitative predictors, the TV x radio interaction, polynomial terms and residual diagnostics; Chapter 7 covers polynomials, step functions and splines. The \`Ch03-linreg-lab.ipynb\` notebook is maintained and uses statsmodels. The cleanest marketing-flavoured, free, Python-native regression text availabl</td>
+		<td>Chapter 3 (linear regression) uses the Advertising data (sales on TV, radio, newspaper), covers qualitative predictors, the TV x radio interaction, polynomial terms and residual diagnostics; Chapter 7 covers polynomials, step functions and splines. The Ch03-linreg-lab.ipynb notebook is maintained and uses statsmodels. The cleanest marketing-flavoured, free, Python-native regression text available.</td>
 		<td>Session 1 (Ch. 3 as core reading and lab warm-up), Session 2 (Ch. 7 sections on non-linear fits as background to saturation curves); free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -23,7 +23,7 @@
 		<td>Python for Marketing Research and Analytics</td>
 		<td>Jason S. Schwarz, Chris Chapman and Elea McDonnell Feit, Springer, 2020, book (283 pp.)</td>
 		<td>[https://doi.org/10.1007/978-3-030-49720-0](https://doi.org/10.1007/978-3-030-49720-0)</td>
-		<td>The only Python regression text written for marketers. Chapter 7 "Identifying Drivers of Outcomes: Linear Models" (doi 10.1007/978-3-030-49720-0_7) runs a satisfaction-drivers regression with statsmodels formulas, standardisation, factor (dummy) coding, interactions and a short marketing-mix example; Chapter 8 "Additional Linear Modeling Topics" covers collinearity/VIF, logistic regression and hie</td>
+		<td>The only Python regression text written for marketers. Chapter 7 "Identifying Drivers of Outcomes: Linear Models" (doi 10.1007/978-3-030-49720-0_7) runs a satisfaction-drivers regression with statsmodels formulas, standardisation, factor (dummy) coding, interactions and a short marketing-mix example; Chapter 8 "Additional Linear Modeling Topics" covers collinearity/VIF, logistic regression and hierarchical models. All examples are Colab notebooks with simulated marketing data.</td>
 		<td>Session 1 (Ch. 7 as reading; notebooks as lab), Session 2 (Ch. 8 on collinearity); paid (Springer, often free via WU SpringerLink licence).</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -32,7 +32,7 @@
 		<td>Regression and Other Stories</td>
 		<td>Andrew Gelman, Jennifer Hill and Aki Vehtari, Cambridge University Press, 2020 (corrected online version), book; free PDF for personal use</td>
 		<td>[https://users.aalto.fi/\~ave/ROS.pdf](https://users.aalto.fi/~ave/ROS.pdf)</td>
-		<td>The best modern teaching text on interpreting regression. Ch. 10 (multiple predictors, indicator variables, interactions), Ch. 11 (assumptions, diagnostics, model evaluation, with a clear ranking of which assumptions matter most), Ch. 12 (log transformations and elasticity-style interpretation, standardising) and Chs. 18 to 21 (causal inference with regression) map directly onto Session 1. Simulat</td>
+		<td>The best modern teaching text on interpreting regression. Ch. 10 (multiple predictors, indicator variables, interactions), Ch. 11 (assumptions, diagnostics, model evaluation, with a clear ranking of which assumptions matter most), Ch. 12 (log transformations and elasticity-style interpretation, standardising) and Chs. 18 to 21 (causal inference with regression) map directly onto Session 1. Simulation-first style suits AI-assisted coding.</td>
 		<td>Session 1 (Chs. 10 and 12 as reading), Session 2 (Ch. 11 on diagnostics); free PDF; examples are R/rstanarm, Python port partial.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -50,7 +50,7 @@
 		<td>Coding for Economists</td>
 		<td>Arthur Turrell, 2021 to present, free online book (Python, Quarto/Jupyter)</td>
 		<td>[https://aeturrell.github.io/coding-for-economists](https://aeturrell.github.io/coding-for-economists)</td>
-		<td>Python-only, current and practical. The \`econmt-regression\` chapter shows statsmodels and pyfixest with formulas, fixed effects, robust and clustered standard errors and regression tables; \`econmt-diagnostics\` covers residual and influence diagnostics; \`time-series\` covers lags and autocorrelation. Closest in spirit to the course stack.</td>
+		<td>Python-only, current and practical. The econmt-regression chapter shows statsmodels and pyfixest with formulas, fixed effects, robust and clustered standard errors and regression tables; econmt-diagnostics covers residual and influence diagnostics; time-series covers lags and autocorrelation. Closest in spirit to the course stack.</td>
 		<td>Session 1 and Session 3 (regression and fixed-effects chapters as lab reference), Session 4 (time-series chapter); free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -59,7 +59,7 @@
 		<td>Introductory Econometrics: A Modern Approach (8th ed.) with Using Python for Introductory Econometrics (2nd ed.)</td>
 		<td>Jeffrey M. Wooldridge, Cengage, January 2025, book; Florian Heiss and Daniel Brunner, 2024, free open-access Python companion</td>
 		<td>[https://www.cengage.com/c/introductory-econometrics-a-modern-approach-8e-wooldridge/9780357900161/](https://www.cengage.com/c/introductory-econometrics-a-modern-approach-8e-wooldridge/9780357900161/)</td>
-		<td>The standard applied econometrics text: Ch. 6 (logs, quadratics, interactions), Ch. 7 (dummy variables, interactions with dummies, Chow tests), Ch. 8 (heteroskedasticity-robust inference), Chs. 10 to 12 (time-series regression, trends, seasonality, serial correlation, HAC errors). Heiss and Brunner reproduce every example in Python with statsmodels and the \`wooldridge\` data package, chapter for ch</td>
+		<td>The standard applied econometrics text: Ch. 6 (logs, quadratics, interactions), Ch. 7 (dummy variables, interactions with dummies, Chow tests), Ch. 8 (heteroskedasticity-robust inference), Chs. 10 to 12 (time-series regression, trends, seasonality, serial correlation, HAC errors). Heiss and Brunner reproduce every example in Python with statsmodels and the wooldridge data package, chapter for chapter.</td>
 		<td>Session 1 (Chs. 6 to 7), Session 4 (Chs. 10 to 12); Wooldridge paid (about EUR 70 to 90), UPfIE free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -68,7 +68,7 @@
 		<td>Forecasting: Principles and Practice, the Pythonic Way</td>
 		<td>Rob J. Hyndman, George Athanasopoulos, Azul Garza, Cristian Challu, Max Mergenthaler and Kin G. Olivares, OTexts, 2025 (print May 2026), free online book</td>
 		<td>[https://otexts.com/fpppy/](https://otexts.com/fpppy/)</td>
-		<td>Python (Nixtla) edition of fpp3. The time-series regression chapter (trend, seasonal dummies, Fourier terms, lagged predictors, residual autocorrelation checks) and the dynamic regression chapter (regression with ARIMA errors, distributed lags) are the clearest free treatment of forecasting as regression. First 13 chapters follow fpp3 numbering (Ch. 7 time-series regression, Ch. 10 dynamic regress</td>
+		<td>Python (Nixtla) edition of fpp3. The time-series regression chapter (trend, seasonal dummies, Fourier terms, lagged predictors, residual autocorrelation checks) and the dynamic regression chapter (regression with ARIMA errors, distributed lags) are the clearest free treatment of forecasting as regression. First 13 chapters follow fpp3 numbering (Ch. 7 time-series regression, Ch. 10 dynamic regression, unverified for the Python edition).</td>
 		<td>Session 4 (core reading for forecasting as regression), Session 2 (seasonality controls); free.</td>
 		<td>neu; Link ungeprüft</td>
 	</tr>

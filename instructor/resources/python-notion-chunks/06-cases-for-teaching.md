@@ -113,7 +113,7 @@
 		<td>University of Edinburgh "Introduction to Data Analysis" course repositories</td>
 		<td>University of Edinburgh School of Mathematics (edinburgh-data-science GitHub organisation), 2016-2024, course repositories</td>
 		<td>[https://github.com/edinburgh-data-science](https://github.com/edinburgh-data-science)</td>
-		<td>Second-year undergraduate data analysis course built around McKinney's Python for Data Analysis, plus a first-year Foundations of Data Science course; useful mainly as an example of a mathematics department teaching Python data analysis from a free textbook. Little recent activity and no Quarto, so a weaker example than the others; the Carpentries at Edinburgh (https://edcarp.github.io/) run curre</td>
+		<td>Second-year undergraduate data analysis course built around McKinney's Python for Data Analysis, plus a first-year Foundations of Data Science course; useful mainly as an example of a mathematics department teaching Python data analysis from a free textbook. Little recent activity and no Quarto, so a weaker example than the others; the Carpentries at Edinburgh (https://edcarp.github.io/) run current Python workshops.</td>
 		<td>background; free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>

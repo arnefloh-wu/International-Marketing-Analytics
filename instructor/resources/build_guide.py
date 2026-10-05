@@ -58,8 +58,14 @@ def norm_title(t: str) -> str:
 
 
 def first_url(s: str) -> str:
-    m = re.search(r"https?://[^\s)\]>]+", s)
-    return m.group(0).rstrip(".,;") if m else ""
+    m = re.search(r"https?://[^\s\]>]+", s)
+    if not m:
+        return ""
+    u = m.group(0).rstrip(".,;")
+    # drop unbalanced closing parentheses at the end (e.g. "(see https://x.org/a)")
+    while u.endswith(")") and u.count(")") > u.count("("):
+        u = u[:-1]
+    return u.rstrip(".,;")
 
 
 entries, guide_body = [], []
@@ -97,6 +103,15 @@ for part in parts:
             # numbered sub-heading like "### 1a. Global thought leaders": treat as sub-section
             sub = line[4:].strip()
 
+def clip(text: str, limit: int = 1500) -> str:
+    text = re.sub(r"\s+", " ", text or "").strip()
+    if len(text) <= limit:
+        return text
+    cut = text[:limit]
+    end = max(cut.rfind(". "), cut.rfind("; "))
+    return (cut[: end + 1] if end > limit * 0.5 else cut[: cut.rfind(" ")]) + " …"
+
+
 # verification status from the text
 for e in entries:
     blob = " ".join([e.get("link_raw", ""), e["source"], e["why"], e["use"]]).lower()
@@ -106,8 +121,9 @@ for e in entries:
         e["status"] = "neu; in Suchergebnis bestätigt"
     else:
         e["status"] = "neu; Link geprüft"
-    e["note"] = re.sub(r"\s+", " ", e["why"])[:400]
-    e["use"] = re.sub(r"\s+", " ", e["use"])[:300]
+    e["note"] = clip(e["why"])
+    e["use"] = clip(e["use"])
+    e["source"] = clip(e["source"])
 
 # dedupe within and against existing Notion rows
 existing_path = ROOT / f"existing-{topic}.json"

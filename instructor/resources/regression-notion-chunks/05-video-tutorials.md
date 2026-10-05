@@ -68,7 +68,7 @@
 		<td>DataCamp: Introduction to Regression with statsmodels in Python, and Intermediate Regression with statsmodels in Python</td>
 		<td>DataCamp, interactive courses, about 4 hours each, beginner and intermediate.</td>
 		<td>[https://www.datacamp.com/courses/introduction-to-regression-with-statsmodels-in-python](https://www.datacamp.com/courses/introduction-to-regression-with-statsmodels-in-python)</td>
-		<td>Browser-based exercises on \`ols()\` formulas, categorical predictors, transformations, prediction and diagnostics, then parallel slopes, interactions and Simpson's paradox. Suits students with no programming background.</td>
+		<td>Browser-based exercises on ols() formulas, categorical predictors, transformations, prediction and diagnostics, then parallel slopes, interactions and Simpson's paradox. Suits students with no programming background.</td>
 		<td>pre-course or between sessions 1 and 2. Subscription (free via DataCamp Classrooms for teaching, unverified).</td>
 		<td>neu; Link ungeprüft</td>
 	</tr>

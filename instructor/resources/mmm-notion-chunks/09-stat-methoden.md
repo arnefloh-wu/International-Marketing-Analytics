@@ -39,7 +39,7 @@
 	<tr>
 		<td>stat. Methoden</td>
 		<td>Ridge regression with hyperparameter search (Robyn approach)</td>
-		<td>Hastie, Tibshirani and Friedman, 2009, book (Elements of Statistical Learning, 2nd ed., section 3.4 shrinkage methods, free PDF); Zhou et al., 2024, paper ("Packaging Up Media Mix Modeling: An Introduction to Robyn's Open-Source Approach", arXiv 2403</td>
+		<td>Hastie, Tibshirani and Friedman, 2009, book (Elements of Statistical Learning, 2nd ed., section 3.4 shrinkage methods, free PDF); Zhou et al., 2024, paper ("Packaging Up Media Mix Modeling: An Introduction to Robyn's Open-Source Approach", arXiv 2403.14674 and MSI working paper).</td>
 		<td>[https://hastie.su.domains/ElemStatLearn/](https://hastie.su.domains/ElemStatLearn/)</td>
 		<td>ESL gives the L2 penalty and bias-variance trade-off; the Robyn paper documents the Nevergrad multi-objective search over adstock, Hill and lambda and the model-selection criteria.</td>
 		<td>S2 reading; compare with Bayesian priors.</td>
@@ -66,7 +66,7 @@
 	<tr>
 		<td>stat. Methoden</td>
 		<td>Fourier seasonality</td>
-		<td>Hyndman and Athanasopoulos, 2021, book (Forecasting: Principles and Practice, 3rd ed., chapter 7 "Time series regression models", section on Fourier terms, free online); Taylor and Letham, 2018, article (Forecasting at Scale, The American Statisticia</td>
+		<td>Hyndman and Athanasopoulos, 2021, book (Forecasting: Principles and Practice, 3rd ed., chapter 7 "Time series regression models", section on Fourier terms, free online); Taylor and Letham, 2018, article (Forecasting at Scale, The American Statistician 72(1), 37 to 45).</td>
 		<td>[https://otexts.com/fpp3/useful-predictors.html](https://otexts.com/fpp3/useful-predictors.html)</td>
 		<td>Fourier pairs are how Prophet, PyMC-Marketing and Meridian represent yearly seasonality with few parameters; fpp3 explains the choice of K.</td>
 		<td>S2 and S4.</td>
@@ -84,7 +84,7 @@
 	<tr>
 		<td>stat. Methoden</td>
 		<td>Budget optimisation under constraints</td>
-		<td>PyMC-Marketing notebook "Budget Allocation with PyMC-Marketing" (SLSQP with bounds and custom constraints, plus risk assessment and multi-objective variants); Google Meridian docs "Budget optimization scenarios" (fixed versus flexible budget, minimal</td>
+		<td>PyMC-Marketing notebook "Budget Allocation with PyMC-Marketing" (SLSQP with bounds and custom constraints, plus risk assessment and multi-objective variants); Google Meridian docs "Budget optimization scenarios" (fixed versus flexible budget, minimal marginal ROI or target ROI constraints).</td>
 		<td>[https://www.pymc-marketing.io/en/latest/notebooks/mmm/mmm_budget_allocation_example.html](https://www.pymc-marketing.io/en/latest/notebooks/mmm/mmm_budget_allocation_example.html)</td>
 		<td>Both docs show the same mathematics (maximise expected response subject to total budget and per-channel bounds) in code students can run, including uncertainty in the optimum.</td>
 		<td>S3 lab (allocate across countries and channels with floor and cap constraints).</td>
@@ -111,7 +111,7 @@
 	<tr>
 		<td>stat. Methoden</td>
 		<td>Synthetic control</td>
-		<td>Abadie, 2021, article (Using Synthetic Controls: Feasibility, Data Requirements, and Methodological Aspects, Journal of Economic Literature 59(2), 391 to 425, open access); Brodersen et al., 2015, article (CausalImpact, Annals of Applied Statistics 9</td>
+		<td>Abadie, 2021, article (Using Synthetic Controls: Feasibility, Data Requirements, and Methodological Aspects, Journal of Economic Literature 59(2), 391 to 425, open access); Brodersen et al., 2015, article (CausalImpact, Annals of Applied Statistics 9(1), 247 to 274).</td>
 		<td>[https://www.aeaweb.org/articles?id=10.1257/jel.20191450](https://www.aeaweb.org/articles?id=10.1257/jel.20191450)</td>
 		<td>Abadie is the definitive guide to when synthetic control is credible (donor pool, pre-period fit, placebo tests); Brodersen gives the Bayesian state-space version used in CausalImpact.</td>
 		<td>S5 reading; CausalPy and tfcausalimpact labs.</td>
@@ -120,7 +120,7 @@
 	<tr>
 		<td>stat. Methoden</td>
 		<td>Geo experiments and power</td>
-		<td>Vaver and Koehler, 2011, paper (Measuring Ad Effectiveness Using Geo Experiments, Google); Chen and Au, 2022, article (Robust causal inference for incremental return on ad spend with randomized paired geo experiments, Annals of Applied Statistics 16(</td>
+		<td>Vaver and Koehler, 2011, paper (Measuring Ad Effectiveness Using Geo Experiments, Google); Chen and Au, 2022, article (Robust causal inference for incremental return on ad spend with randomized paired geo experiments, Annals of Applied Statistics 16(1); Trimmed Match, arXiv 1908.02922) and Trimmed Match Design (arXiv 2105.07060).</td>
 		<td>[https://research.google/pubs/measuring-ad-effectiveness-using-geo-experiments/](https://research.google/pubs/measuring-ad-effectiveness-using-geo-experiments/)</td>
 		<td>Vaver and Koehler is the original geo-based regression design; Trimmed Match adds robust paired designs and power-based pair selection. GeoLift's power tools and Haus's primers build on both.</td>
 		<td>S5 core reading; power-calculation exercise with GeoLift or Trimmed Match.</td>

@@ -93,7 +93,7 @@
 	<tr>
 		<td>Software</td>
 		<td>Synthetic MMM benchmark generators</td>
-		<td>Niklas Heusch, 2026, software and paper (Jupyter, generator for "A Synthetic Benchmark Dataset with Endogenous Marketing Spend for Validating MMMs", arXiv 2608.21130); Meta siMMMulator (R, MIT); PyMC Labs mmm-param-recovery (Python, Apache 2.0, compa</td>
+		<td>Niklas Heusch, 2026, software and paper (Jupyter, generator for "A Synthetic Benchmark Dataset with Endogenous Marketing Spend for Validating MMMs", arXiv 2608.21130); Meta siMMMulator (R, MIT); PyMC Labs mmm-param-recovery (Python, Apache 2.0, compares PyMC samplers and Meridian).</td>
 		<td>[https://github.com/niklas-heusch/mmm-materials](https://github.com/niklas-heusch/mmm-materials)</td>
 		<td>Ground-truth data is the only way to grade an MMM. Heusch's generator is the first with endogenous spend (budget feedback, promo-calendar anticipation, TV bursts, performance chasing) plus simulated go-dark geo tests, which is exactly the confounding students need to see. No licence file shown on the Heusch repo.</td>
 		<td>S2 and S3 assignments (fit a model, compare to known ROI); S5 for simulated geo tests. Free.</td>

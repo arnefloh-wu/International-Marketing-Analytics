@@ -93,7 +93,7 @@
 	<tr>
 		<td>(Video-) Tutorials</td>
 		<td>Meta Robyn walkthroughs</td>
-		<td>Gufeng Zhou (Robyn creator) interview "Robyn's Creation to Controversy, Decomposition Distance and MMM Politics" (2024, about 60 minutes, free); "Ep. 1 to Ep. 8 Marketing Mix Modeling with Facebook Robyn" tutorial series (third party, 2022 to 2023, 1</td>
+		<td>Gufeng Zhou (Robyn creator) interview "Robyn's Creation to Controversy, Decomposition Distance and MMM Politics" (2024, about 60 minutes, free); "Ep. 1 to Ep. 8 Marketing Mix Modeling with Facebook Robyn" tutorial series (third party, 2022 to 2023, 10 to 25 minutes each, free, intermediate R).</td>
 		<td>[https://www.youtube.com/watch?v=QX8ATifkyA4](https://www.youtube.com/watch?v=QX8ATifkyA4)</td>
 		<td>The interview explains design choices (DECOMP.RSSD, ridge, Nevergrad) and their critics from the author himself; the episode series is the practical R walkthrough. Meta's own 15-minute demo video is hosted on Google Drive via the Robyn repo (unverified).</td>
 		<td>S2 optional viewing.</td>

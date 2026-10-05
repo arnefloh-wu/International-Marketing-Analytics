@@ -14,7 +14,7 @@
 		<td>ISLP Chapter 3 lab: Linear Regression (Python)</td>
 		<td>James, Witten, Hastie, Tibshirani and Taylor, 2023, website (book lab notebook).</td>
 		<td>[https://intro-stat-learning.github.io/ISLP/labs/Ch03-linreg-lab.html](https://intro-stat-learning.github.io/ISLP/labs/Ch03-linreg-lab.html)</td>
-		<td>Short, rigorous statsmodels walk-through: simple and multiple regression, interaction terms, polynomial terms, qualitative predictors (Carseats \`ShelveLoc\` dummies), leverage and residual plots. Chapter 3 of the free book uses the Advertising data (TV x radio synergy) to explain interactions.</td>
+		<td>Short, rigorous statsmodels walk-through: simple and multiple regression, interaction terms, polynomial terms, qualitative predictors (Carseats ShelveLoc dummies), leverage and residual plots. Chapter 3 of the free book uses the Advertising data (TV x radio synergy) to explain interactions.</td>
 		<td>session 1 pre-reading and lab template. Free (book PDF free at statlearning.com).</td>
 		<td>neu; in Suchergebnis bestätigt</td>
 	</tr>
@@ -32,7 +32,7 @@
 		<td>statsmodels example notebooks (regression diagnostics, interactions, contrasts, HAC, ARDL)</td>
 		<td>statsmodels developers, ongoing, documentation (Jupyter notebooks).</td>
 		<td>[https://github.com/statsmodels/statsmodels/tree/main/examples/notebooks](https://github.com/statsmodels/statsmodels/tree/main/examples/notebooks)</td>
-		<td>Ready-made notebooks: \`regression_diagnostics\`, \`linear_regression_diagnostics_plots\`, \`regression_plots\` (influence, partial regression, CCPR), \`contrasts\` (treatment, sum, Helmert coding), \`interactions_anova\`, \`categorical_interaction_plot\`, \`wls\`, \`gls\`, \`robust_models_\*\`, \`autoregressive_distributed_lag\`, \`statespace_sarimax_\*\`.</td>
+		<td>Ready-made notebooks: regression_diagnostics, linear_regression_diagnostics_plots, regression_plots (influence, partial regression, CCPR), contrasts (treatment, sum, Helmert coding), interactions_anova, categorical_interaction_plot, wls, gls, robust_models_\*, autoregressive_distributed_lag, statespace_sarimax_\*.</td>
 		<td>sessions 1, 2 and 4 lab seeds; give students the diagnostic notebook as a checklist. Free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
@@ -59,7 +59,7 @@
 		<td>The Effect, Chapter 13 Regression</td>
 		<td>Nick Huntington-Klein, 2021 (online), CRC Press 2022, book website.</td>
 		<td>[https://theeffectbook.net/ch-StatisticalAdjustment.html](https://theeffectbook.net/ch-StatisticalAdjustment.html)</td>
-		<td>Covers polynomials, logs, interaction terms (including why interactions are noisy and need much larger samples), heteroscedasticity-robust and clustered errors, with code in R, Stata and Python (statsmodels formulas with \`I()\`).</td>
+		<td>Covers polynomials, logs, interaction terms (including why interactions are noisy and need much larger samples), heteroscedasticity-robust and clustered errors, with code in R, Stata and Python (statsmodels formulas with I()).</td>
 		<td>session 1 reading for interactions and transformations. Free online.</td>
 		<td>neu; in Suchergebnis bestätigt</td>
 	</tr>
@@ -104,7 +104,7 @@
 		<td>Real Python: Linear Regression in Python</td>
 		<td>Mirko Stojiljković, Real Python, website tutorial (originally 2019, updated; date unverified).</td>
 		<td>[https://realpython.com/linear-regression-in-python/](https://realpython.com/linear-regression-in-python/)</td>
-		<td>Gentle introduction for non-programmers: simple, multiple and polynomial regression with scikit-learn and statsmodels, reading \`summary()\` output, under- and overfitting.</td>
+		<td>Gentle introduction for non-programmers: simple, multiple and polynomial regression with scikit-learn and statsmodels, reading summary() output, under- and overfitting.</td>
 		<td>pre-course self-study before session 1. Free (some Real Python content needs a subscription).</td>
 		<td>neu; Link ungeprüft</td>
 	</tr>

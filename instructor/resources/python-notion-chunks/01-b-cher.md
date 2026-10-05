@@ -86,7 +86,7 @@
 		<td>ggplot2: Elegant Graphics for Data Analysis, 3rd edition</td>
 		<td>Hadley Wickham, Danielle Navarro and Thomas Lin Pedersen, Springer, 3e online 2023-2024, book, free online</td>
 		<td>[https://ggplot2-book.org/](https://ggplot2-book.org/)</td>
-		<td>plotnine is a near one-to-one port of ggplot2, so this is effectively the plotnine theory book: layers, aesthetics, scales, facets, themes, "the grammar" chapter. Students translate \`aes()\`, \`geom_\*\`, \`facet_wrap\` and \`theme\` almost unchanged.</td>
+		<td>plotnine is a near one-to-one port of ggplot2, so this is effectively the plotnine theory book: layers, aesthetics, scales, facets, themes, "the grammar" chapter. Students translate aes(), geom_\*, facet_wrap and theme almost unchanged.</td>
 		<td>session 2 (background reading; part II "The grammar"); free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>

@@ -57,7 +57,7 @@
 	<tr>
 		<td>Reports</td>
 		<td>Google media mix modelling technical reports: Jin et al. (2017) and Chan and Perry (2017)</td>
-		<td>Yuxue Jin, Yueqing Wang, Yunting Sun, David Chan and Jim Koehler, "Bayesian Methods for Media Mix Modeling with Carryover and Shape Effects"; David Chan and Michael Perry, "Challenges and Opportunities in Media Mix Modeling", Google Inc., 2017, techn</td>
+		<td>Yuxue Jin, Yueqing Wang, Yunting Sun, David Chan and Jim Koehler, "Bayesian Methods for Media Mix Modeling with Carryover and Shape Effects"; David Chan and Michael Perry, "Challenges and Opportunities in Media Mix Modeling", Google Inc., 2017, technical reports</td>
 		<td>[https://research.google.com/pubs/archive/46001.pdf](https://research.google.com/pubs/archive/46001.pdf)</td>
 		<td>Jin et al. define the adstock and Hill-saturation regression that PyMC-Marketing and Meridian build on; Chan and Perry explain, in regression language, why MMM struggles (collinear channels, endogenous budgets, limited data). Together they turn the regression topics of Session 1 into the MMM of Sessions 2 and 3.</td>
 		<td>Session 2 (Jin et al. as core reading), Session 3 (Chan and Perry as discussion reading); free.</td>

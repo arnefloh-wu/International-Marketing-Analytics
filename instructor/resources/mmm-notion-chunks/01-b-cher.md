@@ -41,7 +41,7 @@
 		<td>Python for Marketing Research and Analytics</td>
 		<td>Jason S. Schwarz, Chris Chapman, Elea McDonnell Feit, 2020, Springer, textbook with code, DOI 10.1007/978-3-030-49720-0 (verified); code at https://github.com/python-marketing-research/python-marketing-research-1ed (verified)</td>
 		<td>[https://link.springer.com/book/10.1007/978-3-030-49720-0](https://link.springer.com/book/10.1007/978-3-030-49720-0)</td>
-		<td>The only mainstream marketing analytics textbook written in Python (pandas, statsmodels, scikit-learn), by two Google researchers and a Penn professor. Covers data handling, linear models, model interpretation and segmentation with marketing data; no MMM chapter, but it sets the coding baseline. The R twin is Chapman and Feit, R for Marketing Research and Analytics, 2nd ed., 2019, Springer, with f</td>
+		<td>The only mainstream marketing analytics textbook written in Python (pandas, statsmodels, scikit-learn), by two Google researchers and a Penn professor. Covers data handling, linear models, model interpretation and segmentation with marketing data; no MMM chapter, but it sets the coding baseline. The R twin is Chapman and Feit, R for Marketing Research and Analytics, 2nd ed., 2019, Springer, with free slides and exercises at https://r-marketing.r-forge.r-project.org/ (verified).</td>
 		<td>Pre-course or session 1 lab warm-up (chapters on data wrangling and linear models). Paywalled book; GitHub notebooks are free.</td>
 		<td>neu; Link geprüft</td>
 	</tr>
