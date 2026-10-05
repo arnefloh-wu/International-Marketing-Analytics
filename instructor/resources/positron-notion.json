@@ -1356,7 +1356,7 @@
   "note": "92 per cent of UK students use AI (66 per cent a year earlier), 88 per cent in assessments; top worries are misconduct accusations and hallucinations; a gender and subject divide in use. Useful to normalise disclosure and to design for the anxious half of the class."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "USC Marshall MBA \"Data Science 101\" with GitHub Copilot and R",
   "source": "Jacob Bien and Gourab Mukherjee, 2023 course design, published 2025 (see Journal articles), course example; CAUSE webinar recording 2025",
@@ -1368,7 +1368,7 @@
   "note": "The best-documented business-school precedent: non-coding MBA students doing real analysis by prompting Copilot inside an IDE, with the instructors' candid list of what worked and what did not. The webinar adds the practical details (set-up, grading)."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "STA 199 Introduction to Data Science and Statistical Thinking (Duke), AI policy and Quarto/GitHub workflow",
   "source": "Mine Çetinkaya-Rundel and team, Duke University, autumn 2025 offering, course website",
@@ -1380,7 +1380,7 @@
   "note": "A mature, fully open course (R, Quarto, GitHub, Posit tools) with a two-principle AI policy: a cognitive dimension (AI must not reduce your thinking) and an ethical dimension (be transparent, cite AI output), plus \"attempt first, never copy-paste, cite explicitly\" rules for code help. All materials are reusable under CC licences."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "Andrew Heiss's AI/LLM policy for writing and coding courses",
   "source": "Andrew Heiss (Georgia State University), 2024 onward, course policy page",
@@ -1392,7 +1392,7 @@
   "note": "A widely copied two-rule policy for R-based data courses: everything human-facing must be human-generated, and the student is responsible for understanding, verifying and citing everything an LLM produces. Written in plain language students actually read, with separate sections for writing and for code."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "UC San Diego CS1-LLM course (Porter and Zingaro model)",
   "source": "Leo Porter and colleagues, UC San Diego, 2023 onward, course and institutional roll-out",
@@ -1404,7 +1404,7 @@
   "note": "The CS1-LLM course redesigned introductory programming around Copilot for a largely non-CS cohort, with assessment built on problem decomposition, testing and explaining code. The Microsoft case study and the authors' talk describe the institutional mechanics (licences, labs, grading)."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "Harvard CS50 with the CS50 Duck (cs50.ai)",
   "source": "David J. Malan and CS50 team, Harvard, 2023 onward, course and tool",
@@ -1416,7 +1416,7 @@
   "note": "A production example of a pedagogically constrained assistant: the Duck explains errors and code and gives hints but refuses to hand over solutions, available in VS Code and on the web. Shows that \"AI on, answers off\" is feasible at scale."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "Wharton Generative AI Labs: Prompt Library and \"Assigning AI\" / \"Instructors as Innovators\"",
   "source": "Ethan Mollick and Lilach Mollick, Wharton, 2023 to 2025, teaching resources and working papers",
@@ -1428,7 +1428,7 @@
   "note": "Ready-to-use, tested prompts for tutor, coach, simulator and team-mate roles, plus two papers that explain seven ways to assign AI to students and how instructors can build their own exercises. The simulation and \"AI as student\" prompts translate well to analytics (e.g. have the model critique a regression interpretation)."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "Solve It With Code (answer.ai / fast.ai)",
   "source": "Jeremy Howard and Johno Whitaker, answer.ai, 2024 onward (platform \"Solveit\" launched October 2025), live online course",
@@ -1440,7 +1440,7 @@
   "note": "A five-week course for people who have generated code with ChatGPT or Claude but cannot modify it: tiny iterative steps, AI \"in small doses\", understanding before generating. The most explicit anti-vibe-coding pedagogy available, aimed at exactly this course's audience."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "AI Python for Beginners",
   "source": "Andrew Ng, DeepLearning.AI, 2024, short online course (four parts, about 11 hours)",
@@ -1452,7 +1452,7 @@
   "note": "Teaches Python from zero with an AI chatbot companion built into the lessons, explicitly designed for people who will code with AI help. Lightweight, free, and a sensible pre-course assignment for students with no programming background."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "Posit Academy and posit::conf workshop materials",
   "source": "Posit PBC, 2022 onward, mentor-led cohort programme (paid) and open workshop repositories",
@@ -1464,7 +1464,7 @@
   "note": "Posit's own teaching model for Python and R data science (daily lessons, weekly projects, live mentor sessions) and the open posit::conf workshop repos that show how Posit staff teach pandas and Quarto in their tools. Closest to a \"Positron-native\" curriculum, though Academy itself is for teams."
  },
  {
-  "category": "(Video-) Tutorials",
+  "category": "Cases for Teaching",
   "section": "Teaching cases and course examples",
   "title": "Copilot(s): Generative AI at Microsoft and GitHub (HBS case 624-010)",
   "source": "Frank Nagle, Shane Greenstein, Maria P. Roche, Nataliya Langburd Wright and Sarah Mehta, Harvard Business School, 2023 (teaching note revised 2024), case",

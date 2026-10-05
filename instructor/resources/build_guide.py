@@ -23,6 +23,7 @@ TITLES = {
 }
 # map section headings (lower-case substrings) to the Notion category labels
 CATS = [
+    ("teaching case", "Cases for Teaching"), ("course example", "Cases for Teaching"),
     ("book", "Bücher"), ("journal", "Journal Articles"), ("report", "Reports"),
     ("website", "Websites / Blogs"), ("documentation", "Websites / Blogs"), ("blog", "Websites / Blogs"),
     ("video", "(Video-) Tutorials"), ("tutorial", "(Video-) Tutorials"), ("course", "(Video-) Tutorials"),
