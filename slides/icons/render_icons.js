@@ -5,7 +5,10 @@ const OUT = process.argv[2];
 const names = ['LuChartLine','LuEuro','LuGlobe','LuCandy','LuBot','LuScale','LuSplit','LuFlaskConical','LuCode','LuMessagesSquare',
   'LuSchool','LuHouse','LuClock','LuFileText','LuFileSpreadsheet','LuPresentation','LuNotebookPen','LuGraduationCap','LuGitBranch',
   'LuLaptop','LuListChecks','LuClipboardCheck','LuShieldCheck','LuUsers','LuLightbulb','LuTarget','LuMic','LuPencilLine','LuBriefcase','LuFlag','LuSparkles','LuBookOpen',
-  'LuTerminal','LuDownload','LuUserPlus','LuKeyRound','LuMail','LuPackage','LuTable','LuChartColumn','LuDatabase','LuMonitor','LuKeyboard','LuWrench','LuCircleCheck','LuFolderGit2','LuPlay','LuEye','LuLayers','LuSettings','LuBug','LuCloud','LuGithub','LuBadgeCheck','LuTriangleAlert','LuRefreshCw','LuFolderOpen','LuSquareTerminal','LuSigma','LuIdCard','LuAward','LuLink','LuSearch','LuImage','LuPlug','LuHardDrive','LuWifi','LuBatteryCharging','LuLifeBuoy'];
+  'LuTerminal','LuDownload','LuUserPlus','LuKeyRound','LuMail','LuPackage','LuTable','LuChartColumn','LuDatabase','LuMonitor','LuKeyboard','LuWrench','LuCircleCheck','LuFolderGit2','LuPlay','LuEye','LuLayers','LuSettings','LuBug','LuCloud','LuGithub','LuBadgeCheck','LuTriangleAlert','LuRefreshCw','LuFolderOpen','LuSquareTerminal','LuSigma','LuIdCard','LuAward','LuLink','LuSearch','LuImage','LuPlug','LuHardDrive','LuWifi','LuBatteryCharging','LuLifeBuoy',
+  'LuTrendingUp','LuTrendingDown','LuMegaphone','LuTv','LuHistory','LuCalendarDays','LuLock','LuGauge','LuCalculator','LuWallet',
+  'LuCompass','LuHourglass','LuBrain','LuChartArea','LuCoins','LuMousePointerClick','LuCookie','LuEarth','LuSlidersHorizontal',
+  'LuCrosshair','LuMagnet','LuChartSpline','LuShuffle','LuRepeat','LuMap','LuDices'];
 (async () => {
   for (const n of names) {
     for (const [tag, color] of [['navy', '#002350'], ['white', '#FFFFFF'], ['blue', '#0096D3']]) {

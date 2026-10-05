@@ -1,0 +1,9 @@
+2025 media spend, six countries, five channels: 36,193 k EUR (51 weeks); revenue 323,236 k EUR
+2025 spend share by channel: tv 34%, online_video 21%, paid_search 14%, paid_social 21%, ooh 10%
+DE correlation weekly sales vs TV spend: 0.29
+DE TV spend in Christmas weeks vs other weeks (mean k EUR): 188 vs 100
+DE illustrative additive OLS (adstock 0.5 all channels): R2 0.93, media share of fitted 2025 sales 41%
+DE log-log OLS: price elasticity -1.36, TV elasticity 0.06, R2 0.94
+DE log-log media elasticities: tv 0.06, online_video 0.13, paid_search 0.09, paid_social 0.11, ooh 0.01
+Adstock half-life: decay 0.3 -> 0.58 weeks, decay 0.7 -> 1.94 weeks; total effect multiplier 1/(1-decay): 1.43 and 3.33
+Hill curve (K 60, slope 2, max 120): next 10k at 30k -> +12.9k units, at 150k -> +1.8k units
