@@ -348,7 +348,7 @@ card(s, 0.5 + cw2 + 0.5, 2.55, cw2, 2.3, "In the classroom", [
 box(s, 0.5, 5.0, 9.0, 0.55, NAVY, "Exam box")
 icon(s, "LuPencilLine", "white", 0.7, 5.08, 0.38, "exam")
 text(s, 1.25, 5.0, 8.1, 0.55, [[("At the end: ", {"bold": True, "col": WHITE}),
-                                ("written exam, paper and pencil, multiple-choice questions.", {"col": WHITE})]],
+                                ("written exam, 60" + NB + "minutes, paper and pencil, multiple-choice questions.", {"col": WHITE})]],
      "Exam text", anchor=MSO_ANCHOR.MIDDLE)
 
 # 7  Module roadmap: table
@@ -356,7 +356,7 @@ s = add_slide("Titel und Tabelle", "Module roadmap",
               notes="Topics follow the course roadmap; methods in detail.")
 rows = [
     ("Session", "Topic", "Methods"),
-    ("1", "Introduction and linear regression", "Course content and style; Python, Positron, GitHub and DataCamp; MMM fundamentals; OLS, model fit and interpretation"),
+    ("1", "Introduction and linear regression", "Course content and style; registration and set-up (Python, Positron, GitHub, DataCamp); MMM fundamentals; OLS, model fit and interpretation"),
     ("2", "Advanced regression", "Log-log elasticities, dummy variables, non-linear effects, moderation and mediation, adstock and saturation, diagnostics"),
     ("3", "Logistic regression", "Binary outcomes such as purchase or churn, odds ratios, model fit and classification"),
     ("4", "ARIMA", "Trend, seasonality and autocorrelation; ARIMA and ARIMAX forecasts as the sales baseline"),
@@ -388,7 +388,7 @@ s = add_slide("Titel und Inhalt", "Assessment strategy",
 comps = [
     ("Online certificates", "DataCamp, 4" + NB + "×" + NB + "5" + NB + "%", 20, "Individual", "LuGraduationCap", MSO_THEME_COLOR.ACCENT_4, WHITE),
     ("Coding exercises", "4" + NB + "×" + NB + "5" + NB + "%", 20, "Individual", "LuCode", ACC, WHITE),
-    ("Written exam", "paper and pencil, multiple choice", 30, "Individual", "LuPencilLine", NAVY, WHITE),
+    ("Written exam", "60" + NB + "minutes, multiple choice", 30, "Individual", "LuPencilLine", NAVY, WHITE),
     ("Case study report", "written report, groups of max." + NB + "4", 30, "Group", "LuBriefcase", MSO_THEME_COLOR.ACCENT_6, NAVY),
 ]
 x = 0.5
@@ -426,8 +426,8 @@ text(s, 0.5, 5.12, 9.0, 0.4, [[("Attendance: ", {"bold": True, "col": NAVY}), ("
 
 # 9  Software and set-up: tool cards plus installation stepper
 s = add_slide("Titel und Inhalt", "Software and set-up",
-              notes="Everything is free for students. Follow the setup guide before Session 1; the installation check is "
-                    "the command in the guide that prints 'ready'. Bring problems to Session 1.")
+              notes="Everything is free for students. No preparation before the course: we register the accounts and install "
+                    "the software together in Session 1. The check is the command in the guide that prints 'ready'.")
 tools = [("LuCode", "Python", "the language for all analyses"),
          ("LuLaptop", "Positron", "the editor where you write, run and see results"),
          ("LuFileText", "Quarto", "turns code and text into reports and slides"),
@@ -439,13 +439,13 @@ for i, (ic, name, role) in enumerate(tools):
     box(s, x, 1.35, tw5, 1.9, LIGHT, f"Tool card {i + 1}")
     icon(s, ic, "navy", x + 0.15, 1.5, 0.45, f"tool {i + 1}")
     text(s, x + 0.15, 2.05, tw5 - 0.25, 1.15, [[(name, {"bold": True, "col": NAVY})], role], f"Tool text {i + 1}", space=3)
-text(s, 0.5, 3.4, 9.0, 0.3, [[("Set-up in five steps", {"bold": True, "col": NAVY})]], "Set-up label")
-stepper(s, 0.5, 3.75, 9.0, 0.75, ["Install\vPython (uv)", "Install\vPositron", "Install\vQuarto",
-                                  "GitHub:\vclone the repo", "Run the\vcheck"], "Set-up steps", current=4)
+text(s, 0.5, 3.4, 9.0, 0.3, [[("Set-up in Session 1: four steps", {"bold": True, "col": NAVY})]], "Set-up label")
+stepper(s, 0.5, 3.75, 9.0, 0.75, ["Register\vaccounts", "Install\vthe software", "Clone\vthe repo", "Run the\vcheck"],
+        "Set-up steps", current=3)
 box(s, 0.5, 4.75, 9.0, 0.8, LIGHT, "Set-up callout")
-icon(s, "LuClock", "navy", 0.7, 4.91, 0.48, "set-up time")
-text(s, 1.4, 4.75, 7.9, 0.8, [("About 45" + NB + "minutes. ", "Follow the setup guide on Canvas before Session 1 and bring "
-                                                             "any installation problems to the first session.")],
+icon(s, "LuSchool", "navy", 0.7, 4.91, 0.48, "set-up in class")
+text(s, 1.4, 4.75, 7.9, 0.8, [("Together in Session 1. ", "Registration (GitHub, Copilot, DataCamp) and installation are done in class. "
+                                "Just bring your laptop and charger; no preparation needed.")],
      "Set-up text", anchor=MSO_ANCHOR.MIDDLE)
 
 # 10  Online certificates: stat rows plus a callout
@@ -497,11 +497,11 @@ card(s, 0.5, 3.85, 9.0, 1.7, "Rules", [
 s = add_slide("Titel und Inhalt", "Written exam",
               notes="The exam checks understanding, not coding. The non-graded online quiz at the end of each session "
                     "uses the same question format.")
-fact_tiles(s, [("30" + NB + "%", "of the final grade"), ("1", "exam at the end of the course"),
-               ("MC", "multiple-choice questions")], 1.35, "Exam")
+fact_tiles(s, [("30" + NB + "%", "of the final grade"), ("60", "minutes exam time"),
+               ("1", "exam at the end of the course"), ("MC", "multiple-choice questions")], 1.35, "Exam")
 cw3 = (9.0 - GAP * 2) / 3
 card(s, 0.5, 2.55, cw3, 3.0, "Format", [
-    "Paper and pencil", "Multiple-choice questions", "Individual, closed book"], "LuPencilLine", "Exam format card")
+    "Paper and pencil, 60" + NB + "minutes", "Multiple-choice questions", "Individual, closed book"], "LuPencilLine", "Exam format card")
 card(s, 0.5 + cw3 + GAP, 2.55, cw3, 3.0, "Content", [
     "All five sessions", "Concepts and interpretation", "Reading model output, not coding"], "LuBookOpen", "Exam content card")
 card(s, 0.5 + 2 * (cw3 + GAP), 2.55, cw3, 3.0, "Preparation", [
