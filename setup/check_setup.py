@@ -39,7 +39,9 @@ def show(ok, label, detail):
 
 print("Python")
 in_venv = sys.prefix != sys.base_prefix
-show(sys.version_info[:2] >= (3, 11), "version", sys.version.split()[0] + " (course: 3.14)")
+ok_version = sys.version_info[:2] >= (3, 14)
+show(ok_version, "version", sys.version.split()[0] + (" (course: 3.14)" if ok_version else
+     " (course: 3.14): install 3.14, delete .venv, Python: Create Environment again"))
 show(in_venv, "environment", sys.prefix if in_venv else "not the course .venv: select it in Positron")
 
 print("Packages")

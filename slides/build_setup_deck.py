@@ -114,7 +114,7 @@ callout(s, 4.8, 0.75, "LuCircleCheck", ("Goal: ", "by the end of today the check
         "Goal", dark=True)
 
 # ---------------------------------------------------------------- Part 1 -----
-divider("Register your accounts", "Part 1 of 6" + NB + "·" + NB + "GitHub, GitHub Education, DataCamp",
+divider("Register your accounts", "Part 1 of 7" + NB + "·" + NB + "GitHub, GitHub Education, DataCamp",
         "Accounts first: they need e-mail confirmations and, for GitHub Education, an approval that can take days.")
 
 # 3  The accounts
@@ -190,7 +190,7 @@ for i, (fig, lab) in enumerate(facts):
          f"DataCamp fact {i + 1}", anchor=MSO_ANCHOR.MIDDLE, space=0)
 
 # ---------------------------------------------------------------- Part 2 -----
-divider("Install the tools", "Part 2 of 6" + NB + "·" + NB + "Python, Positron, Quarto, GitHub Desktop, the course repository",
+divider("Install the tools", "Part 2 of 7" + NB + "·" + NB + "Python, Positron, Quarto, GitHub Desktop, the course repository",
         "Show the overview first, so students know why each tool is there before they install it.")
 
 # 7  How the pieces fit together
@@ -401,7 +401,7 @@ callout(s, 4.25, 1.2, "LuShieldCheck", ("Our rule: ", "the AI writes, you check.
                                                    "a short prompt log for each submission."), "AI rule", dark=True)
 
 # ---------------------------------------------------------------- Part 3 -----
-divider("How Positron works", "Part 3 of 6" + NB + "·" + NB + "panes, running code, projects, shortcuts, Posit Assistant",
+divider("How Positron works", "Part 3 of 7" + NB + "·" + NB + "panes, running code, projects, shortcuts, Posit Assistant, Claude",
         "Positron 2026.09. A five-minute tour with the live application next to the slides works best.")
 
 # 15  Positron at a glance: a schematic window (names as in the Positron 2026.09 docs)
@@ -579,8 +579,52 @@ code_block(s, 0.5, 3.7, 9.0, 0.8,
 callout(s, 4.7, 0.85, "LuShieldCheck", ("Privacy: ", "prompts, variable names and types go to the model provider; rows of "
                                                      "data only if you ask. Never paste personal data."), "Privacy")
 
+# 21a  Claude inside Positron: two ways
+s = add_slide("Titel und Inhalt", "Claude in Positron: two ways",
+              notes="Optional: the course default stays GitHub Copilot in Posit Assistant, free with GitHub Education. Way 1 "
+                    "uses Claude as the model behind Posit Assistant: Authentication, Configure Language Model Providers, "
+                    "Anthropic, and an API key from the Claude Console (console.anthropic.com, API keys, Create Key). API use "
+                    "is paid per token; a Claude Pro or Max subscription does not include API access. Way 2 is Claude Code, "
+                    "Anthropic's coding agent: the Claude Code extension from the Extensions view (Positron uses the Open VSX "
+                    "registry), or the command-line tool in Positron's terminal. It needs a paid Claude plan or a Claude "
+                    "Console account. It works on the open project folder, runs code and proposes edits you approve.")
+cw2 = (9.0 - GAP) / 2
+card(s, 0.5, 1.35, cw2, 2.75, "1 Claude in Posit Assistant", [
+    "Command Palette \u2192 Authentication: Configure Language Model Providers \u2192 Anthropic",
+    "Paste an API key from the Claude Console",
+    "Pick a Claude model in the chat"], "LuMessagesSquare", "Claude way 1", head_h=0.45)
+card(s, 0.5 + cw2 + GAP, 1.35, cw2, 2.75, "2 Claude Code, the agent", [
+    "Extensions view: search Claude Code (Anthropic), Install",
+    "Or run claude in the Positron terminal",
+    "Sign in with a paid Claude plan or Console account"], "LuBot", "Claude way 2", head_h=0.45)
+box(s, 0.5, 4.25, 9.0, 0.55, LIGHT, "Claude cost box")
+text(s, 0.7, 4.25, 8.7, 0.55, [("Costs: ", "API keys are paid per use; Claude Pro or Max does not include API access.")],
+     "Claude cost text", size=12, anchor=MSO_ANCHOR.MIDDLE)
+callout(s, 4.95, 0.6, "LuKeyRound", ("Optional: ", "the course default is GitHub Copilot, free with GitHub Education. Never "
+                                                  "share your API key."), "Claude optional", dark=True)
+
+# 21b  Working with Claude Code in a project
+s = add_slide("Titel und Inhalt", "Working with Claude Code in your project",
+              notes="Claude Code starts in the open project folder. It reads the files, explains code, writes and runs it, "
+                    "and asks before it changes a file or runs a command. A CLAUDE.md file in the project holds standing "
+                    "instructions, like AGENTS.md for Posit Assistant. Installation in the terminal, as documented by "
+                    "Anthropic: macOS curl -fsSL https://claude.ai/install.sh | bash; Windows PowerShell irm "
+                    "https://claude.ai/install.ps1 | iex. The course rules apply unchanged: you own every number, and the "
+                    "prompts go into your prompt log.")
+stepper(s, 0.5, 1.35, 9.0, 0.6, ["Open your\vproject", "Start\vClaude", "Ask in plain\vEnglish",
+                                 "Approve\vchanges", "Run and\vcheck"], "Claude steps", size=12)
+code_block(s, 0.5, 2.1, 4.45, 1.25, "irm https://claude.ai/install.ps1 | iex\ncurl -fsSL https://claude.ai/install.sh | bash\nclaude",
+           "Claude install", size=10.5, caption="Positron terminal: Windows, macOS, then start")
+code_block(s, 5.1, 2.1, 4.4, 1.25, "use polars, plotnine, great_tables and\nstatsmodels only; explain every model\nin two sentences",
+           "Claude memory", size=10.5, caption="CLAUDE.md: standing instructions")
+code_block(s, 0.5, 3.5, 9.0, 0.95, '"Read test_stack.qmd and explain each cell in one sentence."\n'
+                                   '"Add a residual plot to my regression; do not change the data."',
+           "Claude prompts", size=10.5, caption="Good prompts")
+callout(s, 4.6, 0.75, "LuShieldCheck", ("Same rules as for any AI: ", "you own every number, keep a prompt log, and never "
+                                                                   "paste personal data."), "Claude rules", dark=True)
+
 # ---------------------------------------------------------------- Part 4 -----
-divider("Work with GitHub Desktop", "Part 4 of 6" + NB + "·" + NB + "the window, the everyday workflow, working as a group",
+divider("Work with GitHub Desktop", "Part 4 of 7" + NB + "·" + NB + "the window, the everyday workflow, working as a group",
         "GitHub Desktop is the bridge between the folder on the laptop and GitHub. Show it live with the course repository.")
 
 # 22  GitHub Desktop at a glance
@@ -681,7 +725,7 @@ callout(s, 4.8, 0.75, "LuUsers", ("Only Canvas counts: ", "upload report.qmd and
                                                          "assessed."), "Group rule", dark=True)
 
 # ---------------------------------------------------------------- Part 5 -----
-divider("Write reports with Quarto", "Part 5 of 6" + NB + "·" + NB + "how it works, the YAML header, code cells, output formats",
+divider("Write reports with Quarto", "Part 5 of 7" + NB + "·" + NB + "how it works, the YAML header, code cells, output formats",
         "All labs and the case study report are Quarto documents. One file holds text, code and results.")
 
 # 25  How Quarto works
@@ -797,7 +841,7 @@ quarto render report.qmd --to docx""", "Render code", size=11, caption="Terminal
 text(s, 5.2, 4.9, 4.2, 0.6, [[("Also: pptx, dashboard, pdf (LaTeX)", {"col": WHITE, "size": 11})]], "Formats also")
 
 # ---------------------------------------------------------------- Part 6 -----
-divider("Python packages for this course", "Part 6 of 6" + NB + "·" + NB + "install and load; polars, plotnine, Great Tables, statsmodels",
+divider("Python packages for this course", "Part 6 of 7" + NB + "·" + NB + "install and load; polars, plotnine, Great Tables, statsmodels",
         "Install and load first, then one slide per package with code that runs on the course data.")
 
 # 29  Install packages: code for Windows and macOS
@@ -1000,6 +1044,66 @@ text(s, 0.5, 4.9, 9.0, 0.65, [[("Later in the course: ", {"bold": True, "col": N
                                ("scikit-learn for logistic regression and pymc-marketing for Bayesian MMM.", {})]],
      "Later note", anchor=MSO_ANCHOR.MIDDLE)
 
+# ---------------------------------------------------------------- Part 7 -----
+divider("Update within Positron", "Part 7 of 7" + NB + "·" + NB + "Positron, Python, the project's .venv, packages",
+        "Everything can be kept up to date from inside Positron. Course materials still come with a pull in GitHub Desktop.")
+
+# 36a  What to update and where
+s = add_slide("Titel und Inhalt", "Keep your set-up up to date",
+              notes="Positron checks for updates by itself: on Mac and Windows (user installation) it downloads new "
+                    "versions in the background and applies them on restart; Help, Check for Updates checks by hand. "
+                    "Python: Command Palette, Python: Install Python via uv lists the supported versions (3.9 to 3.14) "
+                    "and installs the one you pick; the Start Session button offers the same. A project's .venv cannot "
+                    "be upgraded to a new Python: it is rebuilt (next slide). Packages: when the course requirements.txt "
+                    "changes after a pull, install it again from the console; single packages with --upgrade, or in the "
+                    "Packages pane.")
+tw2 = (9.0 - GAP) / 2
+upd = [("LuMonitor", "Positron itself", ["Updates itself; restart to apply",
+                                         "By hand: Help \u2192 Check for Updates"]),
+       ("LuDownload", "Python", ["Python: Install Python via uv",
+                                 "Command Palette; pick 3.14"]),
+       ("LuFolderOpen", "The project's .venv", ["Tied to the Python that made it",
+                                                "New Python? Rebuild the .venv (next slide)"]),
+       ("LuPackage", "Packages", ["After a pull: %pip install -r requirements.txt",
+                                  "One package: %pip install --upgrade polars"])]
+for i, (ic, head, lines) in enumerate(upd):
+    x = 0.5 + (i % 2) * (tw2 + GAP)
+    y = 1.35 + (i // 2) * (1.5 + GAP)
+    tile(s, x, y, tw2, 1.5, ic, head, lines, f"Update tile {i + 1}")
+callout(s, 4.7, 0.75, "LuFolderGit2", ("Course materials: ", "not in Positron. Pull in GitHub Desktop before every "
+                                                            "session."), "Update materials", dark=True)
+
+# 36b  Move a project to Python 3.14
+s = add_slide("Titel und Inhalt", "Move a project to Python 3.14",
+              notes="For anyone whose check shows Python 3.13 or older, or whose .venv was made with an older Python. All "
+                    "steps stay inside Positron. Stop the Python session first (power icon in the Console), otherwise "
+                    ".venv is in use and cannot be deleted. If the folder sits in OneDrive or Dropbox, pause syncing, or "
+                    "better, move the course folder out of synced folders. Terminal alternative on Windows: py install "
+                    "3.14, then Remove-Item -Recurse -Force .venv; on macOS the python.org installer and rm -rf .venv.")
+numbered(s, 0.5, 1.35, 5.6, [
+    ("Install 3.14: ", "Command Palette \u2192 Python: Install Python via uv \u2192 3.14"),
+    ("Stop Python: ", "power icon in the Console"),
+    ("Delete .venv: ", "Explorer, right-click the .venv folder \u2192 Delete"),
+    ("Create Environment: ", "Venv \u2192 Python 3.14.8, tick requirements.txt"),
+    ("Check: ", "pick Python 3.14.8 (.venv), then %run setup/check_setup.py")], "Move steps", row_h=0.62, gap=0.08)
+box(s, 6.3, 1.35, 3.2, 3.42, LIGHT, "Move picker panel")
+text(s, 6.45, 1.45, 2.9, 0.4, [[("Interpreter picker", {"bold": True, "col": NAVY, "size": 12})]], "Move picker head",
+     anchor=MSO_ANCHOR.MIDDLE)
+for k, (label, cur) in enumerate([("Python 3.13.5 (.venv)", False), ("Python 3.14.8 (.venv)", True)]):
+    y = 1.95 + k * 0.85
+    pill = box(s, 6.45, y, 2.9, 0.42, NAVY if cur else WHITE_BG, f"Move pill {k + 1}", shape=MSO_SHAPE.ROUNDED_RECTANGLE,
+               line=ACC)
+    text(s, 6.52, y, 2.8, 0.42, [[(label + (" \u2713" if cur else ""), {"font": MONO, "col": WHITE if cur else NAVY,
+                                                                       "size": 11})]], f"Move pill text {k + 1}",
+         anchor=MSO_ANCHOR.MIDDLE)
+    text(s, 6.45, y + 0.42, 2.9, 0.35, [[("before" if not cur else "after", {"size": 11, "col": NAVY})]],
+         f"Move pill label {k + 1}", anchor=MSO_ANCHOR.MIDDLE)
+text(s, 6.45, 3.7, 2.9, 1.0, [[("The check then reports ", {"size": 12}), ("3.14.8", {"bold": True, "col": NAVY, "size": 12}),
+                               (" and ends with ", {"size": 12}), ("ready", {"bold": True, "col": NAVY, "size": 12}),
+                               (".", {"size": 12})]], "Move result", anchor=MSO_ANCHOR.MIDDLE)
+callout(s, 5.0, 0.5, "LuRefreshCw", ("Why rebuild? ", "a .venv cannot be upgraded; the old Python can stay installed."),
+        "Move why", dark=True)
+
 # ---------------------------------------------------------------- wrap-up ----
 # 37  Troubleshooting
 s = add_slide("Titel und Tabelle", "When something goes wrong",
@@ -1007,6 +1111,7 @@ s = add_slide("Titel und Tabelle", "When something goes wrong",
 rows = [("Problem", "Fix"),
         ("Windows: python or py is not recognised", "Reinstall the Python install manager, then run py install 3.14"),
         ("No .venv in the Interpreter picker", "Open the course folder, not a single file; then pick Python 3.14.8 (.venv)"),
+        ("The check shows Python 3.13 or older", "Move the project to Python 3.14 (Part 7)"),
         ("ModuleNotFoundError", "Select the .venv interpreter, then %pip install the package"),
         ("macOS: externally-managed-environment", "You used the system Python: select the project's .venv first"),
         ("Quarto preview does not start", "Restart Positron; run quarto check in the terminal"),

@@ -91,6 +91,15 @@ Positron's built-in AI is **Posit Assistant** (since Positron 2026.07; it replac
 1. Command Palette → *Authentication: Configure Language Model Providers* → **GitHub Copilot** → sign in with GitHub. Copilot gives chat and code completions; it is free with Copilot Student (after GitHub Education approval) or Copilot Free.
 2. Open the chat with *View: Show Posit Assistant*.
 
+### Optional: Claude inside Positron
+
+The course default is GitHub Copilot, free with GitHub Education. If you want to use Claude instead, there are two ways; both cost money.
+
+- **Claude as Posit Assistant's model:** *Command Palette → Authentication: Configure Language Model Providers → Anthropic*, then paste an API key from the Claude Console (*API keys → Create Key*). API use is paid per use; a Claude Pro or Max subscription does not include API access. Pick a Claude model in the chat.
+- **Claude Code, Anthropic's coding agent:** install the *Claude Code* extension (publisher Anthropic) from the Extensions view, or install the command-line tool in Positron's terminal (Windows PowerShell: `irm https://claude.ai/install.ps1 | iex`; macOS: `curl -fsSL https://claude.ai/install.sh | bash`) and start it with `claude` in your project folder. Sign in with a paid Claude plan or a Claude Console account. Claude Code reads your project, runs code and asks before it changes a file; a `CLAUDE.md` file in the project holds standing instructions such as "use polars, plotnine, great_tables and statsmodels only".
+
+Never share an API key, and never paste personal data into any assistant.
+
 The rule for this course: the AI writes, you check. Run the code, read the output and export the chat as your prompt log.
 
 ## 8. The GitHub workflow you will use
@@ -112,8 +121,28 @@ or open `setup/check_setup.py` and press *Run*. The script lists Python, each co
 
 Then test the whole stack with `test_stack.qmd`, a single file that also works outside the course folder (it reads the data from GitHub, so you need internet). Open it in Positron, run its first cell once with Ctrl/Cmd + Enter (it installs polars, plotnine, great_tables, statsmodels, pyarrow and jupyter), then press *Preview* (Ctrl/Cmd + Shift + K). A table, a chart and regression results appear: you are ready for Session 1.
 
+## 10. Update within Positron
+
+- **Positron** updates itself: on Windows and macOS it downloads new versions in the background and applies them when you restart. To check by hand: *Help → Check for Updates*.
+- **Python:** *Command Palette → Python: Install Python via uv* installs any supported version (up to 3.14) next to the ones you have.
+- **Packages:** after pulling a new `requirements.txt`, run `%pip install -r requirements.txt` in the console; a single package with `%pip install --upgrade polars`.
+- **Course materials** do not come through Positron: pull them in GitHub Desktop before every session.
+
+### Move a project to Python 3.14
+
+A `.venv` belongs to the Python that created it and cannot be upgraded; you rebuild it. If the check shows Python 3.13 or older:
+
+1. *Command Palette → Python: Install Python via uv* → 3.14.
+2. Stop the Python session (power icon in the Console).
+3. In the Explorer, right-click the `.venv` folder → *Delete*. If the folder is in OneDrive or Dropbox, pause syncing first.
+4. *Command Palette → Python: Create Environment* → Venv → Python 3.14.8, tick `requirements.txt`.
+5. Pick *Python 3.14.8 (.venv)* in the Interpreter picker and run `%run setup/check_setup.py`: it reports 3.14.8 and ends with `ready`.
+
+Terminal alternative on Windows: `py install 3.14`, then `Remove-Item -Recurse -Force .venv` before step 4.
+
 ## Troubleshooting
 
+- **The check shows Python 3.13 or older:** move the project to Python 3.14 (section 10).
 - **Windows: `python` or `py` is not recognised:** reinstall the Python install manager, then run `py install 3.14`.
 - **No `.venv` in the Interpreter picker:** open the course folder (not a single file), then pick *Python 3.14.8 (.venv)*.
 - **macOS: `externally-managed-environment`:** you used the system Python; select the project's `.venv` first.
