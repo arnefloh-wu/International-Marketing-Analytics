@@ -264,7 +264,7 @@ s = add_slide("Titel und Inhalt", "Software and set-up",
 tools = [("LuCode", "Python 3.14", "the language for all analyses"),
          ("LuLaptop", "Positron", "the editor where you write, run and see results"),
          ("LuFileText", "Quarto", "turns code and text into reports and slides"),
-         ("LuGitBranch", "GitHub Desktop", "versions and shares your work"),
+         ("LuGitBranch", "GitHub Desktop", "gets the course materials: clone and pull"),
          ("LuBot", "Posit Assistant", "AI inside Positron, with GitHub Copilot")]
 tw5 = (9.0 - 0.12 * 4) / 5
 for i, (ic, name, role) in enumerate(tools):
@@ -350,7 +350,7 @@ s = add_slide("Titel und Inhalt", "Case study: written report",
                     "Each part of the case uses the methods of one session, so groups can work on it week by week. "
                     "Questions go to the Q&A forum on Canvas so every group gets the same answer.")
 fact_tiles(s, [("1", "written report per group"), ("max." + NB + "4", "students per group"),
-               ("30" + NB + "%", "of the final grade"), ("30" + NB + "Nov", "2026, 23:59: deadline")],
+               ("30" + NB + "%", "of the final grade"), ("30" + NB + "Nov", "2026, midnight: deadline")],
            1.35, "Case")
 tw = (9.0 - GAP * 2) / 3
 text(s, 0.5, 2.55, 9.0, 0.3, [[("What you submit on Canvas", {"bold": True, "col": NAVY})]], "Submit label")
@@ -370,6 +370,64 @@ text(s, 0.75, 4.45, 8.5, 1.1,
       [("Tools: ", {"bold": True, "col": WHITE}),
        ("polars, plotnine, great_tables and statsmodels.", {"col": WHITE})]],
      "Task text", anchor=MSO_ANCHOR.MIDDLE, space=6)
+
+# 13b  Case study: parts and points
+s = add_slide("Titel und Inhalt", "Case study: parts and points",
+              notes="Each part answers one question from Alpenglow's Head of E-commerce with the methods of one session, so "
+                    "groups can work on it week by week. 20 criteria in total; the full list with what earns full points is "
+                    "in the brief (case-study/brief.pdf).")
+parts = [("A", "What drives weekly orders?", "data check, first regression, model fit, assumptions", "Session 1", 15),
+         ("B", "Price and advertising", "elasticities, temperature, adstock and saturation, moderation, mediation",
+          "Session 2", 30),
+         ("C", "Which subscribers will cancel?", "logistic regression, classification, retention-offer threshold",
+          "Session 3", 20),
+         ("D", "The Q1 2026 baseline for Germany", "ARIMA versus ARIMAX on a holdout, forecast with intervals",
+          "Session 4", 20),
+         ("E", "Recommendations and report", "summary, limitations, reproducibility, presentation", "all sessions", 15)]
+rh, rg = 0.66, 0.08
+for i, (letter, q, what, sess, pts) in enumerate(parts):
+    y = 1.35 + i * (rh + rg)
+    box(s, 0.5, y, 9.0, rh, LIGHT, f"Part row {i + 1}")
+    box(s, 0.5, y, 0.07, rh, ACC, f"Part bar {i + 1}")
+    b = box(s, 0.72, y + (rh - 0.42) / 2, 0.42, 0.42, NAVY, f"Part badge {i + 1}", shape=MSO_SHAPE.OVAL)
+    text(s, 0.72, y + (rh - 0.42) / 2, 0.42, 0.42, [[(letter, {"bold": True, "col": WHITE})]], f"Part letter {i + 1}",
+         align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+    text(s, 1.3, y, 5.6, rh, [[(q, {"bold": True, "col": NAVY})], [(what, {"size": 12})]], f"Part text {i + 1}",
+         anchor=MSO_ANCHOR.MIDDLE, space=0)
+    text(s, 6.95, y, 1.35, rh, [[(sess, {"bold": True, "col": ACC, "size": 12})]], f"Part session {i + 1}",
+         anchor=MSO_ANCHOR.MIDDLE)
+    text(s, 8.2, y, 1.15, rh, [[(f"{pts}", {"size": FIG, "bold": True, "col": NAVY, "head": True}),
+                                (NB + "pts", {"bold": True, "col": NAVY, "size": 12})]], f"Part points {i + 1}",
+         anchor=MSO_ANCHOR.MIDDLE, align=PP_ALIGN.RIGHT)
+text(s, 0.5, 5.05, 9.0, 0.5, [[("100 points, 20 criteria, ", {"bold": True, "col": NAVY}),
+                               ("each scored Excellent (90–100" + NB + "%), Good (75–89" + NB + "%), Adequate (60–74" + NB +
+                                "%) or Insufficient (below 60" + NB + "%).", {})]], "Levels line", anchor=MSO_ANCHOR.MIDDLE,
+     size=12)
+
+# 13c  Case study: submission and rules
+s = add_slide("Titel und Inhalt", "Case study: submission and rules",
+              notes="Everything as in the brief. GitHub: cloning and pulling the course repository is required; a shared "
+                    "group repository is optional, and the commit history is not assessed. Before uploading, render the "
+                    "report from a fresh copy of the project folder and open the HTML file in a browser.")
+stepper(s, 0.5, 1.35, 9.0, 0.6, ["Pull course\vrepository", "Copy into\vyour folder", "Work in\vthe group",
+                                 "Render a\vfresh copy", "Upload to\vCanvas"], "Case steps", size=12)
+cw2 = (9.0 - GAP) / 2
+card(s, 0.5, 2.1, cw2, 2.4, "Submission", [
+    "Mon 30" + NB + "Nov 2026, midnight (Vienna)",
+    "Canvas: one upload per group",
+    "report.qmd + report.html, no zip",
+    "Re-upload until the deadline"], "LuCalendarDays", "Submission card", head_h=0.45)
+card(s, 0.5 + cw2 + GAP, 2.1, cw2, 2.4, "The report", [
+    "Max. 3,000 words, without code and tables",
+    "Every number from code (inline code)",
+    "great_tables and plotnine",
+    "Appendix: prompt log, contributions"], "LuFileText", "Report card", head_h=0.45)
+box(s, 0.5, 4.65, 9.0, 0.85, NAVY, "Rules box")
+icon(s, "LuTriangleAlert", "white", 0.72, 4.87, 0.42, "rules")
+text(s, 1.35, 4.65, 8.0, 0.85, [[("Two rules: ", {"bold": True, "col": WHITE}),
+                                ("if report.qmd does not render, reproducibility scores 0; a number in the text that does "
+                                 "not match the code caps its criterion at Adequate.", {"col": WHITE})]], "Rules text",
+     anchor=MSO_ANCHOR.MIDDLE, size=12)
 
 # 14  Closing contact card
 add_slide("Abschlussfolie Kontakt", notes="Any questions? Contact details on the card.")
