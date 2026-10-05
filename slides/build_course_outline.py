@@ -246,53 +246,68 @@ for i, (ic, para) in enumerate(rows):
     icon(s, ic, "navy", 0.72, y + (rh - 0.42) / 2, 0.42, f"content row {i + 1}")
     text(s, 1.4, y, 7.9, rh, [para], f"Content text {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
 
-# 4  Course roadmap: five sessions as stops on a road
+# 4  Course roadmap: five stops on a road, one card per session
 s = add_slide("Titel und Inhalt", "Course roadmap: five sessions",
               notes="Session 1 combines the introduction with linear regression. Each session adds one method; "
                     "the last brings them together in dedicated MMM software.")
 stops = [
     ("Introduction and linear regression", "MMM basics, OLS, elasticities, dummy variables"),
     ("Advanced regression", "Non-linear effects, interactions, adstock, saturation"),
-    ("Logistic regression", "Binary outcomes, odds ratios"),
-    ("ARIMA", "Trend, seasonality, forecasting the baseline"),
-    ("Advanced MMM tools", "Bayesian MMM, budget optimisation"),
+    ("Logistic regression", "Binary outcomes such as purchase or churn, odds ratios"),
+    ("ARIMA", "Trend, seasonality, forecasting the sales baseline"),
+    ("Advanced MMM tools", "Bayesian MMM, budget optimisation across channels"),
 ]
-road_y, sw = 2.4, 9.0 / 5
-box(s, 0.5, road_y - 0.06, 8.85, 0.12, ACC, "Road")
-arrowhead = box(s, 9.25, road_y - 0.17, 0.25, 0.34, ACC, "Road end", shape=MSO_SHAPE.ISOSCELES_TRIANGLE)
-arrowhead.rotation = 90
+cg = 0.1
+cw = (9.0 - cg * 4) / 5
+road_y = 1.72
+box(s, 0.5, road_y - 0.06, 8.75, 0.12, ACC, "Road")
+end = box(s, 9.2, road_y - 0.17, 0.3, 0.34, ACC, "Road end", shape=MSO_SHAPE.ISOSCELES_TRIANGLE)
+end.rotation = 90
 for i, (theme, desc) in enumerate(stops):
-    cx = 0.5 + sw * (i + 0.5)
-    text(s, cx - sw / 2 + 0.05, 1.42, sw - 0.1, 0.3, [[("Session " + str(i + 1), {"bold": True, "col": ACC})]],
-         f"Stop label {i + 1}", align=PP_ALIGN.CENTER)
-    dot = box(s, cx - 0.33, road_y - 0.33, 0.66, 0.66, NAVY, f"Stop {i + 1}", shape=MSO_SHAPE.OVAL)
+    x = 0.5 + i * (cw + cg)
+    cx = x + cw / 2
+    box(s, cx - 0.015, road_y, 0.03, 0.55, ACC, f"Stop connector {i + 1}")
+    dot = box(s, cx - 0.3, road_y - 0.3, 0.6, 0.6, NAVY, f"Stop {i + 1}", shape=MSO_SHAPE.OVAL)
     tf = dot.text_frame; tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
     tf.vertical_anchor = MSO_ANCHOR.MIDDLE
     p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
     r = p.add_run(); r.text = str(i + 1); r.font.size = Pt(TITLE); r.font.bold = True; r.font.name = "+mj-lt"
     color(r.font.color, WHITE)
-    text(s, cx - sw / 2 + 0.07, 2.9, sw - 0.14, 0.85, [theme], f"Stop theme {i + 1}", size=HEAD, col=NAVY, bold=True,
-         head=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.BOTTOM, space=0)
-    text(s, cx - sw / 2 + 0.07, 3.85, sw - 0.14, 1.15, [desc], f"Stop text {i + 1}", align=PP_ALIGN.CENTER)
-box(s, 0.5, 5.0, 9.0, 0.55, LIGHT, "Along the way")
-icon(s, "LuFlag", "navy", 0.7, 5.08, 0.38, "along the way")
-text(s, 1.25, 5.0, 8.1, 0.55, [("Along the way: ", "DataCamp certificates, coding exercises and a guest speaker. "
-                                                   "At the end: written exam.")], "Along the way text", anchor=MSO_ANCHOR.MIDDLE)
+    box(s, x, 2.27, cw, 2.5, LIGHT, f"Session card {i + 1}")
+    text(s, x + 0.07, 2.4, cw - 0.12, 0.95, [theme], f"Session theme {i + 1}", size=HEAD, col=NAVY, bold=True,
+         head=True, space=0)
+    box(s, x + 0.07, 3.42, 0.5, 0.04, ACC, f"Session rule {i + 1}")
+    text(s, x + 0.07, 3.58, cw - 0.12, 1.1, [desc], f"Session text {i + 1}")
+box(s, 0.5, 4.95, 5.75, 0.6, LIGHT, "Along the way")
+icon(s, "LuFlag", "navy", 0.68, 5.06, 0.38, "along the way")
+text(s, 1.2, 4.95, 4.95, 0.6, [("Along the way: ", "DataCamp certificates, coding exercises, guest speaker")],
+     "Along the way text", anchor=MSO_ANCHOR.MIDDLE)
+box(s, 6.4, 4.95, 3.1, 0.6, NAVY, "Exam box")
+icon(s, "LuPencilLine", "white", 6.55, 5.06, 0.38, "exam")
+text(s, 7.05, 4.95, 2.4, 0.6, [[("At the end: ", {"bold": True, "col": WHITE}), ("written exam", {"col": WHITE})]],
+     "Exam text", anchor=MSO_ANCHOR.MIDDLE)
 
 
-# 5  Learning outcomes: grouped bands
+# 5  Learning outcomes: grouped bands with numbered badges, one line per outcome
 def bands(slide, groups, top, height, prefix):
     for g, (ic, heading, items) in enumerate(groups):
         y = top + g * (height + GAP)
         box(slide, 0.5, y, 9.0, height, LIGHT, f"{prefix} band {g + 1}")
         box(slide, 0.5, y, 0.07, height, ACC, f"{prefix} bar {g + 1}")
         icon(slide, ic, "navy", 0.75, y + (height - 0.42) / 2, 0.42, f"{prefix} {g + 1}")
-        text(slide, 1.3, y, 1.4, height, [heading], f"{prefix} heading {g + 1}", size=HEAD, col=NAVY,
+        text(slide, 1.3, y, 1.45, height, [heading], f"{prefix} heading {g + 1}", size=HEAD, col=NAVY,
              bold=True, head=True, anchor=MSO_ANCHOR.MIDDLE, space=0)
-        paras = [[(num + NB + NB, {"bold": True, "col": ACC}), (lead, {"bold": True, "col": NAVY}), (rest, {})]
-                 for num, lead, rest in items]
-        text(slide, 2.85, y + 0.1, 6.45, height - 0.2, paras, f"{prefix} outcomes {g + 1}", space=6,
-             anchor=MSO_ANCHOR.MIDDLE)
+        row_h = height / len(items)
+        for k, (num, lead, rest) in enumerate(items):
+            ry = y + k * row_h
+            badge = box(slide, 2.85, ry + (row_h - 0.34) / 2, 0.34, 0.34, NAVY, f"{prefix} number {num}",
+                        shape=MSO_SHAPE.OVAL)
+            tf = badge.text_frame; tf.margin_left = tf.margin_right = tf.margin_top = tf.margin_bottom = 0
+            tf.vertical_anchor = MSO_ANCHOR.MIDDLE
+            p = tf.paragraphs[0]; p.alignment = PP_ALIGN.CENTER
+            r = p.add_run(); r.text = num; r.font.size = Pt(BODY); r.font.bold = True; color(r.font.color, WHITE)
+            text(slide, 3.35, ry, 6.0, row_h, [[(lead, {"bold": True, "col": NAVY}), (rest, {})]],
+                 f"{prefix} outcome {num}", anchor=MSO_ANCHOR.MIDDLE, space=0)
 
 
 s = add_slide("Titel und Inhalt", "Learning outcomes",
@@ -301,14 +316,14 @@ s = add_slide("Titel und Inhalt", "Learning outcomes",
 text(s, 0.5, 1.3, 9.0, 0.3, ["On successful completion of this module, students will be able to:"], "Outcomes intro")
 bands(s, [
     ("LuLightbulb", "Understand", [
-        ("1", "Explain the fundamentals of MMM, ", "including its strengths and limitations."),
-        ("2", "Describe real-world applications ", "of MMM in marketing and budget planning.")]),
+        ("1", "Explain the fundamentals of MMM, ", "its strengths and limits"),
+        ("2", "Describe real-world applications ", "of MMM in marketing")]),
     ("LuCode", "Apply", [
-        ("3", "Apply MMM in Python ", "to cross-sectional and longitudinal data."),
-        ("4", "Practise decision-making: ", "interpret results and turn them into marketing decisions.")]),
+        ("3", "Apply MMM in Python ", "to cross-sectional and longitudinal data"),
+        ("4", "Interpret results ", "and turn them into marketing decisions")]),
     ("LuUsers", "Transfer", [
-        ("5", "Use AI tools ", "for analysis and reporting, and check their output."),
-        ("6", "Apply transferable skills: ", "think critically and work effectively in teams.")]),
+        ("5", "Use AI tools ", "for analysis and reporting, and check the output"),
+        ("6", "Think critically ", "and work effectively in teams")]),
 ], 1.72, 1.18, "Outcomes")
 
 # 6  Methods of teaching and learning: stepper, two cards, the exam
@@ -453,7 +468,39 @@ text(s, 0.75, 4.8, 8.5, 0.75, [[("Both are individual. ", {"bold": True, "col": 
                                ("The case study report (30" + NB + "%) is the group component.", {"col": WHITE})]],
      "Takeaway text", anchor=MSO_ANCHOR.MIDDLE)
 
-# 11  Closing contact card
+# 11  Case study: written report (group)
+s = add_slide("Titel und Inhalt", "Case study: written report",
+              notes="The case and its data are published on Canvas together with the deadline. Online consulting hours "
+                    "need registration. The report is the only group component of the grade.")
+facts = [("4–5", "students per group; enrol on Canvas"), ("30" + NB + "%", "of the final grade"),
+         ("1", "written report per group")]
+tw = (9.0 - GAP * 2) / 3
+for i, (fig, label) in enumerate(facts):
+    x = 0.5 + i * (tw + GAP)
+    box(s, x, 1.35, tw, 0.95, LIGHT, f"Fact tile {i + 1}")
+    box(s, x, 1.35, 0.07, 0.95, ACC, f"Fact bar {i + 1}")
+    text(s, x + 0.25, 1.35, tw - 0.35, 0.95,
+         [[(fig, {"size": FIG, "bold": True, "col": NAVY, "head": True}), ("  " + label, {})]],
+         f"Fact text {i + 1}", anchor=MSO_ANCHOR.MIDDLE)
+text(s, 0.5, 2.45, 9.0, 0.3, [[("What you submit", {"bold": True, "col": NAVY})]], "Submit label")
+subs = [("LuCode", "Quarto file", "your analysis and text in one reproducible document"),
+        ("LuFileText", "Rendered report", "the output of the Quarto file; HTML recommended"),
+        ("LuFileSpreadsheet", "Data file", "the data you analysed, so the report can be rerun")]
+for i, (ic, head, body) in enumerate(subs):
+    x = 0.5 + i * (tw + GAP)
+    box(s, x, 2.8, tw, 1.45, LIGHT, f"Submission card {i + 1}")
+    icon(s, ic, "navy", x + 0.18, 2.95, 0.4, f"submission {i + 1}")
+    text(s, x + 0.75, 2.95, tw - 0.9, 1.2, [[(head, {"bold": True, "col": NAVY})], body], f"Submission text {i + 1}", space=4)
+box(s, 0.5, 4.45, 9.0, 1.1, NAVY, "Task box")
+text(s, 0.75, 4.45, 8.5, 1.1,
+     [[("The task: ", {"bold": True, "col": WHITE}),
+       ("apply marketing mix modelling to a real marketing case, interpret the results and recommend a decision "
+        "to management.", {"col": WHITE})],
+      [("Support: ", {"bold": True, "col": WHITE}),
+       ("online consulting hours (registration needed). Deadline: see Canvas.", {"col": WHITE})]],
+     "Task text", anchor=MSO_ANCHOR.MIDDLE, space=6)
+
+# 12  Closing contact card
 add_slide("Abschlussfolie Kontakt", notes="Any questions? Contact details on the card.")
 
 # ---- language tag on every run ----------------------------------------------
