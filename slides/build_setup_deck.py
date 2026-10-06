@@ -385,8 +385,15 @@ text(s, 5.32, 4.36, 4.13, 0.64, [[("No module named 'yaml'? ", {"bold": True, "c
                                ("Install into the .venv:", {"size": 11})],
                               [(".venv\\Scripts\\python -m pip install \u2026", {"font": MONO, "col": NAVY, "size": 10.5})]],
      "Venv fix text", anchor=MSO_ANCHOR.MIDDLE, space=2)
-callout(s, 5.1, 0.45, "LuPlay", ("Run it: ", "pick Python 3.14.8 (.venv), run cell 1 once, then Preview "
-                                            "(Ctrl/Cmd + Shift + K)."), "Test run")
+TEST_URL = "https://github.com/arnefloh-wu/international-marketing-analytics-teaching/blob/main/test_stack.qmd"
+box(s, 0.5, 5.08, 9.0, 0.52, LIGHT, "Test run box")
+icon(s, "LuDownload", "navy", 0.68, 5.14, 0.4, "test download")
+text(s, 1.25, 5.08, 8.15, 0.52, [[("Download: ", {"bold": True, "col": NAVY, "size": 11.5}),
+                                 ("test_stack.qmd on GitHub", {"link": TEST_URL, "col": ACC, "size": 11.5}),
+                                 (" (button Download raw file) or on Canvas", {"size": 11.5})],
+                                [("Run it: ", {"bold": True, "col": NAVY, "size": 11.5}),
+                                 ("pick Python 3.14.8 (.venv), run cell 1 once, then Preview (Ctrl/Cmd + Shift + K)",
+                                  {"size": 11.5})]], "Test run text", anchor=MSO_ANCHOR.MIDDLE, space=0)
 
 # 14  AI assistant
 s = add_slide("Titel und Inhalt", "Step 6: connect your AI assistant",
