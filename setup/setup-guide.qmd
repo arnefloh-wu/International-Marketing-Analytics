@@ -18,7 +18,7 @@ format:
         </style>
 ---
 
-We go through this guide together in Session 1; you do not need to install anything beforehand. Bring your laptop and charger, and know the password of your WU student e-mail account. The set-up slides on Canvas show the same steps.
+We go through this guide together in Session 1; you do not need to install anything beforehand. Bring your laptop and charger, and know the password of your WU student e-mail account. The set-up slides show the same steps: `slides/01a_setup-and-registration_WT26-27.pdf` in the course repository, and on Canvas.
 
 ## 0. Register your accounts
 
