@@ -545,7 +545,7 @@ Team exercise (60 minutes). Work in your own folder or your group repository; on
 1. **Promotion elasticity by country.** Convert the promotion coefficients from Section 4.5 into "percent units per 10 points of promo share" and chart them with 95 % intervals. Which two countries differ significantly?
 2. **Add distribution.** Add `np.log(distribution)` to `FULL` and re-estimate the six elasticities. Which country's price elasticity moves most, and why would you expect that country?
 3. **Germany versus Poland.** Using the pooled model, make Germany the reference category and test whether Poland's elasticity differs from Germany's. Do you get the same p-value as in Section 4.6?
-4. **Chocolate brand 1.** Load `../../data/legacy/chocolate_dataset.xlsx` (68 weeks, four brands) and estimate brand 1's own-price elasticity and its cross-price elasticities with respect to brands 2 to 4. Which brand is the closest substitute?
+4. **Chocolate brand 1.** Load `../../data/legacy/chocolate_dataset.csv` with `pl.read_csv` (68 weeks, four brands) and estimate brand 1's own-price elasticity and its cross-price elasticities with respect to brands 2 to 4. Which brand is the closest substitute?
 5. **The one-slide answer.** Write five sentences answering "Is our price too high in Poland?" with numbers, an interval, a recommendation and one caveat. Save it as `poland_answer.md`.
 
 Details and hints are in `exercises.qmd`.

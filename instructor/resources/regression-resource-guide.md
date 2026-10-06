@@ -454,6 +454,12 @@ Session map used below (from `instructor/course_design.md`): Session 1 regressio
 
 ## Books
 
+### Regression Analysis (Handbook of Market Research)
+- **Source:** Bernd Skiera, Jochen Reiner and Sönke Albers, in C. Homburg, M. Klarmann and A. Vomberg (eds), *Handbook of Market Research*, Springer, 2022, pp. 299 to 327, book chapter
+- **Link:** https://doi.org/10.1007/978-3-319-57413-4_17 (PDF supplied by the instructor, licensed; not in the repository)
+- **Why it matters:** Regression for marketing decisions from start to finish on one numerical example (quantity, price, advertising, salespersons in 16 districts): least squares, R² and F-test, standardised coefficients, the seven assumptions, multicollinearity with VIF (mailings and salespersons, r = 0.989, VIF 53), Durbin-Watson, heteroscedasticity tests, outliers with Cook's and Mahalanobis distance, the multiplicative (log-log) sales response function with elasticities (price -2.34), the optimal price and budget from the estimated function, and endogeneity.
+- **Use in course:** Session 1 core reading; structure of the assumptions-and-tests part of the regression deck (01b). Paid (Springer; WU SpringerLink licence).
+
 ### An Introduction to Statistical Learning, with Applications in Python (ISLP)
 - **Source:** James, Witten, Hastie, Tibshirani and Taylor, Springer, 2023, book (free PDF on the book website)
 - **Link:** https://www.statlearning.com/ (host blocked; free PDF and Springer edition confirmed via search listing and https://link.springer.com/doi/10.1007/978-3-031-38747-0); labs confirmed at https://github.com/intro-stat-learning/ISLP_labs
@@ -809,6 +815,12 @@ Session map used below (from `instructor/course_design.md`): Session 1 regressio
 - **Use in course:** Session 2 (Jin et al. as core reading), Session 3 (Chan and Perry as discussion reading); free.
 
 ## Teaching cases and course examples
+
+### Linear Regression (HBS background note 9-622-100)
+- **Source:** Iavor I. Bojinov, Michael Parzen and Paul J. Hamilton, Harvard Business School, 2022, revised 6 January 2025, background note (20 pp.)
+- **Link:** Harvard Business Publishing, product 9-622-100 (PDF licensed to the instructor; distribute through Canvas only, never in a public repository)
+- **Why it matters:** A short, managerial introduction: correlation and its rule of thumb, correlation versus causation, the correlation matrix, simple regression and least squares, inference for coefficients, R² and residual standard error, prediction intervals, multiple regression, the overall F-test and dummy variables, with example prompts for doing each step with generative AI tools.
+- **Use in course:** Session 1 core reading for students without a statistics background; the AI-prompt examples fit the course's "the AI writes, you check" rule.
 
 ### ISLP Chapter 3 lab and Stanford Online "Statistical Learning with Python"
 - **Source:** Hastie, Tibshirani and Taylor (Stanford), 2023 onwards, course (edX, 11 weeks) with Jupyter labs

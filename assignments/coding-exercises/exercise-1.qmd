@@ -1,0 +1,49 @@
+---
+title: "Coding exercise 1: pricing a chocolate brand with linear regression"
+subtitle: "Individual · 5 % of the final grade · International Marketing Analytics · WU Vienna · WT 2026/27"
+format:
+  html:
+    toc: true
+    embed-resources: true
+---
+
+::: {.callout-important}
+## In brief
+
+| | |
+|---|---|
+| **Work** | individual |
+| **Weight** | 5 % of the final grade (20 points) |
+| **Submit** | `exercise1_lastname.qmd` **and** the rendered `.html` on Canvas |
+| **Deadline** | see Canvas |
+| **Data** | `data/legacy/chocolate_dataset.csv` in the course repository: 68 weeks of real scanner data, unit sales of brand 1 and prices, features and displays of four chocolate brands |
+| **Tools** | polars, plotnine, great_tables and statsmodels |
+:::
+
+The code from Session 1 (`sessions/01-foundations/regression_chocolate.qmd`) is your starting point. This exercise uses a different model and a different cost, so the answers differ from the in-class results.
+
+## Tasks
+
+1. **Explore.** A great_tables table with the mean, minimum and maximum of `sales`, `price1` to `price4`, `feature1` and `display1`. Two plotnine charts: sales over the 68 weeks, and sales against `price1`. Describe in two sentences what you see.
+2. **Simple model.** Estimate `sales ~ price1`. Interpret the slope for a price change of 10 cents and report R².
+3. **Log-log model.** Estimate
+   `np.log(sales) ~ np.log(price1) + np.log(price2) + np.log(price3) + np.log(price4) + feature1 + display1 + temp + december`.
+   Interpret the own-price elasticity, one competitor price and `december` (use exp(b) − 1 for the dummy). Which coefficients are significant at 5 %?
+4. **Assumptions.** A plot of residuals against fitted values, a histogram of the residuals, the Durbin-Watson statistic, the Breusch-Pagan and Jarque-Bera p-values and the VIFs, in one table. One sentence per check: is the assumption met, and what does it mean for your results? Comment on the VIF of `display1`.
+5. **Robust errors.** Refit the model with Newey-West standard errors (`model.model.fit(cov_type="HAC", cov_kwds={"maxlags": 1})`). What changes, and what does not?
+6. **Recommendation.** With a marginal cost of 0.90, compute the price that the own-price elasticity suggests (p* = cost × ε / (1 + ε)). In at most 100 words, recommend a regular price to the brand manager and give two caveats.
+
+Every number in your text must come from code (inline code such as `` `{python} f"{eps:.2f}"` ``). End the file with a **prompt log**: the prompts you used with an AI assistant, and what you kept or changed.
+
+## Grading (20 points)
+
+| Criterion | Points |
+|---|---:|
+| Code runs from top to bottom; charts and tables clean and labelled | 5 |
+| Interpretation of the coefficients (units, per cent, significance) | 6 |
+| Assumption checks and a sound conclusion | 5 |
+| Recommendation with the computed price and two caveats | 2 |
+| Prompt log | 2 |
+| **Total** | **20** |
+
+Individual work: discuss ideas, but write and check your own code. AI assistants are allowed; you own every number. Questions go to the Q&A forum on Canvas.

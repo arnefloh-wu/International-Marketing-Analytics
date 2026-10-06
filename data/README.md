@@ -50,7 +50,7 @@ The actual orders of the 13 plan weeks and all true parameters are in `instructo
 ## `legacy/` — warm-up datasets for Session 1
 
 - `Video_Games_Sales.csv` — regional (NA, EU, JP, Other) sales of video games with critic/user scores.
-- `chocolate_dataset.xlsx` — 68 weeks of sales, prices, features and displays for four chocolate brands.
+- `chocolate_dataset.csv` (and the original `.xlsx`) — real weekly scanner data, 68 weeks: unit sales of brand 1; prices (`price1` to `price4`), feature ads (`feature1` to `feature4`), displays (`display1` to `display4`) and feature-and-display (`fand1`, `fand3`, `fand4`, shares of stores 0 to 1) of four chocolate brands; `temp` (°C), `december` and `easter` dummies; `week` 1 to 68. Used in the Session 1 regression slides, the in-class file and coding exercise 1. Read the CSV with polars (`pl.read_csv`); reading the .xlsx needs an extra package.
 - `WA_Fn-UseC_-Telco-Customer-Churn.csv`, `churn_data.csv` — customer churn data (logistic regression warm-ups).
 - `vienna.csv` — Inside Airbnb listings for Vienna (pricing regression warm-up).
 

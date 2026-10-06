@@ -124,8 +124,10 @@ AI assistants (Posit Assistant with GitHub Copilot, or similar) are expected and
 
 ## Reading
 
-Session 1 reading (on Canvas):
+Session 1 readings (on Canvas):
 
+- Bojinov, I. I., Parzen, M. and Hamilton, P. J. (2025). *Linear Regression*. Harvard Business School background note 9-622-100 (rev. 6 January 2025).
+- Skiera, B., Reiner, J. and Albers, S. (2022). Regression analysis. In C. Homburg, M. Klarmann and A. Vomberg (eds), *Handbook of Market Research* (pp. 299–327). Springer. https://doi.org/10.1007/978-3-319-57413-4_17
 - Fantini, F. and Narayandas, D. (2023). Analytics for marketers: When to rely on algorithms and when to trust your gut. *Harvard Business Review*, May–June 2023.
 
 Core:
