@@ -26,6 +26,8 @@ Preview says *No module named 'yaml'* or *There is an unactivated Python environ
 # The four course packages, plus pyarrow (polars uses it to hand data to
 # plotnine and statsmodels) and jupyter (lets Quarto run Python).
 %pip install polars plotnine great-tables statsmodels pyarrow jupyter
+import sys
+print("Installed into:", sys.executable)  # must end in .venv\Scripts\python.exe (macOS: .venv/bin/python)
 ```
 
 ```{python}
