@@ -1,0 +1,95 @@
+---
+title: "Statistics refresher: by hand in Python"
+subtitle: "Session 1 · in-class code · International Marketing Analytics"
+format:
+  html:
+    embed-resources: true
+    toc: true
+---
+
+The code from Part 5 of the statistics refresher slides. Run it cell by cell in Positron (click into a cell, press Ctrl/Cmd + Enter) and compare every result with the slides. Each step first calculates by hand, then checks with the built-in function.
+
+## Step 1: the data and the mean
+
+```{python}
+import polars as pl
+
+kiosk = pl.DataFrame({
+    "week":  [1, 2, 3, 4, 5],
+    "price": [2.0, 2.5, 3.0, 3.5, 4.0],
+    "units": [110, 100, 80, 70, 40],
+})
+
+n = kiosk.height                         # 5
+mean_units = kiosk["units"].sum() / n    # by hand
+print(n, mean_units, kiosk["units"].mean(), kiosk["units"].median())
+```
+
+## Step 2: variance, standard deviation, standard error
+
+```{python}
+dev = kiosk["units"] - mean_units
+print(dev.to_list())                     # 30, 20, 0, -10, -40
+
+var_units = (dev ** 2).sum() / (n - 1)   # 750.0
+sd_units = var_units ** 0.5              # 27.39
+se_units = sd_units / n ** 0.5           # 12.25
+print(var_units, round(sd_units, 2), round(kiosk["units"].std(), 2), round(se_units, 2))
+```
+
+## Step 3: standardise
+
+```{python}
+kiosk = kiosk.with_columns(
+    z_units=(pl.col("units") - pl.col("units").mean()) / pl.col("units").std()
+)
+print(kiosk)
+print(round(kiosk["z_units"].mean(), 10), kiosk["z_units"].std())   # 0 and 1
+```
+
+## Step 4: covariance and correlation
+
+```{python}
+dev_p = kiosk["price"] - kiosk["price"].mean()
+dev_u = kiosk["units"] - kiosk["units"].mean()
+
+cov = (dev_p * dev_u).sum() / (n - 1)                       # -21.25
+r = cov / (kiosk["price"].std() * kiosk["units"].std())     # -0.981
+print(cov, round(r, 3))
+kiosk.select(pl.cov("price", "units").alias("cov"),
+             pl.corr("price", "units").alias("r"))      # check
+```
+
+## Step 5: look at it
+
+```{python}
+from plotnine import aes, geom_point, ggplot, labs
+
+(ggplot(kiosk, aes("price", "units"))
+ + geom_point(size=3)
+ + labs(x="Price (EUR)", y="Bars sold per week"))
+```
+
+## Your turn: by hand, then in Python
+
+Five days at the kiosk: temperature and bars sold.
+
+| Day | Temperature (°C) | Bars sold |
+|---|---:|---:|
+| Mon | 10 | 60 |
+| Tue | 15 | 55 |
+| Wed | 20 | 50 |
+| Thu | 25 | 40 |
+| Fri | 30 | 35 |
+
+1. **Scales:** which scale is each column?
+2. **Centre:** mean and median of bars sold.
+3. **Spread:** variance and standard deviation of bars sold, by hand.
+4. **z:** the z-score of the hottest day's sales.
+5. **Together:** covariance and correlation of temperature and bars sold, by hand; then check all results in Python with the code above.
+
+```{python}
+#| eval: false
+days = pl.DataFrame({"temp": [10, 15, 20, 25, 30], "units": [60, 55, 50, 40, 35]})
+# your code here
+```

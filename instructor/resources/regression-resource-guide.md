@@ -458,7 +458,7 @@ Session map used below (from `instructor/course_design.md`): Session 1 regressio
 - **Source:** Bernd Skiera, Jochen Reiner and Sönke Albers, in C. Homburg, M. Klarmann and A. Vomberg (eds), *Handbook of Market Research*, Springer, 2022, pp. 299 to 327, book chapter
 - **Link:** https://doi.org/10.1007/978-3-319-57413-4_17 (PDF supplied by the instructor, licensed; not in the repository)
 - **Why it matters:** Regression for marketing decisions from start to finish on one numerical example (quantity, price, advertising, salespersons in 16 districts): least squares, R² and F-test, standardised coefficients, the seven assumptions, multicollinearity with VIF (mailings and salespersons, r = 0.989, VIF 53), Durbin-Watson, heteroscedasticity tests, outliers with Cook's and Mahalanobis distance, the multiplicative (log-log) sales response function with elasticities (price -2.34), the optimal price and budget from the estimated function, and endogeneity.
-- **Use in course:** Session 1 core reading; structure of the assumptions-and-tests part of the regression deck (01b). Paid (Springer; WU SpringerLink licence).
+- **Use in course:** Session 1 core reading; structure of the assumptions-and-tests part of the regression deck (01c). Paid (Springer; WU SpringerLink licence).
 
 ### An Introduction to Statistical Learning, with Applications in Python (ISLP)
 - **Source:** James, Witten, Hastie, Tibshirani and Taylor, Springer, 2023, book (free PDF on the book website)

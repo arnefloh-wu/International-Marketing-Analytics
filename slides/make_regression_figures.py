@@ -1,4 +1,4 @@
-"""Charts and numbers for the deck "Linear regression" (01b), built on the real chocolate data.
+"""Charts and numbers for the deck "Linear regression" (01c), built on the real chocolate data.
 
 Data: data/legacy/chocolate_dataset.csv (68 weeks; weekly sales of brand 1, prices, feature and display
 activity of four chocolate brands, temperature, December and Easter weeks). Writes to slides/figures/:

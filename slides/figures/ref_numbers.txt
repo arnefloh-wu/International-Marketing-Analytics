@@ -1,0 +1,13 @@
+weeks: price [2.0, 2.5, 3.0, 3.5, 4.0], units [110, 100, 80, 70, 40]
+mean price 3.00, mean units 80.0
+units deviations [30.0, 20.0, 0.0, -10.0, -40.0], squared [900.0, 400.0, 0.0, 100.0, 1600.0], sum 3000
+var units 750.0, sd units 27.39; var price 0.6250, sd price 0.7906
+products [-30.0, -10.0, 0.0, -5.0, -40.0], sum -85.0, cov -21.25, r -0.981
+slope cov/var(price) = -34.0 units per EUR; z of week 5 units -1.46
+z units all: [1.1, 0.73, 0.0, -0.37, -1.46]
+check numpy: 27.39, -0.981
+days: mean 20.0, median 12.0
+spread: kiosk A sd 3.8, kiosk B sd 31.6, both mean 80
+bars: P(weight < 97 g) = P(z < -1.5) = 0.0668; 95 % between 96.08 and 103.92 g
+standard normal: P(Z<1) = 0.841, P(Z<1.645) = 0.950, P(Z<1.96) = 0.975, P(Z<2.576) = 0.995
+gallery r: r ≈ +0.9 0.89, r ≈ 0 -0.00, r ≈ −0.9 -0.88, U-shape: r ≈ 0 -0.03
