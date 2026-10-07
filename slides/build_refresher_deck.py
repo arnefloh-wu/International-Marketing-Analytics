@@ -562,6 +562,33 @@ numbered(s, 3.85, 2.0, 5.65, [
     ("Together: ", "covariance and r of temperature and bars; then check all in Python")],
     "Turn q", row_h=0.5, gap=0.07, size=12)
 
+# 26b  In-class quiz
+s = add_slide("Titel und Inhalt", "In-class quiz: five questions",
+              notes="Three minutes alone, then compare with your neighbour; reveal the answers one by one. Answers: 1 B "
+                    "(ordinal: ordered, but the distances between stars are unknown). 2 B (the median, 12; the event day "
+                    "pulls the mean to 20). 3 A (SE = sd / square root of n: four times the sample halves it). 4 B (z counts "
+                    "standard deviations; about 2.3 % of weeks lie that low in a normal distribution, so C is wrong). 5 B "
+                    "(r measures the strength of a straight-line relationship; it says nothing about cause, and the slope "
+                    "per euro is the regression coefficient, -34 bars here).")
+quiz = [("1 Satisfaction from 1 to 5 stars is measured on which scale?", "A nominal · B ordinal · C ratio"),
+        ("2 Daily sales 10, 12, 11, 13, 54: what describes a typical day best?",
+         "A the mean (20) · B the median (12) · C the standard deviation"),
+        ("3 You survey four times as many customers. The standard error of the mean …",
+         "A halves · B falls to a quarter · C stays the same"),
+        ("4 A week's sales have z = −2. That week was …",
+         "A 2 bars below the mean · B 2 standard deviations below the mean · C 2" + PCT + " below the mean"),
+        ("5 Price and bars sold have r = −0.98. What does this mean?",
+         "A higher prices cause lower sales · B opposite directions, nearly linear · "
+         "C 0.98 bars fewer per EUR")]
+for i, (q, opts) in enumerate(quiz):
+    y = 1.35 + i * (0.64 + 0.08)
+    box(s, 0.5, y, 9.0, 0.64, LIGHT, f"Quiz row {i + 1}")
+    box(s, 0.5, y, 0.07, 0.64, ACC, f"Quiz bar {i + 1}")
+    text(s, 0.72, y, 8.7, 0.64, [[(q.strip(), {"bold": True, "col": NAVY})], [(opts.replace(" · ", "     "), {})]],
+         f"Quiz text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, size=12, space=1)
+callout(s, 5.0, 0.5, "LuListChecks", ("3 minutes alone, ", "then compare with your neighbour. Same format as the online "
+                                                          "quiz and the exam."), "Quiz how", dark=True, size=12)
+
 # 27  Takeaways
 s = add_slide("Titel und Inhalt", "Key takeaways",
               notes="The vocabulary for the rest of the course: every regression table reports means, standard errors, "
