@@ -20,7 +20,31 @@ format:
 | **Tools** | polars, plotnine, great_tables and statsmodels |
 :::
 
-The code from Session 1 (`sessions/01-foundations/regression_chocolate.qmd`) is your starting point. This exercise uses a different model and a different cost, so the answers differ from the in-class results.
+The code from Session 1 (`sessions/01-foundations/regression_chocolate.qmd`) is your starting point.
+
+## Packages
+
+**Install once** (skip if you did it in class): pick **Python 3.14 (.venv)** at the top right of Positron and run this line in a cell or the Console. In your submitted file, keep it in a cell with `#| eval: false`, so that Quarto does not run it when rendering.
+
+```python
+%pip install polars plotnine great-tables statsmodels pyarrow jupyter
+```
+
+**Load at the top of your file**, in the first code cell:
+
+```python
+import numpy as np                       # np.log in model formulas
+import polars as pl                      # data
+import statsmodels.formula.api as smf    # regression
+from great_tables import GT              # tables
+from plotnine import (aes, geom_histogram, geom_hline,   # charts
+                      geom_line, geom_point, ggplot, labs)
+from statsmodels.stats.diagnostic import het_breuschpagan
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.stats.stattools import durbin_watson, jarque_bera
+```
+
+pyarrow and jupyter are never imported, but must be installed: pyarrow passes polars data to plotnine and statsmodels, jupyter lets Quarto run Python. Install `great-tables`, load `great_tables`. Error *No module named ...*? See Step 0 of `regression_chocolate.qmd`. This exercise uses a different model and a different cost, so the answers differ from the in-class results.
 
 ## Tasks
 

@@ -469,7 +469,51 @@ divider("Python in Positron", "Part 5 of 11" + NB + "·" + NB + "mean, standard 
         "correlation by hand, then checked", "Open sessions/01-foundations/stats_refresher.qmd and run it cell by cell "
         "with Ctrl/Cmd + Enter. Each step first calculates by hand, then checks with the built-in function.")
 
-# 21  Step 1 mean
+# 21  Packages
+s = add_slide("Titel und Inhalt", "The packages we use today",
+              notes="Seven packages cover the whole session: polars for data, plotnine for charts, great_tables for tables, "
+                    "statsmodels for regression and tests, numpy for logs inside model formulas. pyarrow and jupyter are "
+                    "never imported but must be installed: pyarrow lets polars hand its data to plotnine and statsmodels "
+                    "(.to_pandas()), jupyter lets Quarto run Python. numpy and pandas come with statsmodels automatically. "
+                    "Watch the one trap: the install name great-tables has a hyphen, the import name great_tables an "
+                    "underscore.")
+grid(s, [("Install (pip)", "Load (import)", "What for"),
+         ("polars", "import polars as pl", "data frames: read, select, calculate"),
+         ("plotnine", "from plotnine import ggplot, aes, …", "charts"),
+         ("great-tables", "from great_tables import GT", "formatted tables"),
+         ("statsmodels", "import statsmodels.formula.api as smf", "regression and tests"),
+         ("numpy", "import numpy as np", "np.log in model formulas"),
+         ("pyarrow", "no import needed", "polars → plotnine and statsmodels"),
+         ("jupyter", "no import needed", "lets Quarto run Python")],
+     [1.65, 3.75, 3.6], 0.5, 1.35, "Pkg table", row_h=0.36, size=11.5)
+callout(s, 4.55, 0.7, "LuTriangleAlert", ("Install name ≠ import name: ", "install great-tables, load great_tables. numpy "
+                                                                       "and pandas come with statsmodels."), "Pkg trap",
+        dark=True, size=12)
+
+# 22  Install and load
+s = add_slide("Titel und Inhalt", "Install once, load in every file",
+              notes="Install once per computer (per .venv): the packages stay. Load them at the top of every file, every "
+                    "time Python starts or Quarto renders. In Positron, pick Python 3.14 (.venv) at the top right first, "
+                    "then run the %pip line in a cell or the Console. If Quarto says 'No module named ...', the packages "
+                    "went to a different Python: in Positron's terminal run .venv\\Scripts\\python -m pip install polars "
+                    "plotnine great-tables statsmodels pyarrow jupyter (macOS: .venv/bin/python -m pip install ...). The "
+                    "same lines are at the top of stats_refresher.qmd and regression_chocolate.qmd.")
+code_block(s, 0.5, 1.35, 9.0, 0.85, "%pip install polars plotnine great-tables statsmodels pyarrow jupyter",
+           "Install code", size=12, caption="1  Install once: in a Positron cell or the Console, with Python 3.14 (.venv)")
+code_block(s, 0.5, 2.35, 4.6, 2.05, """import numpy as np
+import polars as pl
+import statsmodels.formula.api as smf
+from great_tables import GT
+from plotnine import (ggplot, aes,
+                      geom_point, labs)""", "Load code", size=11, caption="2  Load at the top of every file")
+rows_with_bar(s, 5.25, 2.35, 4.25, [("Install ", "once per computer; the packages stay"),
+                                    ("Load ", "every time Python starts or Quarto renders"),
+                                    ("Check: ", "pl.__version__ prints a version number")], "Pkg rows", row_h=0.62)
+callout(s, 4.55, 0.7, "LuWrench", ("'No module named …'? ", "pick Python 3.14 (.venv) at the top right and install again; "
+                                                            "the terminal fix is in the set-up guide."), "Pkg fix",
+        dark=True, size=12)
+
+# 23  Step 1 mean
 s = add_slide("Titel und Inhalt", "Step 1: the data and the mean",
               notes="A polars data frame from three lists. The mean by hand is the sum divided by the number of rows; "
                     "polars' mean() gives the same 80.0.")
@@ -490,7 +534,7 @@ grid(s, [("Result", "Value"), ("n", "5"), ("mean, by hand", "80.0"), ("mean(), c
 callout(s, 4.55, 0.6, "LuPlay", ("Run it: ", "click into a cell and press Ctrl/Cmd + Enter; the result appears in the "
                                              "Console."), "Run it", size=12)
 
-# 22  Step 2 sd
+# 24  Step 2 sd
 s = add_slide("Titel und Inhalt", "Step 2: variance, standard deviation, standard error",
               notes="The same steps as on the slide by hand: deviations, squares, sum, divide by n - 1, square root. polars' "
                     "std() uses n - 1 by default (ddof=1), so it matches. The standard error of the mean is sd / sqrt(n).")
@@ -507,7 +551,7 @@ grid(s, [("Result", "Value"), ("variance", "750.0"), ("sd, by hand", "27.39"), (
 callout(s, 4.55, 0.6, "LuSigma", ("Note: ", "std() divides by n − 1 (ddof=1), like the formula on the slide."), "SD note",
         size=12)
 
-# 23  Step 3 z
+# 25  Step 3 z
 s = add_slide("Titel und Inhalt", "Step 3: standardise",
               notes="with_columns adds a new column; the expression subtracts the mean and divides by the standard deviation. "
                     "The z-scores have mean 0 and standard deviation 1. Week 5 lies 1.46 standard deviations below the mean.")
@@ -524,7 +568,7 @@ grid(s, [("Week", "Bars", "z"), ("1", "110", "1.10"), ("2", "100", "0.73"), ("3"
 callout(s, 4.55, 0.6, "LuScale", ("Read it: ", "week 5 lies 1.46 standard deviations below an average week."), "Z out read",
         size=12)
 
-# 24  Step 4 cov and r
+# 26  Step 4 cov and r
 s = add_slide("Titel und Inhalt", "Step 4: covariance and correlation",
               notes="Deviations of both variables, multiplied week by week, summed and divided by n - 1: the covariance. "
                     "Divided by both standard deviations: the correlation. pl.cov and pl.corr check both in one line.")
@@ -543,7 +587,7 @@ grid(s, [("Result", "Value"), ("covariance", "−21.25"), ("correlation", "−0.
 callout(s, 4.55, 0.6, "LuShuffle", ("Same numbers ", "as by hand: the computer only saves the typing."), "Cov same",
         size=12)
 
-# 25  Step 5 chart
+# 27  Step 5 chart
 s = add_slide("Titel und Inhalt", "Step 5: look at it",
               notes="plotnine takes the polars data frame directly. Always plot two variables before you trust a correlation: "
                     "the U-shape on the correlation slide had r = 0.")
@@ -558,7 +602,7 @@ picture(s, "ref_quadrants.png", 5.25, 1.35, 4.25, 2.96, "The scatter plot of pri
 callout(s, 4.5, 0.75, "LuEye", ("Plot first: ", "a correlation can hide a curve, an outlier or two groups."), "Plot first",
         dark=True)
 
-# 26  Your turn
+# 28  Your turn
 s = add_slide("Titel und Inhalt", "Your turn: by hand, then in Python",
               notes="Answers: 1 day nominal-ordinal (weekday order), temperature interval, bars sold ratio. 2 mean 48, "
                     "median 50. 3 deviations 12, 7, 2, -8, -13; squares sum 430; variance 107.5; sd 10.37. 4 z of the "
@@ -576,7 +620,7 @@ numbered(s, 3.85, 2.0, 5.65, [
     ("Together: ", "covariance and r of temperature and bars; then check all in Python")],
     "Turn q", row_h=0.5, gap=0.07, size=12)
 
-# 27  In-class quiz
+# 29  In-class quiz
 s = add_slide("Titel und Inhalt", "Quiz 1: statistics in five questions",
               notes="Three minutes alone, then compare with your neighbour; reveal the answers one by one. Answers: 1 B "
                     "(ordinal: ordered, but the distances between stars are unknown). 2 B (the median, 12; the event day "
@@ -603,7 +647,7 @@ for i, (q, opts) in enumerate(quiz):
 callout(s, 5.0, 0.5, "LuListChecks", ("3 minutes alone, ", "then compare with your neighbour. Same format as the online "
                                                           "quiz and the exam."), "Quiz how", dark=True, size=12)
 
-# 28  Takeaways
+# 30  Takeaways
 s = add_slide("Titel und Inhalt", "Refresher: key takeaways",
               notes="The vocabulary for the rest of the course: every regression table reports means, standard errors, "
                     "z- or t-values and builds on covariances.")
@@ -619,7 +663,7 @@ callout(s, 5.0, 0.5, "LuChartLine", ("Next: ", "linear regression on real chocol
 divider("Linear regression: theory", "Part 6 of 11" + NB + "·" + NB + "real data, simple and multiple regression, "
         "inference, fit, logs, from elasticity to price", "From the kiosk to real scanner data. Concepts first, each shown on the chocolate data. Bojinov et al. (2025) and Skiera "
         "et al. (2022) cover the same steps in more depth.")
-# 30  The business question
+# 32  The business question
 s = add_slide("Titel und Inhalt", "The question: what does a price cut sell?",
               notes="Real weekly scanner data for one chocolate brand (brand 1) and three competitors: 68 weeks of unit "
                     "sales, prices, feature ads and in-store displays, plus temperature and holiday weeks. Brand 1 cut its "
@@ -640,7 +684,7 @@ rows_with_bar(s, 5.65, 1.35, 3.85, [
 callout(s, 4.8, 0.6, "LuTarget", ("The manager asks: ", "how much does 1" + PCT + " lower price sell, and is the regular "
                                                         "price right?"), "Manager question", dark=True)
 
-# 31  Correlation
+# 33  Correlation
 s = add_slide("Titel und Inhalt", "Correlation on real data: how strong is strong?",
               notes="The correlation r lies between -1 and +1 and measures the direction and strength of a linear "
                     "relationship. The rule of thumb in the HBS note: below 0.2 very weak, up to 0.4 weak to moderate, up "
@@ -664,7 +708,7 @@ callout(s, 4.4, 0.75, "LuTriangleAlert", ("Real data are never a perfect line: "
         x=0.5, w=9.0, size=12)
 source(s, HBS + " (HBS note 9-622-100)")
 
-# 32  Simple linear regression
+# 34  Simple linear regression
 s = add_slide("Titel und Inhalt", "Simple linear regression",
               notes="The line sales = 1,110 - 669 x price1 is the least-squares line for brand 1, built from the same pieces as the kiosk slope in Part 4 (cov / var). The slope says: one "
                     "unit (one euro) more price, 669 units fewer per week; more useful, 10 cents more price, about 67 units "
@@ -680,7 +724,7 @@ rows_with_bar(s, 5.55, 2.1, 3.95, [("b0 = 1,110: ", "intercept, sales at price 0
 callout(s, 4.75, 0.55, "LuEye", ("Look at the chart: ", "the points curve, so a straight line misses the price-cut weeks."),
         "Simple look", size=12)
 
-# 33  Least squares
+# 35  Least squares
 s = add_slide("Titel und Inhalt", "Least squares: the line with the smallest squared errors",
               notes="Each residual is the vertical distance between an observed week and the line. Ordinary least "
                     "squares (OLS) chooses intercept and slope so that the sum of squared residuals is as small as "
@@ -696,7 +740,7 @@ rows_with_bar(s, 5.25, 2.45, 4.25, [("Squared: ", "misses above and below do not
                                     ("One line: ", "the unique best fit for these data")], "LS rows", row_h=0.6)
 source(s, SKIERA + "; " + HBS, y=4.75)
 
-# 34  Multiple regression
+# 36  Multiple regression
 s = add_slide("Titel und Inhalt", "Multiple regression: holding other things constant",
               notes="With several explanatory variables each coefficient measures the effect of one variable while the "
                     "others are held constant (ceteris paribus). This is exactly the marketing mix question: what does a "
@@ -716,7 +760,7 @@ text(s, 0.5, 4.85, 9.0, 0.4, [[("Left out ", {"bold": True, "col": NAVY, "size":
                                ("a relevant variable? Its effect ends up in the others (omitted variable bias).",
                                 {"size": 12})]], "Omitted note", anchor=MSO_ANCHOR.MIDDLE)
 
-# 35  Inference
+# 37  Inference
 s = add_slide("Titel und Inhalt", "Is the effect real? t-test, p-value, interval, F-test",
               notes="Every coefficient comes with a standard error (Part 2). t = b / se tests whether the true coefficient is zero; "
                     "the p-value is the probability of a t this extreme if it were zero; below 0.05 we call it significant. "
@@ -736,7 +780,7 @@ callout(s, 4.75, 0.55, "LuTriangleAlert", ("Significant is not important: ", "re
         size=12)
 source(s, HBS + "; " + SKIERA)
 
-# 36  Fit
+# 38  Fit
 s = add_slide("Titel und Inhalt", "How well does the model fit?",
               notes="R-squared is the share of the variation in the outcome that the model explains; it never falls when "
                     "a variable is added, so adjusted R-squared penalises extra variables. The residual standard error "
@@ -757,7 +801,7 @@ callout(s, 4.1, 0.6, "LuTarget", ("Main model for brand 1: ", "log-log, own and 
                                                              "December; 68 weeks."), "Fit model", size=12)
 source(s, HBS + "; " + SKIERA, y=4.85)
 
-# 37  Functional forms and dummies
+# 39  Functional forms and dummies
 s = add_slide("Titel und Tabelle", "Functional forms and dummy variables",
               notes="Logs turn a multiplicative sales response function into a linear regression (Skiera et al. 2022): in "
                     "the log-log form the coefficient is an elasticity, the per cent change in sales for a 1 % change in "
@@ -773,7 +817,7 @@ callout(s, 4.25, 0.75, "LuLightbulb", ("Why logs? ", "sales respond in per cent,
                                                      "compared across brands and countries."), "Forms why", dark=True)
 source(s, SKIERA + "; Wooldridge 2025, ch. 6 to 7", y=5.1)
 
-# 38  From elasticity to price
+# 40  From elasticity to price
 s = add_slide("Titel und Inhalt", "From elasticity to a pricing decision",
               notes="With a constant elasticity e below -1, the profit-maximising price is marginal cost times e / (1 + e) "
                     "(the Amoroso-Robinson relation). Skiera et al. estimate e = -2.34 with unit cost $30, which gives about "
@@ -800,7 +844,7 @@ divider("Assumptions and tests", "Part 7 of 11" + NB + "·" + NB + "what OLS ass
         "Look first (residual plots), then test, then decide. Skiera et al. (2022) recommend checking multicollinearity, "
         "autocorrelation and heteroscedasticity in every model.")
 
-# 40  Assumptions overview
+# 42  Assumptions overview
 s = add_slide("Titel und Tabelle", "Seven assumptions behind OLS",
               notes="Linearity and no omitted variables protect the coefficients themselves; homoscedasticity, no "
                     "autocorrelation and normal residuals protect the standard errors and therefore the t- and F-tests. "
@@ -818,7 +862,7 @@ table(s, [("Assumption", "If violated", "Look or test (statsmodels)"),
       [3.1, 2.6, 3.3], "Assumption table", size=11.5, head_size=13, top=1.35, row_margin=36000)
 source(s, SKIERA + "; Hair et al. 2019; Wooldridge 2025", y=5.2)
 
-# 41  Look first
+# 43  Look first
 s = add_slide("Titel und Inhalt", "Look first: two residual plots",
               notes="Left: residuals against fitted values for the main brand-1 model. No curve and no funnel, so the "
                     "linear log form and constant variance look acceptable; a few price-cut weeks sit to the right. Right: "
@@ -835,7 +879,7 @@ text(s, 5.15, 4.42, 4.35, 0.5, [("Look for: ", "a rough bell shape, no extreme w
 callout(s, 4.95, 0.5, "LuEye", ("Brand 1: ", "no curve, no funnel, a roughly bell-shaped histogram."), "Look verdict",
         size=12)
 
-# 42  Then test
+# 44  Then test
 s = add_slide("Titel und Inhalt", "Then test: four numbers for the brand 1 model",
               notes="Durbin-Watson 1.41: below 2, some positive autocorrelation between neighbouring weeks, which makes "
                     "the usual standard errors a little too small; Newey-West (HAC) standard errors correct this (0.32 "
@@ -857,7 +901,7 @@ callout(s, 3.6, 1.6, "LuShieldCheck", ("Verdict: ", "usable. Report Newey-West (
                                                     "autocorrelation: 0.32 instead of 0.30 for own price."), "Test verdict",
         dark=True, x=3.25, w=6.25, size=12)
 
-# 43  When tests fail
+# 45  When tests fail
 s = add_slide("Titel und Tabelle", "When a test fails: what to do",
               notes="Most fixes are one argument in statsmodels: cov_type='HC3' for heteroscedasticity-robust standard "
                     "errors, cov_type='HAC' with maxlags for autocorrelation (Newey-West). Multicollinearity has no "
@@ -875,7 +919,7 @@ table(s, [("Problem", "Remedy", "In statsmodels"),
       [2.2, 3.4, 3.4], "Remedy table", size=11.5, head_size=13, top=1.35, row_margin=40000)
 source(s, SKIERA + "; statsmodels documentation", y=5.15)
 
-# 44  Two warnings from the data
+# 46  Two warnings from the data
 s = add_slide("Titel und Inhalt", "Three warnings from real data",
               notes="Multicollinearity: brand 1 ran displays in only four weeks, mostly together with features and price "
                     "cuts; adding display1 and fand1 gives VIFs of 11.4 and 10.9. Influence: there is a single Easter week; "
@@ -895,7 +939,7 @@ callout(s, 4.3, 0.8, "LuFlaskConical", ("The real fix: ", "vary the marketing in
                                                           "field experiment."), "Warn fix", dark=True)
 source(s, SKIERA + "; own calculation on the chocolate data", y=5.2)
 
-# 45  Endogeneity
+# 47  Endogeneity
 s = add_slide("Titel und Inhalt", "Endogeneity: when marketing follows demand",
               notes="OLS assumes that the explanatory variables are unrelated to the error. Marketing breaks this whenever "
                     "managers spend more where they expect success: then high spend and high unexplained sales go "
@@ -918,7 +962,7 @@ source(s, SKIERA + "; Gordon, Zettelmeyer, Bhargava & Chapsky 2019", y=5.2)
 divider("Regression in the real world", "Part 8 of 11" + NB + "·" + NB + "benchmarks, companies, what transfers to MMM",
         "Regression is everywhere in marketing practice, usually with a different name.")
 
-# 47  Benchmarks
+# 49  Benchmarks
 s = add_slide("Titel und Inhalt", "Benchmarks from decades of regressions",
               notes="Bijmolt, van Heerde and Pieters (2005) pool 1,851 price elasticities: mean -2.62. Sethuraman, Tellis "
                     "and Briesch (2011): short-term advertising elasticity 0.12 on average. Datta et al. (2022): across 14 "
@@ -936,7 +980,7 @@ for i, (fig, lab) in enumerate(bm):
 callout(s, 4.82, 0.45, "LuScale", ("Use benchmarks ", "to judge whether your own estimate is plausible."), "Bench use",
         dark=True, size=12)
 
-# 48  Companies
+# 50  Companies
 s = add_slide("Titel und Inhalt", "Where companies use regression",
               notes="Meta's Robyn is a ridge regression on adstocked and saturated media variables: MMM in production. "
                     "Microsoft and Booking.com add the pre-period metric as a covariate in A/B tests (CUPED), which cuts "
@@ -963,9 +1007,9 @@ source(s, "Robyn docs; Deng et al. 2013; Vaver & Koehler 2011; Makridakis et al.
 # ---------------------------------------------------------------- Part 4 -----
 divider("The chocolate data in Python", "Part 9 of 11" + NB + "·" + NB + "load and plot, the first regression, the log-log "
         "model, the checks", "Live in Positron. The code on the next slides is complete: copy it into a Quarto file "
-        "and run it cell by cell.")
+        "and run it cell by cell. The packages are the ones installed in Part 5 (polars, plotnine, statsmodels, numpy).")
 
-# 50  The data
+# 52  The data
 s = add_slide("Titel und Tabelle", "The data: 68 weeks of chocolate scanner data",
               notes="data/legacy/chocolate_dataset.csv in the course repository (also as the original .xlsx). Feature, "
                     "display and fand (feature and display) are shares of stores between 0 and 1. Sales and prices are "
@@ -984,7 +1028,7 @@ text(s, 0.5, 5.0, 9.0, 0.35, [[("File: ", {"bold": True, "col": NAVY, "size": 12
                                ("data/legacy/chocolate_dataset.csv", {"font": MONO, "col": NAVY, "size": 12})]],
      "Data file", anchor=MSO_ANCHOR.MIDDLE)
 
-# 51  Step 1 load and plot
+# 53  Step 1 load and plot
 s = add_slide("Titel und Inhalt", "Step 1: load and look",
               notes="polars reads the CSV; describe() gives counts, means and ranges. plotnine draws the scatter plot "
                     "with the least-squares line in three lines of code. Always look before you model.")
@@ -1007,7 +1051,7 @@ picture(s, "reg_scatter.png", 5.25, 1.35, 4.25, 2.81,
 callout(s, 4.8, 0.55, "LuEye", ("Look before you model: ", "ranges, outliers, the shape of the relationship."),
         "Load look", size=12)
 
-# 52  Step 2 first regression
+# 54  Step 2 first regression
 s = add_slide("Titel und Inhalt", "Step 2: the first regression",
               notes="statsmodels takes a pandas data frame, so .to_pandas() converts the polars frame (pyarrow does the "
                     "work in the background). The formula reads like the equation. summary() prints the full table; "
@@ -1032,7 +1076,7 @@ rows_with_bar(s, 0.5, 3.95, 9.0, [("Read it: ", "10 cents more price, about 67 u
 callout(s, 4.7, 0.55, "LuTriangleAlert", ("But: ", "the residuals curve. Next: the log-log model with the marketing mix."),
         "Simple next", dark=True, size=12)
 
-# 53  Step 3 log-log model
+# 55  Step 3 log-log model
 s = add_slide("Titel und Inhalt", "Step 3: the log-log model with the marketing mix",
               notes="np.log inside the formula transforms the variables; numpy comes with statsmodels. Own price: "
                     "elasticity -3.64, highly significant. Competitor prices are not significant at 5 %; the sign for brand "
@@ -1057,7 +1101,7 @@ callout(s, 4.6, 0.65, "LuLightbulb", ("Read it: ", "1" + PCT + " higher price, 3
                                                    "32" + PCT + " lower; each degree warmer 0.7" + PCT + " lower."),
         "Loglog read", dark=True, size=12)
 
-# 54  Step 4 checks
+# 56  Step 4 checks
 s = add_slide("Titel und Inhalt", "Step 4: check the assumptions",
               notes="Four functions, four numbers. Then refit with HAC standard errors because Durbin-Watson is below 2. "
                     "The residual plot uses the same plotnine grammar as before.")
@@ -1086,7 +1130,7 @@ picture(s, "reg_resid_hist.png", 7.85, 3.12, 1.65, 1.15, "Small residual histogr
 callout(s, 4.6, 0.65, "LuShieldCheck", ("Decide: ", "report the HAC result; the own-price elasticity stays −3.64, its "
                                                    "standard error rises to 0.32."), "Check decide", dark=True, size=12)
 
-# 55  In-class quiz
+# 57  In-class quiz
 s = add_slide("Titel und Inhalt", "Quiz 2: regression in five questions",
               notes="Three minutes alone, then compare with your neighbour; reveal the answers one by one. Answers: 1 C (the "
                     "sum of squared residuals). 2 B (log-log: an elasticity, 1 % higher price, 3.6 % fewer sales). 3 B "
@@ -1116,7 +1160,7 @@ callout(s, 5.0, 0.5, "LuListChecks", ("3 minutes alone, ", "then compare with yo
 divider("In-class assignment", "Part 10 of 11" + NB + "·" + NB + "groups of 3, 25 minutes, on the chocolate data",
         "Run the code from Part 4, then answer the four questions. One group presents per question.")
 
-# 57  In-class assignment
+# 59  In-class assignment
 s = add_slide("Titel und Inhalt", "In-class assignment: pricing brand 1",
               notes="Expected answers. 1 A falling cloud is weak for brands 3 and 4; brand 2 shows little relation: weak "
                     "competition at the price level in these data. 2 With display1 and fand1 the VIFs exceed 10 and the "
@@ -1140,7 +1184,7 @@ text(s, 0.5, 5.0, 9.0, 0.35, [[("File: ", {"bold": True, "col": NAVY, "size": 12
 divider("Coding exercise 1", "Part 11 of 11" + NB + "·" + NB + "individual, 5" + PCT + " of the grade",
         "The first of four coding exercises. It applies the code of this session to a similar task.")
 
-# 59  Exercise tasks
+# 61  Exercise tasks
 s = add_slide("Titel und Inhalt", "Coding exercise 1: what to do",
               notes="Individual work. The exercise reuses the data of this session with a different specification "
                     "(display1 added, marginal cost 0.90), so the in-class code transfers but the answers differ. The file "
@@ -1159,7 +1203,7 @@ text(s, 0.5, 5.15, 9.0, 0.35, [[("Brief: ", {"bold": True, "col": NAVY, "size": 
                                 ("  in the course repository and on Canvas", {"size": 12})]],
      "Ex data", anchor=MSO_ANCHOR.MIDDLE)
 
-# 60  Exercise rules and grading
+# 62  Exercise rules and grading
 s = add_slide("Titel und Inhalt", "Coding exercise 1: submission and grading",
               notes="Grading on 20 points, scaled to 5 % of the final grade. Interpretation counts most, because the AI "
                     "writes much of the code. Deadline: see Canvas.")
@@ -1178,7 +1222,7 @@ callout(s, 4.3, 0.8, "LuShieldCheck", ("Individual work: ", "discuss ideas, but 
                                                            "assistants are allowed; you own every number."), "Ex rules",
         dark=True, size=12)
 
-# 61  Takeaways
+# 63  Takeaways
 s = add_slide("Titel und Inhalt", "Regression: key takeaways",
               notes="If students remember one thing: in a log-log model the coefficient is an elasticity, and an elasticity "
                     "turns into a price with one formula, but only if the assumptions hold and the data vary enough.")
@@ -1191,7 +1235,7 @@ numbered(s, 0.5, 1.35, 9.0, [
 callout(s, 5.0, 0.5, "LuWallet", ("Next session: ", "the marketing mix model, a regression with adstock and saturation."),
         "Takeaway next", dark=True, size=12)
 
-# 62  References
+# 64  References
 s = add_slide("Titel und Inhalt", "References: statistics refresher",
               notes="Field is the friendliest textbook for students without a statistics background; Seeing Theory and "
                     "StatQuest visualise every concept of today.")
@@ -1214,7 +1258,7 @@ for k, (head, ic, refs) in enumerate([("Books and readings", "LuBookOpen", refs_
     text(s, x + 0.18, 1.9, cw2 - 0.33, 3.6, [[(lead, {"bold": True, "col": NAVY}), (rest, {})] for lead, rest in refs],
          f"Ref {k + 1} text", size=11.5, space=6)
 
-# 63  References
+# 65  References
 s = add_slide("Titel und Inhalt", "References: linear regression",
               notes="Core readings first. All sources are listed with notes in instructor/resources/"
                     "regression-resource-guide.md.")
@@ -1242,7 +1286,7 @@ for k, (head, ic, refs) in enumerate([("Academic", "LuBookOpen", refs_l), ("Lear
     text(s, x + 0.18, 1.9, cw2 - 0.33, 3.6, [[(lead, {"bold": True, "col": NAVY}), (rest, {})] for lead, rest in refs],
          f"Ref {k + 1} text", size=11, space=5)
 
-# 64  Closing
+# 66  Closing
 add_slide("Abschlussfolie Kontakt", notes="Questions? Contact details on the card; office hours via the booking link.")
 
 deck.save(OUT)

@@ -11,7 +11,30 @@ execute:
 
 The code from Part 4 of the regression slides. Run it cell by cell (Ctrl/Cmd + Enter), then work on the in-class questions at the end. The file sits in `sessions/01-foundations/` of the course repository, so it reads the data two folders up (`../../data/...`). In the Positron console, run from the project folder, the path is `data/legacy/chocolate_dataset.csv`, as on the slides.
 
-## Step 1: load and look
+## Step 0: install and load the packages
+
+**Install once** per computer. Pick **Python 3.14 (.venv)** at the top right of Positron, click into the cell below and press Ctrl/Cmd + Enter. Quarto skips this cell when it renders (`eval: false`).
+
+```{python}
+#| eval: false
+%pip install polars plotnine great-tables statsmodels pyarrow jupyter
+```
+
+| Install (pip) | Load (import) | What for |
+|---|---|---|
+| polars | `import polars as pl` | data frames |
+| plotnine | `from plotnine import ggplot, aes, ...` | charts |
+| great-tables | `from great_tables import GT` | formatted tables |
+| statsmodels | `import statsmodels.formula.api as smf` | regression and tests |
+| numpy | `import numpy as np` | `np.log` in model formulas (comes with statsmodels) |
+| pyarrow | no import needed | hands polars data to plotnine and statsmodels |
+| jupyter | no import needed | lets Quarto run Python |
+
+Note the one trap: you install `great-tables` (hyphen) but load `great_tables` (underscore).
+
+*Error "No module named ..."?* The packages went to a different Python. In Positron's terminal run `.venv\Scripts\python -m pip install polars plotnine great-tables statsmodels pyarrow jupyter` (macOS: `.venv/bin/python -m pip install ...`), then try again.
+
+**Load every time** Python starts or Quarto renders: all imports for this file in one cell, including the four test functions of Step 4.
 
 ```{python}
 import numpy as np
@@ -19,7 +42,14 @@ import polars as pl
 import statsmodels.formula.api as smf
 from great_tables import GT
 from plotnine import aes, geom_hline, geom_line, geom_point, geom_smooth, ggplot, labs
+from statsmodels.stats.diagnostic import het_breuschpagan
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+from statsmodels.stats.stattools import durbin_watson, jarque_bera
+```
 
+## Step 1: load and look
+
+```{python}
 choc = pl.read_csv("../../data/legacy/chocolate_dataset.csv")
 choc.select("sales", "price1", "price2").describe()
 ```
@@ -65,10 +95,6 @@ The own-price elasticity is `{python} f"{model.params['np.log(price1)']:.2f}"`: 
 ## Step 4: check the assumptions
 
 ```{python}
-from statsmodels.stats.diagnostic import het_breuschpagan
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-from statsmodels.stats.stattools import durbin_watson, jarque_bera
-
 X = model.model.exog
 checks = pl.DataFrame({
     "check": ["Durbin-Watson", "Breusch-Pagan p", "Jarque-Bera p", "largest VIF"],

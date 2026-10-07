@@ -9,11 +9,39 @@ format:
 
 The code from Part 5 of the statistics refresher slides. Run it cell by cell in Positron (click into a cell, press Ctrl/Cmd + Enter) and compare every result with the slides. Each step first calculates by hand, then checks with the built-in function.
 
-## Step 1: the data and the mean
+## Step 0: install and load the packages
+
+**Install once** per computer. Pick **Python 3.14 (.venv)** at the top right of Positron, click into the cell below and press Ctrl/Cmd + Enter. Quarto skips this cell when it renders (`eval: false`).
+
+```{python}
+#| eval: false
+%pip install polars plotnine great-tables statsmodels pyarrow jupyter
+```
+
+| Install (pip) | Load (import) | What for |
+|---|---|---|
+| polars | `import polars as pl` | data frames |
+| plotnine | `from plotnine import ggplot, aes, ...` | charts |
+| great-tables | `from great_tables import GT` | formatted tables |
+| statsmodels | `import statsmodels.formula.api as smf` | regression and tests |
+| numpy | `import numpy as np` | `np.log` in model formulas (comes with statsmodels) |
+| pyarrow | no import needed | hands polars data to plotnine and statsmodels |
+| jupyter | no import needed | lets Quarto run Python |
+
+Note the one trap: you install `great-tables` (hyphen) but load `great_tables` (underscore).
+
+*Error "No module named ..."?* The packages went to a different Python. In Positron's terminal run `.venv\Scripts\python -m pip install polars plotnine great-tables statsmodels pyarrow jupyter` (macOS: `.venv/bin/python -m pip install ...`), then try again.
+
+**Load every time** Python starts or Quarto renders: this file needs polars and plotnine.
 
 ```{python}
 import polars as pl
+from plotnine import aes, geom_point, ggplot, labs
+```
 
+## Step 1: the data and the mean
+
+```{python}
 kiosk = pl.DataFrame({
     "week":  [1, 2, 3, 4, 5],
     "price": [2.0, 2.5, 3.0, 3.5, 4.0],
@@ -63,8 +91,6 @@ kiosk.select(pl.cov("price", "units").alias("cov"),
 ## Step 5: look at it
 
 ```{python}
-from plotnine import aes, geom_point, ggplot, labs
-
 (ggplot(kiosk, aes("price", "units"))
  + geom_point(size=3)
  + labs(x="Price (EUR)", y="Bars sold per week"))
