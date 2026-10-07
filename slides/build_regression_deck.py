@@ -4,7 +4,7 @@ Six parts: theory (correlation, simple and multiple OLS, inference, fit, functio
 price), assumptions and tests, regression in the real world, the chocolate data in Python (statsmodels and
 plotnine), an in-class assignment and the individual coding exercise 1. Core readings: Bojinov, Parzen & Hamilton
 (2025, HBS note 9-622-100) and Skiera, Reiner & Albers (2022, Handbook of Market Research); further sources from
-instructor/resources/regression-resource-guide.md; quick-check questions adapted from the quantmethods exam bank.
+instructor/resources/regression-resource-guide.md; two quiz questions adapted from the quantmethods exam bank.
 Every number comes from make_regression_figures.py (slides/figures/reg_numbers.txt), which also draws the charts.
 
 usage: python slides/build_regression_deck.py TEMPLATE.pptx OUT.pptx
@@ -662,19 +662,31 @@ picture(s, "reg_resid_hist.png", 7.85, 3.12, 1.65, 1.15, "Small residual histogr
 callout(s, 4.6, 0.65, "LuShieldCheck", ("Decide: ", "report the HAC result; the own-price elasticity stays −3.64, its "
                                                    "standard error rises to 0.32."), "Check decide", dark=True, size=12)
 
-# 29  Quick check
-s = add_slide("Titel und Inhalt", "Quick check: four questions",
-              notes="Answers: 1 C (the sum of squared residuals). 2 B (multicollinearity, VIF). 3 A (non-constant variance "
-                    "of the residuals). 4 C (an elasticity: 1 % more price, b % change in sales). Questions 1 to 3 adapted "
-                    "from the quantmethods exam bank; the written exam uses the same format.")
-qs = [("1 OLS minimises ", "A the sum of residuals · B the sum of absolute residuals · C the sum of squared residuals"),
-      ("2 A VIF of 11 signals ", "A autocorrelation · B multicollinearity · C heteroscedasticity"),
-      ("3 Heteroscedasticity means ", "A non-constant variance of the residuals · B correlated predictors · C non-normal "
-                                      "sales"),
-      ("4 In ln sales = a + b·ln price, b is ", "A units per euro · B a percentage point change · C an elasticity")]
-rows_with_bar(s, 0.5, 1.35, 9.0, qs, "Quiz", row_h=0.72, gap=0.1)
-callout(s, 4.75, 0.55, "LuListChecks", ("Same format ", "as the online quiz after this session and the written exam."),
-        "Quiz note", size=12)
+# 29  In-class quiz
+s = add_slide("Titel und Inhalt", "In-class quiz: five questions",
+              notes="Three minutes alone, then compare with your neighbour; reveal the answers one by one. Answers: 1 C (the "
+                    "sum of squared residuals). 2 B (log-log: an elasticity, 1 % higher price, 3.6 % fewer sales). 3 B "
+                    "(multicollinearity; VIF above 10 is a warning). 4 A (below 2: positive autocorrelation between "
+                    "neighbouring weeks, so the usual standard errors are too small; report HAC errors). 5 B (R-squared never "
+                    "falls when a variable is added; compare adjusted R-squared or test the coefficient). Questions 1 and 3 "
+                    "adapted from the quantmethods exam bank.")
+quiz = [("1 What does OLS minimise?", "A the sum of residuals · B the sum of absolute residuals · C the sum of squared "
+                                      "residuals"),
+        ("2 In ln sales = a + b · ln price, b = −3.64 means …",
+         "A 1 EUR more, 3.64 units fewer · B 1" + PCT + " higher price, 3.6" + PCT + " fewer sales · C 3.64 fewer per week"),
+        ("3 A VIF of 11 signals …", "A autocorrelation · B multicollinearity · C heteroscedasticity"),
+        ("4 Weekly data, Durbin-Watson = 1.41. This suggests …",
+         "A positive autocorrelation · B no problem · C unequal variance"),
+        ("5 R² rises from 0.85 to 0.86 after adding a variable. This shows …",
+         "A the variable matters · B nothing: R² never falls · C the model is causal")]
+for i, (q, opts) in enumerate(quiz):
+    y = 1.35 + i * (0.64 + 0.08)
+    box(s, 0.5, y, 9.0, 0.64, LIGHT, f"Quiz row {i + 1}")
+    box(s, 0.5, y, 0.07, 0.64, ACC, f"Quiz bar {i + 1}")
+    text(s, 0.72, y, 8.7, 0.64, [[(q, {"bold": True, "col": NAVY})], [(opts.replace(" · ", "     "), {})]],
+         f"Quiz text {i + 1}", anchor=MSO_ANCHOR.MIDDLE, size=12, space=1)
+callout(s, 5.0, 0.5, "LuListChecks", ("3 minutes alone, ", "then compare with your neighbour. Same format as the online "
+                                                          "quiz and the exam."), "Quiz how", dark=True, size=12)
 
 # ---------------------------------------------------------------- Part 5 -----
 divider("In-class assignment", "Part 5 of 6" + NB + "·" + NB + "groups of 3, 25 minutes, on the chocolate data",
